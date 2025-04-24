@@ -1,11 +1,29 @@
 use axum::{routing::get, Router};
+use eyre::Result;
+use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
+    dotenvy::dotenv()?;
+
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect("postgres://postgres:password@localhost/test")
+        .await?;
+
+    // Make a simple query to return the given parameter (use a question mark `?` instead of `$1` for MySQL/MariaDB)
+    let row: (i64,) = sqlx::query_as("SELECT $1")
+        .bind(150_i64)
+        .fetch_one(&pool)
+        .await?;
+
+    assert_eq!(row.0, 150);
     // build our application with a single route
     let app = Router::new().route("/", get(|| async { "Hello, World!" }));
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
+
+    Ok(())
 }
