@@ -1,5 +1,7 @@
 use axum::{http::StatusCode, Extension, Json};
 use serde::Deserialize;
+use nanoid::nanoid;
+use eyre::Result;
 
 use crate::DB;
 
@@ -10,9 +12,9 @@ struct RegisterTeam {
 }
 
 async fn register(Extension(db): Extension<DB>, Json(payload): Json<RegisterTeam>) -> Result<StatusCode> {
-    let id = nanoid!()
+    let id = nanoid!();
     sqlx::query!(
-        "INSERT INTO teams VALUES ($1, $2, $3)",
+        "INSERT INTO teams (public_id, name, email) VALUES ($1, $2, $3)",
         nanoid!(),
         payload.name,
         payload.email

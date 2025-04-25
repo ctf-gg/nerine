@@ -1,8 +1,8 @@
 use axum::Router;
 use thiserror::Error;
 
-mod account;
 mod register;
+mod jwt;
 
 pub fn router() -> Router {
     Router::new()
