@@ -1,5 +1,4 @@
 use axum::{routing::post, Router};
-use thiserror::Error;
 
 mod jwt;
 mod register;
