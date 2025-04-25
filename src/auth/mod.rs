@@ -1,15 +1,9 @@
-use axum::Router;
+use axum::{routing::post, Router};
 use thiserror::Error;
 
-mod register;
 mod jwt;
+mod register;
 
 pub fn router() -> Router {
-    Router::new()
-}
-
-#[derive(Error, Debug)]
-pub enum AuthError {
-    #[error("database error")]
-    Database,
+    Router::new().route("/register", post(register::route))
 }

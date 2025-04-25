@@ -1,26 +1,40 @@
 use axum::{http::StatusCode, Extension, Json};
-use serde::Deserialize;
+use chrono::NaiveDateTime;
 use nanoid::nanoid;
-use eyre::Result;
+use serde::{Deserialize, Serialize};
 
 use crate::DB;
 
 #[derive(Deserialize)]
-struct RegisterTeam {
+pub struct RegisterTeam {
     name: String,
     email: String,
 }
 
-async fn register(Extension(db): Extension<DB>, Json(payload): Json<RegisterTeam>) -> Result<StatusCode> {
-    let id = nanoid!();
-    sqlx::query!(
-        "INSERT INTO teams (public_id, name, email) VALUES ($1, $2, $3)",
+#[derive(Deserialize, Serialize)]
+pub struct Team {
+    #[serde(skip_serializing)]
+    id: i32,
+    #[serde(rename(serialize = "id"))]
+    public_id: String,
+    name: String,
+    email: String,
+    created_at: NaiveDateTime,
+}
+
+pub async fn route(
+    Extension(db): Extension<DB>,
+    Json(payload): Json<RegisterTeam>,
+) -> sctf::Result<(StatusCode, Json<Team>)> {
+    let team = sqlx::query_as!(
+        Team,
+        "INSERT INTO teams (public_id, name, email) VALUES ($1, $2, $3) RETURNING *",
         nanoid!(),
         payload.name,
         payload.email
     )
-    .execute(&db)
+    .fetch_one(&db)
     .await?;
 
-    StatusCode::CREATED
+    Ok((StatusCode::CREATED, Json(team)))
 }
