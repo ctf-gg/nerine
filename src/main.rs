@@ -1,10 +1,10 @@
 use std::env;
 
-use axum::{routing::get, Extension, Router};
+use axum::{Extension, Router};
 use eyre::Result;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
-mod auth;
+mod account;
 mod deploy;
 
 pub type DB = Pool<Postgres>;
@@ -21,8 +21,8 @@ async fn main() -> Result<()> {
     sqlx::migrate!().run(&pool).await?;
 
     let app = Router::new()
-        .layer(Extension(pool))
-        .nest("/api", Router::new().nest("/auth", auth::router()));
+        .nest("/api", Router::new().nest("/account", account::router()))
+        .layer(Extension(pool));
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

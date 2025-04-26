@@ -10,6 +10,10 @@ use thiserror::Error;
 pub enum Error {
     #[error("{0}")]
     Database(#[from] sqlx::Error),
+    #[error("{0}")] // TODO(aiden): nit: this is not lowercase, (but it could be)
+    Jwt(#[from] jsonwebtoken::errors::Error),
+    #[error("invalid token")]
+    InvalidToken,
     #[error("event has not started")]
     EventNotStarted,
     #[error("event has ended")]
@@ -28,6 +32,8 @@ impl IntoResponse for Error {
     fn into_response(self) -> Response {
         let (status, kind) = match self {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
+            Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
+            Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
             Error::EventNotStarted => (StatusCode::UNAUTHORIZED, "event_not_started"),
             Error::EventEnded => (StatusCode::UNAUTHORIZED, "event_ended"),
         };
