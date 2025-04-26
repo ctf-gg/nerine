@@ -74,7 +74,7 @@ pub async fn update_profile(
     Auth(Claims { team_id, .. }): Auth,
     Json(payload): Json<TeamInfo>,
 ) -> sctf::Result<Json<Team>> {
-        let team = sqlx::query_as!(
+    let team = sqlx::query_as!(
         Team,
         "UPDATE teams SET name = $1, email = $2 WHERE public_id = $3 RETURNING *",
         payload.name,
