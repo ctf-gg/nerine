@@ -86,3 +86,46 @@ pub async fn all(
 
     Ok(Json(challs))
 }
+
+#[derive(Deserialize)]
+pub struct Submission {
+    flag: String,
+    challenge_id: String,
+}
+
+pub async fn submit(
+    Extension(db): Extension<DB>,
+    Auth(claims): Auth,
+    Json(submission): Json<Submission>,
+) -> sctf::Result<()> {
+    let now = Utc::now().naive_utc();
+    if now < EVENT.start_time {
+        return Err(sctf::Error::EventNotStarted);
+    }
+    if now > EVENT.end_time {
+        return Err(sctf::Error::EventEnded);
+    }
+
+    let is_correct = sqlx::query!(
+        r#"WITH challenge_data AS (SELECT id, flag FROM challenges WHERE public_id = $2)
+        INSERT INTO submissions (submission, is_correct, team_id, challenge_id)
+        SELECT 
+            $1,
+            $1 = challenge_data.flag,
+            (SELECT id FROM teams WHERE public_id = $3),
+            challenge_data.id
+        FROM challenge_data RETURNING is_correct"#,
+        submission.flag,
+        submission.challenge_id,
+        claims.team_id,
+    )
+    .fetch_one(&db)
+    .await?
+    .is_correct;
+
+    if is_correct {
+        Ok(())
+    } else {
+        Err(sctf::Error::WrongFlag)
+    }
+}

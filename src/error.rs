@@ -14,10 +14,12 @@ pub enum Error {
     Jwt(#[from] jsonwebtoken::errors::Error),
     #[error("invalid token")]
     InvalidToken,
-    #[error("event has not started")]
+    #[error("the event has not started")]
     EventNotStarted,
-    #[error("event has ended")]
+    #[error("the event has ended")]
     EventEnded,
+    #[error("wrong flag")]
+    WrongFlag,
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
@@ -36,6 +38,7 @@ impl IntoResponse for Error {
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
             Error::EventNotStarted => (StatusCode::UNAUTHORIZED, "event_not_started"),
             Error::EventEnded => (StatusCode::UNAUTHORIZED, "event_ended"),
+            Error::WrongFlag => (StatusCode::BAD_REQUEST, "wrong_flag"),
         };
 
         (
