@@ -5,6 +5,7 @@ use eyre::Result;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 mod account;
+mod admin;
 mod challenges;
 mod deploy;
 
