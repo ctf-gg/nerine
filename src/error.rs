@@ -3,8 +3,11 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use chrono::NaiveDateTime;
 use serde::Serialize;
 use thiserror::Error;
+
+use crate::EVENT;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -30,24 +33,36 @@ pub struct ErrorResponse<'a> {
     message: String,
 }
 
+#[derive(Serialize)]
+pub struct EventNotStartedResponse<'a> {
+    kind: &'a str,
+    message: String,
+    data: NaiveDateTime,
+}
+
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
+        let message = self.to_string();
         let (status, kind) = match self {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
             Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
-            Error::EventNotStarted => (StatusCode::UNAUTHORIZED, "event_not_started"),
+            Error::EventNotStarted => {
+                // Event not started special cased to return start time
+                return (
+                    StatusCode::UNAUTHORIZED,
+                    Json(EventNotStartedResponse {
+                        kind: "event_not_started",
+                        message,
+                        data: EVENT.start_time,
+                    }),
+                )
+                    .into_response();
+            }
             Error::EventEnded => (StatusCode::UNAUTHORIZED, "event_ended"),
             Error::WrongFlag => (StatusCode::BAD_REQUEST, "wrong_flag"),
         };
 
-        (
-            status,
-            Json(ErrorResponse {
-                kind,
-                message: self.to_string(),
-            }),
-        )
-            .into_response()
+        (status, Json(ErrorResponse { kind, message })).into_response()
     }
 }

@@ -24,7 +24,7 @@ CREATE TABLE challenges (
     id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     public_id TEXT NOT NULL UNIQUE,
 
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     points_min INT NOT NULL,
     points_max INT NOT NULL,

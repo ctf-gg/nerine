@@ -5,20 +5,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{account::Auth, DB};
 
-impl Challenge {
-    fn into_public(self) -> PublicChallenge {
-        PublicChallenge {
-            public_id: self.public_id,
-            name: self.name,
-            description: self.description,
-            points_min: self.points_min,
-            points_max: self.points_max,
-            attachments: self.attachments,
-            category: self.category.name,
-        }
-    }
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct PublicChallenge {
     #[serde(rename(serialize = "id"))]
