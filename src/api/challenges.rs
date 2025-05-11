@@ -1,9 +1,13 @@
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use axum::{Extension, Json};
 use chrono::Utc;
-use sctf::EVENT;
+use sctf::{EVENT, extractors::Auth};
 use serde::{Deserialize, Serialize};
 
-use crate::{account::Auth, DB};
+use crate::DB;
 
 #[derive(Deserialize, Serialize)]
 pub struct PublicChallenge {
@@ -19,7 +23,7 @@ pub struct PublicChallenge {
 
 // NOTE: All of the routes in this file are PUBLICALLY
 // ACCESSABLE!! Do not leak any important information.
-pub async fn all(
+pub async fn list(
     Extension(db): Extension<DB>,
     Auth(_): Auth,
 ) -> sctf::Result<Json<Vec<PublicChallenge>>> {
@@ -86,4 +90,10 @@ pub async fn submit(
     } else {
         Err(sctf::Error::WrongFlag)
     }
+}
+
+pub fn router() -> Router {
+    Router::new()
+        .route("/", get(list))
+        .route("/submit", post(submit))
 }

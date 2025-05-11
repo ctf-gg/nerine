@@ -1,11 +1,13 @@
-use axum::{Extension, Json};
+use axum::{
+    routing::{delete, get, put},
+    Extension, Json, Router,
+};
 use nanoid::nanoid;
+use sctf::extractors::Admin;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
 use crate::DB;
-
-use super::Admin;
 
 #[derive(Deserialize, Serialize)]
 pub struct Challenge {
@@ -22,6 +24,7 @@ pub struct Challenge {
     category: Category,
     group: Option<ChallengeGroup>,
 }
+
 impl FromRow<'_, PgRow> for Challenge {
     fn from_row(row: &PgRow) -> sqlx::Result<Self> {
         Ok(Self {
@@ -61,6 +64,37 @@ pub struct ChallengeGroup {
     name: String,
 }
 
+pub async fn get_challenges(
+    Extension(db): Extension<DB>,
+    _: Admin,
+) -> sctf::Result<Json<Vec<Challenge>>> {
+    let challs: Vec<Challenge> = sqlx::query_as(
+        "WITH chall AS (SELECT * FROM challenges) SELECT 
+                m.id,
+                m.public_id,
+                m.name,
+                m.description,
+                m.points_min,
+                m.points_max,
+                m.flag,
+                m.attachments,
+                m.visible,
+                c.id AS category_id,
+                c.name AS category_name,
+                g.id AS group_id,
+                g.name AS group_name
+            FROM 
+                chall m
+                JOIN categories c ON m.category_id = c.id
+                LEFT JOIN challenge_groups g ON m.group_id = g.id",
+    )
+    .fetch_all(&db)
+    .await?;
+
+    return Ok(Json(challs));
+}
+
+#[derive(Deserialize)]
 pub struct UpsertChallenge {
     id: Option<String>,
     name: String,
@@ -79,50 +113,50 @@ pub async fn upsert_challenge(
     _: Admin,
     Json(payload): Json<UpsertChallenge>,
 ) -> sctf::Result<Json<Challenge>> {
-    // sqlx query macro bug rejects this query
+    // sqlx query macro cannot understand the custom challenge fromRow
     let chall: Challenge = sqlx::query_as(
         "WITH merged AS (
             INSERT INTO challenges (
-            public_id,
-            name,
-            description,
-            points_min,
-            points_max,
-            flag,
-            attachments,
-            visible,
-            category_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-        ON CONFLICT(public_id) DO UPDATE 
-        SET 
-            name = $2,
-            description = $3,
-            points_min = $4,
-            points_max = $5,
-            flag = $6,
-            attachments = $7,
-            visible = $8,
-            category_id = $9
-            RETURNING *
-        )
-        SELECT 
-            m.id,
-            m.public_id,
-            m.name,
-            m.description,
-            m.points_min,
-            m.points_max,
-            m.flag,
-            m.attachments,
-            m.visible,
-            c.id AS category_id,
-            c.name AS category_name,
-            g.id AS group_id,
-            g.name AS group_name
-        FROM 
-            merged m
-            JOIN categories c ON m.category_id = c.id
-            LEFT JOIN challenge_groups g ON m.group_id = g.id;",
+                public_id,
+                name,
+                description,
+                points_min,
+                points_max,
+                flag,
+                attachments,
+                visible,
+                category_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+            ON CONFLICT(public_id) DO UPDATE 
+            SET 
+                name = $2,
+                description = $3,
+                points_min = $4,
+                points_max = $5,
+                flag = $6,
+                attachments = $7,
+                visible = $8,
+                category_id = $9
+                RETURNING *
+            )
+            SELECT 
+                m.id,
+                m.public_id,
+                m.name,
+                m.description,
+                m.points_min,
+                m.points_max,
+                m.flag,
+                m.attachments,
+                m.visible,
+                c.id AS category_id,
+                c.name AS category_name,
+                g.id AS group_id,
+                g.name AS group_name
+            FROM 
+                merged m
+                JOIN categories c ON m.category_id = c.id
+                LEFT JOIN challenge_groups g ON m.group_id = g.id;",
     )
     .bind(payload.id.unwrap_or_else(|| nanoid!()))
     .bind(payload.name)
@@ -137,4 +171,28 @@ pub async fn upsert_challenge(
     .await?;
 
     Ok(Json(chall))
+}
+
+#[derive(Deserialize)]
+pub struct DeleteChallenge {
+    id: String,
+}
+
+pub async fn delete_challenge(
+    Extension(db): Extension<DB>,
+    _: Admin,
+    Json(payload): Json<DeleteChallenge>,
+) -> sctf::Result<()> {
+    sqlx::query!("DELETE FROM challenges WHERE public_id = $1", payload.id)
+        .execute(&db)
+        .await?;
+
+    Ok(())
+}
+
+pub fn router() -> Router {
+    Router::new()
+        .route("/", get(get_challenges))
+        .route("/upsert", put(upsert_challenge))
+        .route("/delete", delete(delete_challenge))
 }

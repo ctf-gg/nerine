@@ -1,4 +1,8 @@
-use axum::{http::StatusCode, Extension, Json};
+use axum::{
+    http::StatusCode,
+    routing::{get, post},
+    Extension, Json, Router,
+};
 use axum_extra::extract::{cookie::Cookie, CookieJar};
 use chrono::{Duration, NaiveDateTime};
 use nanoid::nanoid;
@@ -6,13 +10,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::DB;
 
-use super::{
+use sctf::{
+    extractors::Auth,
     jwt::{decode_jwt, generate_jwt, Claims},
-    Auth,
 };
 
 #[derive(Deserialize)]
-pub struct TeamInfo {
+struct TeamInfo {
     name: String,
     email: String,
 }
@@ -20,15 +24,15 @@ pub struct TeamInfo {
 #[derive(Deserialize, Serialize)]
 pub struct Team {
     #[serde(skip_serializing)]
-    id: i32,
+    pub id: i32,
     #[serde(rename(serialize = "id"))]
-    public_id: String,
-    name: String,
-    email: String,
-    created_at: NaiveDateTime,
+    pub public_id: String,
+    pub name: String,
+    pub email: String,
+    pub created_at: NaiveDateTime,
 }
 
-pub async fn register(
+async fn register(
     Extension(db): Extension<DB>,
     jar: CookieJar,
     Json(payload): Json<TeamInfo>,
@@ -44,7 +48,7 @@ pub async fn register(
     .await?;
 
     // TODO(aiden): if the duration is long, we'll need a way to revoke all jwts
-    let jwt = generate_jwt(&team.public_id, Duration::days(7))?;
+    let jwt = generate_jwt(&team.public_id, Duration::days(30))?;
 
     Ok((
         StatusCode::CREATED,
@@ -53,14 +57,22 @@ pub async fn register(
     ))
 }
 
+async fn gen_token(
+    Auth(Claims { team_id, .. }): Auth,
+) -> sctf::Result<Json<String>> {
+    let jwt = generate_jwt(&team_id, Duration::days(30))?;
+
+    return Ok(Json(jwt));
+}
+
 #[derive(Deserialize)]
-pub struct LoginTeam {
+struct LoginTeam {
     token: String,
 }
 
 // TODO(aiden): i'm trying to avoid the extra query to get the team so im just returning a status code here
 // but maybe worth reconsidering it.
-pub async fn login(
+async fn login(
     jar: CookieJar,
     Json(LoginTeam { token: jwt }): Json<LoginTeam>,
 ) -> sctf::Result<(StatusCode, CookieJar)> {
@@ -69,20 +81,10 @@ pub async fn login(
     Ok((StatusCode::OK, jar.add(Cookie::new("token", jwt))))
 }
 
-pub async fn update_profile(
-    Extension(db): Extension<DB>,
-    Auth(Claims { team_id, .. }): Auth,
-    Json(payload): Json<TeamInfo>,
-) -> sctf::Result<Json<Team>> {
-    let team = sqlx::query_as!(
-        Team,
-        "UPDATE teams SET name = $1, email = $2 WHERE public_id = $3 RETURNING *",
-        payload.name,
-        payload.email,
-        team_id
-    )
-    .fetch_one(&db)
-    .await?;
 
-    Ok(Json(team))
+pub fn router() -> Router {
+    Router::new()
+        .route("/register", post(register))
+        .route("/login", post(login))
+        .route("/gen_token", get(gen_token))
 }

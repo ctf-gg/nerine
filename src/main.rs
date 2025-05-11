@@ -4,9 +4,8 @@ use axum::{Extension, Router};
 use eyre::Result;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
-mod account;
 mod admin;
-mod challenges;
+mod api;
 mod deploy;
 
 pub type DB = Pool<Postgres>;
@@ -23,12 +22,7 @@ async fn main() -> Result<()> {
     sqlx::migrate!().run(&pool).await?;
 
     let app = Router::new()
-        .nest(
-            "/api",
-            Router::new()
-                .nest("/account", account::router())
-                .nest("/challenges", challenges::router()),
-        )
+        .nest("/api", api::router())
         .layer(Extension(pool));
 
     // run our app with hyper, listening globally on port 3000

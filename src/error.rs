@@ -17,6 +17,10 @@ pub enum Error {
     Jwt(#[from] jsonwebtoken::errors::Error),
     #[error("invalid token")]
     InvalidToken,
+    #[error("challenge not found")]
+    NotFoundChallenge,
+    #[error("team not found")]
+    NotFoundTeam,
     #[error("the event has not started")]
     EventNotStarted,
     #[error("the event has ended")]
@@ -47,6 +51,7 @@ impl IntoResponse for Error {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
             Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
+            Error::NotFoundChallenge | Error::NotFoundTeam => (StatusCode::NOT_FOUND, "not_found"),
             Error::EventNotStarted => {
                 // Event not started special cased to return start time
                 return (

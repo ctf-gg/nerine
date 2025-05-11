@@ -32,13 +32,13 @@ pub fn generate_jwt(team_id: &str, exp: chrono::Duration) -> Result<String> {
     )
 }
 
-pub fn decode_jwt(jwt: &str) -> sctf::Result<Claims> {
+pub fn decode_jwt(jwt: &str) -> crate::Result<Claims> {
     // TODO(aiden): this logic is pretty ugly, the cleaner option would be to give jwt errors a nice formatting.
     Ok(
         jsonwebtoken::decode::<Claims>(jwt, &KEYS.decoding, &Default::default())
             .map_err(|e| {
                 if *e.kind() == jsonwebtoken::errors::ErrorKind::InvalidToken {
-                    sctf::Error::InvalidToken
+                    crate::Error::InvalidToken
                 } else {
                     e.into()
                 }
