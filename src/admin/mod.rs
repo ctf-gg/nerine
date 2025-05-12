@@ -1,8 +1,4 @@
-use std::sync::LazyLock;
-
-use axum::{
-    extract::FromRequestParts, http::request::Parts, RequestPartsExt, Router
-};
+use axum::Router;
 mod challenges;
 
 pub fn router() -> Router {

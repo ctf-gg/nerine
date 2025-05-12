@@ -119,7 +119,6 @@ def get_new_chall_id(team_id):
     return random.choice(list(remaining_challs))
 
 
-# yJRvMR1NfsELj9lfTL-SC
 for i in tqdm(range(TICKS)):
     submissions = []
     for tid, skill in enumerate(team_skills):

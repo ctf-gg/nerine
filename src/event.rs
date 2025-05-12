@@ -1,7 +1,6 @@
 use std::{cmp::max, str::FromStr, sync::LazyLock};
 
 use chrono::NaiveDateTime;
-use serde::Serialize;
 
 // TODO(aiden): in the future it would be really cool
 // if on init of backend it could auto build a default

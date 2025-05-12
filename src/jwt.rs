@@ -33,7 +33,9 @@ pub fn generate_jwt(team_id: &str, exp: chrono::Duration) -> Result<String> {
 }
 
 pub fn decode_jwt(jwt: &str) -> crate::Result<Claims> {
-    // TODO(aiden): this logic is pretty ugly, the cleaner option would be to give jwt errors a nice formatting.
+    // TODO(aiden): this logic is pretty ugly, but there doesn't seem to be a good way to handle it
+    // since the constructor for the error in jsonwebtoken is private
+    // keep trying i guess though.
     Ok(
         jsonwebtoken::decode::<Claims>(jwt, &KEYS.decoding, &Default::default())
             .map_err(|e| {

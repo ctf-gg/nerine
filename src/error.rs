@@ -13,7 +13,7 @@ use crate::EVENT;
 pub enum Error {
     #[error("{0}")]
     Database(#[from] sqlx::Error),
-    #[error("{0}")] // TODO(aiden): nit: this is not lowercase, (but it could be)
+    #[error("{}", _0.to_string().to_lowercase())] // TODO(aiden): nit: this is not lowercase, (but it could be)
     Jwt(#[from] jsonwebtoken::errors::Error),
     #[error("invalid token")]
     InvalidToken,

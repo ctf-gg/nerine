@@ -1,5 +1,5 @@
 use axum::{
-    routing::{delete, get, put},
+    routing::{delete, get, patch, post},
     Extension, Json, Router,
 };
 use nanoid::nanoid;
@@ -10,7 +10,7 @@ use sqlx::{postgres::PgRow, FromRow, Row};
 use crate::DB;
 
 #[derive(Deserialize, Serialize)]
-pub struct Challenge {
+struct Challenge {
     id: i32,
     public_id: String,
     name: String,
@@ -53,18 +53,18 @@ impl FromRow<'_, PgRow> for Challenge {
     }
 }
 #[derive(Deserialize, Serialize)]
-pub struct Category {
+struct Category {
     id: i32,
     name: String,
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct ChallengeGroup {
+struct ChallengeGroup {
     id: i32,
     name: String,
 }
 
-pub async fn get_challenges(
+async fn get_challenges(
     Extension(db): Extension<DB>,
     _: Admin,
 ) -> sctf::Result<Json<Vec<Challenge>>> {
@@ -95,7 +95,7 @@ pub async fn get_challenges(
 }
 
 #[derive(Deserialize)]
-pub struct UpsertChallenge {
+struct UpsertChallenge {
     id: Option<String>,
     name: String,
     description: String,
@@ -108,7 +108,7 @@ pub struct UpsertChallenge {
     category_id: i32,
 }
 
-pub async fn upsert_challenge(
+async fn upsert_challenge(
     Extension(db): Extension<DB>,
     _: Admin,
     Json(payload): Json<UpsertChallenge>,
@@ -174,11 +174,11 @@ pub async fn upsert_challenge(
 }
 
 #[derive(Deserialize)]
-pub struct DeleteChallenge {
+struct DeleteChallenge {
     id: String,
 }
 
-pub async fn delete_challenge(
+async fn delete_challenge(
     Extension(db): Extension<DB>,
     _: Admin,
     Json(payload): Json<DeleteChallenge>,
@@ -190,9 +190,29 @@ pub async fn delete_challenge(
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct CreateCategory {
+    name: String,
+}
+
+async fn create_category(
+    Extension(db): Extension<DB>,
+    _: Admin,
+    Json(payload): Json<CreateCategory>,
+) -> sctf::Result<Json<Category>> {
+    Ok(Json(sqlx::query_as!(
+        Category,
+        "INSERT INTO categories (name) VALUES ($1) RETURNING *",
+        payload.name
+    )
+    .fetch_one(&db)
+    .await?))
+}
+
 pub fn router() -> Router {
     Router::new()
         .route("/", get(get_challenges))
-        .route("/upsert", put(upsert_challenge))
-        .route("/delete", delete(delete_challenge))
+        .route("/", delete(delete_challenge))
+        .route("/", patch(upsert_challenge))
+        .route("/category", post(create_category))
 }

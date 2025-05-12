@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use axum::{routing::get, Extension, Json, Router};
 use chrono::Utc;
 use sctf::{event::point_formula, extractors::Auth, EVENT};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::DB;
 
@@ -17,7 +17,6 @@ struct LeaderboardEntry {
 
 struct Solve {
     team_id: i64,
-    public_id: String,
     challenge_id: i64,
 }
 
@@ -51,7 +50,7 @@ async fn leaderboard(db: DB) -> sctf::Result<Vec<LeaderboardEntry>> {
 
     let solves = sqlx::query_as!(
         Solve,
-        "SELECT team_id, public_id, challenge_id FROM submissions 
+        "SELECT team_id, challenge_id FROM submissions 
         JOIN teams ON teams.id = team_id WHERE is_correct = true"
     )
     .fetch_all(&db)
