@@ -113,5 +113,5 @@ async fn profile(
 pub fn router() -> Router {
     Router::new()
         .route("/update", post(update))
-        .route("/:id", get(profile))
+        .route("/{id}", get(profile))
 }

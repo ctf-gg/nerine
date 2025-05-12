@@ -11,8 +11,8 @@ CATA_COUNT = 4
 TEAM_COUNT = 200
 # on every tick each team as a n% chance
 # of submissing a flag, where n is the team's skill
-TICKS = 100
-SKILL_MEAN = 0.25
+TICKS = 50
+SKILL_MEAN = 0.20
 SKILL_STD = 0.05
 # chance of submitting an incorrect flag
 MISS_CHANCE = 0.3
@@ -50,8 +50,8 @@ def nanoid(size = 21):
 
 
 
-def generate_name():
-    return f"{random.choice(PLANTS)}-{random.choice(FRUIT)}-{random.randint(100, 999)}"
+def generate_name(prefix = None):
+    return f"{f'[{prefix}] 'if prefix else ""}{random.choice(PLANTS)}-{random.choice(FRUIT)}-{random.randint(100, 999)}"
 
 # SEEDING STARTS HERE
 
@@ -95,8 +95,9 @@ conn.commit()
 teams = []
 team_skills = []
 for i in range(TEAM_COUNT):
-    name = generate_name()
-    team_skills.append(random.gauss(SKILL_MEAN, SKILL_STD))
+    skill = random.gauss(SKILL_MEAN, SKILL_STD)
+    name = generate_name(f"skill {skill}")
+    team_skills.append(skill)
     teams.append((nanoid(), name, f"{name}@sctf.email"))
 
 print(f"[+] Creating {TEAM_COUNT} teams")

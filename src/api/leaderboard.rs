@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
-use sctf::event::point_formula;
+use axum::{routing::get, Extension, Json, Router};
+use chrono::Utc;
+use sctf::{event::point_formula, extractors::Auth, EVENT};
 use serde::{Deserialize, Serialize};
 
 use crate::DB;
 
 // TODO: figure out whether we want pagnation
+#[derive(Serialize)]
 struct LeaderboardEntry {
     name: String,
     public_id: String,
@@ -70,10 +73,11 @@ async fn leaderboard(db: DB) -> sctf::Result<Vec<LeaderboardEntry>> {
             .fetch_all(&db)
             .await?
             .into_iter()
-            .map(|x: (i64, String, String)| (x.0, (x.1, x.2)))
+            // TODO investigate this & why the cast is needed
+            .map(|x: (i32, String, String)| (x.0 as i64, (x.1, x.2)))
             .collect();
 
-    let leaderboard_entries = team_scores
+    let mut leaderboard_entries: Vec<LeaderboardEntry> = team_scores
         .into_iter()
         .map(|(id, score)| {
             let (public_id, name) = teams.remove(&id).unwrap();
@@ -84,6 +88,24 @@ async fn leaderboard(db: DB) -> sctf::Result<Vec<LeaderboardEntry>> {
             }
         })
         .collect();
+    // sort desc
+    leaderboard_entries.sort_by_key(|x| -x.score);
 
     Ok(leaderboard_entries)
+}
+
+#[axum::debug_handler]
+async fn get_lb(
+    Extension(db): Extension<DB>,
+    Auth(_): Auth,
+) -> sctf::Result<Json<Vec<LeaderboardEntry>>> {
+    if Utc::now().naive_utc() < EVENT.start_time {
+        return Err(sctf::Error::EventNotStarted);
+    }
+    return leaderboard(db).await.map(Json);
+}
+
+pub fn router() -> Router {
+    Router::new()
+        .route("/", get(get_lb))
 }

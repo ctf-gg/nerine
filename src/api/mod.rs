@@ -11,4 +11,5 @@ pub fn router() -> Router {
         .nest("/auth", auth::router())
         .nest("/challs", challenges::router())
         .nest("/profile", profile::router())
+        .nest("/leaderboard", leaderboard::router())
 }
