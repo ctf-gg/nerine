@@ -3,7 +3,11 @@ use axum::{
     routing::{get, post},
     Extension, Json, Router,
 };
-use sctf::{extractors::Auth, jwt::Claims};
+use sctf::{
+    event::point_formula,
+    extractors::Auth,
+    jwt::Claims,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
 
@@ -35,48 +39,38 @@ async fn update(
     Ok(Json(team))
 }
 
-#[derive(Serialize, sqlx::FromRow)]
-struct ChallDetails {
-    name: String,
-    points_min: i64,
-    points_max: i64,
-    // TODO figure out why this is possibly null
-    // (probably that count can return null somehow?)
-    solves: Option<i64>,
-}
-
 #[derive(Serialize)]
 struct Solve {
     name: String,
     points: i64,
 }
 
-fn point_formula(
-    ChallDetails {
-        points_max,
-        points_min,
-        solves,
-        ..
-    }: &ChallDetails,
-) -> i64 {
-    return points_max - ((points_max - points_min) * solves.unwrap() / 20);
+#[derive(Serialize, sqlx::FromRow)]
+struct ChallDetails {
+    name: String,
+    points_min: i64,
+    points_max: i64,
+    solves: i64,
 }
 
 async fn get_score_solves(db: &DB, pub_id: &str) -> sctf::Result<(i64, Vec<Solve>)> {
     let chall_details = sqlx::query_as!(
         ChallDetails,
-        "WITH
-            team_id AS (SELECT id FROM teams WHERE public_id = $1 LIMIT 1),
-            solved_challs AS (SELECT challenge_id AS id FROM submissions WHERE is_correct = true AND team_id = team_id),
-            solves_per_chall AS (SELECT challenge_id AS id, count(*) AS solves FROM submissions JOIN solved_challs sc ON sc.id = challenge_id GROUP BY challenge_id)
-        SELECT name, points_min, points_max, spc.solves FROM challenges c JOIN solves_per_chall spc ON spc.id = c.id",
+        r#"WITH
+            solved_challs AS (SELECT challenge_id AS id FROM submissions WHERE is_correct = true AND team_id = (SELECT id FROM teams WHERE public_id = $1)),
+            solves_per_chall AS (SELECT challenge_id AS id, count(*) AS solves FROM submissions JOIN solved_challs sc ON challenge_id = sc.id WHERE is_correct = true GROUP BY challenge_id)
+        SELECT name, points_min, points_max, spc.solves AS "solves!" FROM challenges c JOIN solves_per_chall spc ON spc.id = c.id"#,
         pub_id
     ).fetch_all(db).await?;
 
     let mut total_points = 0;
     let mut solves = vec![];
     for details in chall_details {
-        let points = point_formula(&details);
+        let points = point_formula(
+            details.points_min,
+            details.points_max,
+            details.solves,
+        );
         solves.push(Solve {
             name: details.name,
             points,

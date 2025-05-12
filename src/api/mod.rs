@@ -3,7 +3,7 @@ use axum::Router;
 mod auth;
 mod challenges;
 mod profile;
-
+mod leaderboard;
 
 pub fn router() -> Router {
     Router::new()
