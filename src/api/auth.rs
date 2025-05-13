@@ -8,11 +8,10 @@ use chrono::{Duration, NaiveDateTime};
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 
-use crate::DB;
-
 use sctf::{
     extractors::Auth,
     jwt::{decode_jwt, generate_jwt, Claims},
+    DB,
 };
 
 #[derive(Deserialize)]
@@ -32,6 +31,7 @@ pub struct Team {
     pub created_at: NaiveDateTime,
 }
 
+// TODO also enforce email constraints here for workarounds like caps & a cleaner error message.
 async fn register(
     Extension(db): Extension<DB>,
     jar: CookieJar,
@@ -57,9 +57,7 @@ async fn register(
     ))
 }
 
-async fn gen_token(
-    Auth(Claims { team_id, .. }): Auth,
-) -> sctf::Result<Json<String>> {
+async fn gen_token(Auth(Claims { team_id, .. }): Auth) -> sctf::Result<Json<String>> {
     let jwt = generate_jwt(&team_id, Duration::days(30))?;
 
     return Ok(Json(jwt));
@@ -80,7 +78,6 @@ async fn login(
 
     Ok((StatusCode::OK, jar.add(Cookie::new("token", jwt))))
 }
-
 
 pub fn router() -> Router {
     Router::new()

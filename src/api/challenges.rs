@@ -4,10 +4,8 @@ use axum::{
 };
 use axum::{Extension, Json};
 use chrono::Utc;
-use sctf::{EVENT, extractors::Auth};
+use sctf::{db::update_chall_cache, extractors::Auth, DB, EVENT};
 use serde::{Deserialize, Serialize};
-
-use crate::DB;
 
 #[derive(Deserialize, Serialize)]
 pub struct PublicChallenge {
@@ -15,8 +13,8 @@ pub struct PublicChallenge {
     public_id: String,
     name: String,
     description: String,
-    points_min: i32,
-    points_max: i32,
+    points: i32,
+    solves: i32,
     attachments: serde_json::Value,
     category: String,
 }
@@ -37,8 +35,8 @@ pub async fn list(
             public_id,
             challenges.name,
             description,
-            points_min,
-            points_max,
+            c_points AS points,
+            c_solves AS solves,
             attachments, 
             categories.name AS category 
         FROM challenges JOIN categories ON categories.id = category_id"#
@@ -68,24 +66,34 @@ pub async fn submit(
         return Err(sctf::Error::EventEnded);
     }
 
-    let is_correct = sqlx::query!(
-        r#"WITH challenge_data AS (SELECT id, flag FROM challenges WHERE public_id = $2)
-        INSERT INTO submissions (submission, is_correct, team_id, challenge_id)
-        SELECT 
-            $1,
-            $1 = challenge_data.flag,
-            (SELECT id FROM teams WHERE public_id = $3),
-            challenge_data.id
-        FROM challenge_data RETURNING is_correct"#,
-        submission.flag,
-        submission.challenge_id,
-        claims.team_id,
+    struct AnswerInfo {
+        id: i32,
+        flag: String,
+    }
+
+    let answer_info: AnswerInfo = sqlx::query_as!(
+        AnswerInfo,
+        "SELECT id, flag FROM challenges WHERE public_id = $1",
+        submission.challenge_id
     )
     .fetch_one(&db)
-    .await?
-    .is_correct;
+    .await?;
+
+    let is_correct = answer_info.flag == submission.flag;
+
+    sqlx::query!(
+        r#"INSERT INTO submissions (submission, is_correct, team_id, challenge_id)
+        VALUES ($1, $2, (SELECT id FROM teams WHERE public_id = $3), $4)"#,
+        submission.flag,
+        is_correct,
+        claims.team_id,
+        answer_info.id,
+    )
+    .fetch_one(&db)
+    .await?;
 
     if is_correct {
+        update_chall_cache(&db, answer_info.id).await?;
         Ok(())
     } else {
         Err(sctf::Error::WrongFlag)

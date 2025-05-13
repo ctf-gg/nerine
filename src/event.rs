@@ -21,7 +21,7 @@ pub static EVENT: LazyLock<Event> = LazyLock::new(|| Event {
 });
 
 pub fn point_formula(
-    points_min: i64, points_max: i64, solves: i64,
-) -> i64 {
+    points_min: i32, points_max: i32, solves: i32,
+) -> i32 {
     return max(points_min, points_max - (points_max - points_min) * solves / 20)
 }

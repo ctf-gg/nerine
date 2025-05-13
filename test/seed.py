@@ -8,12 +8,12 @@ if input("Type y to confirm, anything else to cancel: ").lower() != "y":
 
 CHALL_COUNT = 70
 CATA_COUNT = 4
-TEAM_COUNT = 200
+TEAM_COUNT = 1000
 # on every tick each team as a n% chance
 # of submissing a flag, where n is the team's skill
-TICKS = 50
-SKILL_MEAN = 0.20
-SKILL_STD = 0.05
+TICKS = 30
+SKILL_MEAN = 0.05
+SKILL_STD = 0.02
 # chance of submitting an incorrect flag
 MISS_CHANCE = 0.3
 
@@ -132,5 +132,37 @@ for i in tqdm(range(TICKS)):
     execute_batch(cur, """INSERT INTO submissions (submission, is_correct, team_id, challenge_id, created_at) VALUES 
                   (%s, %s, %s, %s,  to_timestamp(%s))""", submissions)
 conn.commit()
-    
+
+cur.execute("""WITH solves as (SELECT challenge_id, count(*) AS solves FROM submissions WHERE is_correct = true GROUP BY challenge_id) 
+            SELECT c.id, points_min, points_max, solves FROM challenges c JOIN solves ON c.id = challenge_id""")
+
+solves = cur.fetchall()
+
+def point_formula(points_min, points_max, solves):
+    return max(points_min, points_max - (points_max - points_min) * solves / 20)
+
+
+pts_per_chall = map(lambda x: (x[3], point_formula(*x[1:]), x[0]), solves)
+for chall in pts_per_chall:
+    cur.execute("UPDATE challenges SET c_solves = %s, c_points = %s WHERE id = %s", chall)
+conn.commit()
+
+
+# let points = point_formula(
+#     chall_details.points_min,
+#     chall_details.points_max,
+#     chall_details.solves,
+# );
+
+# sqlx::query!(
+#     "UPDATE challenges SET c_solves = $1, c_points = $2",
+#     chall_details.solves,
+#     points
+# )
+# .execute(db)
+# .await?;
+
+
+
+
 print("[!] Seeding done!")

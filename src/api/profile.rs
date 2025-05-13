@@ -3,15 +3,9 @@ use axum::{
     routing::{get, post},
     Extension, Json, Router,
 };
-use sctf::{
-    event::point_formula,
-    extractors::Auth,
-    jwt::Claims,
-};
+use sctf::{extractors::Auth, DB, jwt::Claims};
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
 
-use crate::DB;
 
 use super::auth::Team;
 
@@ -42,44 +36,18 @@ async fn update(
 #[derive(Serialize)]
 struct Solve {
     name: String,
-    points: i64,
+    points: i32,
 }
 
-#[derive(Serialize, sqlx::FromRow)]
-struct ChallDetails {
-    name: String,
-    points_min: i64,
-    points_max: i64,
-    solves: i64,
-}
-
-async fn get_score_solves(db: &DB, pub_id: &str) -> sctf::Result<(i64, Vec<Solve>)> {
-    let chall_details = sqlx::query_as!(
-        ChallDetails,
-        r#"WITH
-            solved_challs AS (SELECT challenge_id AS id FROM submissions WHERE is_correct = true AND team_id = (SELECT id FROM teams WHERE public_id = $1)),
-            solves_per_chall AS (SELECT challenge_id AS id, count(*) AS solves FROM submissions JOIN solved_challs sc ON challenge_id = sc.id WHERE is_correct = true GROUP BY challenge_id)
-        SELECT name, points_min, points_max, spc.solves AS "solves!" FROM challenges c JOIN solves_per_chall spc ON spc.id = c.id"#,
+async fn get_score_solves(db: &DB, pub_id: &str) -> sctf::Result<(i32, Vec<Solve>)> {
+    let solves = sqlx::query_as!(
+        Solve,
+        r#"WITH solved_challs AS (SELECT challenge_id AS id FROM submissions WHERE is_correct = true AND team_id = (SELECT id FROM teams WHERE public_id = $1))
+        SELECT name, c_points AS points FROM challenges c JOIN solved_challs sc ON sc.id = c.id"#,
         pub_id
     ).fetch_all(db).await?;
 
-    let mut total_points = 0;
-    let mut solves = vec![];
-    for details in chall_details {
-        let points = point_formula(
-            details.points_min,
-            details.points_max,
-            details.solves,
-        );
-        solves.push(Solve {
-            name: details.name,
-            points,
-        });
-
-        total_points += points;
-    }
-
-    return Ok((total_points, solves));
+    return Ok((solves.iter().map(|x| x.points).sum(), solves));
 }
 
 // TODO we do want to put placement here
@@ -87,7 +55,7 @@ async fn get_score_solves(db: &DB, pub_id: &str) -> sctf::Result<(i64, Vec<Solve
 #[derive(Serialize)]
 struct PublicProfile {
     name: String,
-    score: i64,
+    score: i32,
     solves: Vec<Solve>,
 }
 
@@ -96,11 +64,10 @@ async fn profile(
     Auth(_): Auth,
     Path(pub_id): Path<String>,
 ) -> sctf::Result<Json<PublicProfile>> {
-    let name: String = sqlx::query("SELECT name FROM teams WHERE public_id = $1")
-        .bind(&pub_id)
+    let name: String = sqlx::query!("SELECT name FROM teams WHERE public_id = $1", pub_id)
         .fetch_one(&db)
         .await?
-        .try_get(0)?;
+        .name;
     let (score, solves) = get_score_solves(&db, &pub_id).await?;
 
     return Ok(Json(PublicProfile {

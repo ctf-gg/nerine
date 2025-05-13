@@ -8,8 +8,6 @@ mod admin;
 mod api;
 mod deploy;
 
-pub type DB = Pool<Postgres>;
-
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv()?;

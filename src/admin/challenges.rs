@@ -3,11 +3,9 @@ use axum::{
     Extension, Json, Router,
 };
 use nanoid::nanoid;
-use sctf::extractors::Admin;
+use sctf::{db::update_chall_cache, extractors::Admin, DB};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
-
-use crate::DB;
 
 #[derive(Deserialize, Serialize)]
 struct Challenge {
@@ -169,6 +167,8 @@ async fn upsert_challenge(
     .bind(payload.category_id)
     .fetch_one(&db)
     .await?;
+
+    update_chall_cache(&db, chall.id).await?;
 
     Ok(Json(chall))
 }
