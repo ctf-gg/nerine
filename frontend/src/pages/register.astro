@@ -1,0 +1,22 @@
+<form id="register">
+  <input type="text" name="email" placeholder="email" />
+  <input type="text" name="name" placeholder="team name" />
+  <button type="submit">register</button>
+</form>
+
+<script>
+  import { register, isError } from "../api";
+  const registerForm = document.getElementById("register")! as HTMLFormElement;
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(registerForm);
+
+    const res = await register(
+      formData.get("email") as string,
+      formData.get("name") as string
+    );
+    if (isError(res))
+      return; // tell user they messed up
+    else window.location.href = `/profile/${res.id}`;
+  });
+</script>

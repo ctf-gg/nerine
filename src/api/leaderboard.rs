@@ -7,6 +7,7 @@ use serde::Serialize;
 #[derive(Serialize)]
 struct LeaderboardEntry {
     name: String,
+    #[serde(rename = "id")]
     public_id: String,
     score: i32,
 }

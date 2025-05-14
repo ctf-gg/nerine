@@ -33,13 +33,13 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Serialize)]
 pub struct ErrorResponse<'a> {
-    kind: &'a str,
+    error: &'a str,
     message: String,
 }
 
 #[derive(Serialize)]
 pub struct EventNotStartedResponse<'a> {
-    kind: &'a str,
+    error: &'a str,
     message: String,
     data: NaiveDateTime,
 }
@@ -47,7 +47,7 @@ pub struct EventNotStartedResponse<'a> {
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         let message = self.to_string();
-        let (status, kind) = match self {
+        let (status, error) = match self {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
             Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
@@ -57,7 +57,7 @@ impl IntoResponse for Error {
                 return (
                     StatusCode::UNAUTHORIZED,
                     Json(EventNotStartedResponse {
-                        kind: "event_not_started",
+                        error: "event_not_started",
                         message,
                         data: EVENT.start_time,
                     }),
@@ -68,6 +68,6 @@ impl IntoResponse for Error {
             Error::WrongFlag => (StatusCode::BAD_REQUEST, "wrong_flag"),
         };
 
-        (status, Json(ErrorResponse { kind, message })).into_response()
+        (status, Json(ErrorResponse { error, message })).into_response()
     }
 }
