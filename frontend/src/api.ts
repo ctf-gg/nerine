@@ -1,4 +1,4 @@
-export const API_BASE = "http://localhost:3000/api";
+export const API_BASE = "http://sctf.localhost/api";
 
 export type ApiError = GenericApiError | EventNotStartedApiError;
 
@@ -26,28 +26,30 @@ export interface Team {
   created_at: Date;
 }
 
-interface RequestOptions<T extends object> {
-  body: T;
-  headers?: { [k: string]: string | undefined };
+interface RequestOptions {
+  body: object;
+  headers?: HeadersInit;
 }
 
 type Req = {
   (
     method: "GET",
     path: string,
-    options?: Omit<RequestOptions<object>, "body">
+    options?: Omit<RequestOptions, "body">
   ): Promise<Response>;
   (
     method: "POST" | "PUT" | "DELETE",
     path: string,
-    options: RequestOptions<object>
+    options: RequestOptions
   ): Promise<Response>;
 };
 
-const req: Req = (method, path, { body, headers } = {}) => {
+const req: Req = (method, path, options = {}) => {
   if (method == "GET") {
+    const { headers } = options;
     return fetch(`${API_BASE}${path}`, { method, headers });
   } else {
+    const { body, headers } = options as RequestOptions;
     return fetch(`${API_BASE}${path}`, {
       method,
       body: JSON.stringify(body),
@@ -96,8 +98,26 @@ type Profile =
       solves: Solve[];
     };
 
-export const profile = async (id: string): Promise<Profile | ApiError> => {
-  const res = await req("GET", `/profile/${id}`);
+const tokenToOptions = (
+  token?: string
+): Omit<RequestOptions, "body"> | undefined =>
+  token ? { headers: { Cookie: `token=${token}` } } : undefined;
+
+export const profile = async (
+  id: string,
+  token?: string
+): Promise<Profile | ApiError> => {
+  const res = await req("GET", `/profile/${id}`, tokenToOptions(token));
 
   return (await res.json()) as Profile | ApiError;
 };
+
+interface Token {
+  token: string;
+}
+
+export const genToken = async (): Promise<Token | ApiError> => {
+  const res = await req("GET", "/auth/gen_token");
+
+  return (await res.json()) as Token | ApiError;
+}

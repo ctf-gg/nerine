@@ -18,7 +18,7 @@ async fn leaderboard(db: DB) -> sctf::Result<Vec<LeaderboardEntry>> {
         r#"
         WITH solves AS (SELECT team_id, challenge_id, created_at FROM submissions WHERE is_correct = true),
         last_solve AS (SELECT team_id, MAX(created_at) AS sub_time FROM solves GROUP BY team_id)
-        SELECT t.name, t.public_id, COALESCE(SUM(c_points), 0)::int AS "score!"
+        SELECT t.name, t.public_id, COALESCE(SUM(ch.c_points), 0)::int AS "score!"
             FROM teams t 
             LEFT JOIN solves s ON t.id = s.team_id 
             LEFT JOIN challenges ch ON s.challenge_id = ch.id

@@ -1,13 +1,18 @@
 ---
 import { isError, profile } from "../../api";
+import TokenReveal from "../../components/TokenReveal.svelte";
 
 export const prerender = false;
 const { id } = Astro.params;
 
 if (!id) return Astro.redirect("/", 307);
-const prof = await profile(id);
-if (isError(prof)) return Astro.redirect("/", 307);
+const prof = await profile(id, Astro.cookies.get("token")?.value);
+if (isError(prof)) {
+  if (prof.error === "invalid_token") return Astro.redirect("/login", 304);
+  else return new Response("profile not found", { status: 404 });
+}
 ---
 
 <h1>{prof.name}</h1>
 {prof.type === "private" && <h2>{prof.email}</h2>}
+<div>Reveal Token: <TokenReveal client:idle /></div>

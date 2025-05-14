@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
 
     let cors = CorsLayer::new()
         .allow_methods(Any)
-        .allow_origin(["http://localhost:4321".parse::<HeaderValue>().unwrap()])
+        .allow_origin(["http://sctf.localhost".parse::<HeaderValue>().unwrap()])
         .allow_headers(Any);
         // .allow_credentials(true);
 

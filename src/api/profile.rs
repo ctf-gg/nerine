@@ -95,7 +95,7 @@ async fn profile(
                 t.id, 
                 ROW_NUMBER() OVER (
                     ORDER BY 
-                        COALESCE(SUM(c_points), 0) DESC,
+                        COALESCE(SUM(ch.c_points), 0) DESC,
                         ls.sub_time ASC NULLS LAST,
                         t.id ASC
                 )::int AS rank

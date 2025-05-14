@@ -16,7 +16,7 @@
       formData.get("name") as string
     );
     if (isError(res))
-      return; // tell user they messed up
+      return alert(`wuh oh! ${res.message}`); // tell user they messed up
     else window.location.href = `/profile/${res.id}`;
   });
 </script>

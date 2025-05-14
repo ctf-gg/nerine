@@ -50,33 +50,34 @@ async fn register(
     // TODO(aiden): if the duration is long, we'll need a way to revoke all jwts
     let jwt = generate_jwt(&team.public_id, Duration::days(30))?;
 
-    Ok((
-        StatusCode::CREATED,
-        jar.add(Cookie::new("token", jwt)),
-        Json(team),
-    ))
+    let mut cookie = Cookie::new("token", jwt);
+    cookie.set_path("/");
+
+    Ok((StatusCode::CREATED, jar.add(cookie), Json(team)))
 }
 
-async fn gen_token(Auth(Claims { team_id, .. }): Auth) -> sctf::Result<Json<String>> {
+#[derive(Serialize, Deserialize)]
+struct Token {
+    token: String,
+}
+
+async fn gen_token(Auth(Claims { team_id, .. }): Auth) -> sctf::Result<Json<Token>> {
     let jwt = generate_jwt(&team_id, Duration::days(30))?;
 
-    return Ok(Json(jwt));
-}
-
-#[derive(Deserialize)]
-struct LoginTeam {
-    token: String,
+    return Ok(Json(Token { token: jwt }));
 }
 
 // TODO(aiden): i'm trying to avoid the extra query to get the team so im just returning a status code here
 // but maybe worth reconsidering it.
 async fn login(
     jar: CookieJar,
-    Json(LoginTeam { token: jwt }): Json<LoginTeam>,
+    Json(Token { token: jwt }): Json<Token>,
 ) -> sctf::Result<(StatusCode, CookieJar)> {
     decode_jwt(&jwt)?;
 
-    Ok((StatusCode::OK, jar.add(Cookie::new("token", jwt))))
+    let mut cookie = Cookie::new("token", jwt);
+    cookie.set_path("/");
+    Ok((StatusCode::OK, jar.add(cookie)))
 }
 
 pub fn router() -> Router {
