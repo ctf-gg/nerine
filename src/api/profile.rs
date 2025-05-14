@@ -86,14 +86,25 @@ async fn profile(
 
     let details = sqlx::query_as!(
         TeamDetails,
-        r#" WITH
-                team AS (SELECT id FROM teams WHERE public_id = $1),
-                solves AS (SELECT team_id, challenge_id FROM submissions WHERE is_correct = true),
-                rank AS (SELECT teams.id, ROW_NUMBER() OVER (ORDER BY SUM(c_points) DESC)::int AS rank
-                    FROM team, challenges
-                    JOIN solves ON challenge_id = challenges.id
-                    JOIN teams ON team_id = teams.id GROUP BY teams.id)
-            SELECT name, email, rank FROM teams, team JOIN rank ON rank.id = team.id WHERE teams.id = team.id"#,
+        r#"
+        WITH
+        team AS (SELECT id FROM teams WHERE public_id = $1),
+        solves AS (SELECT team_id, challenge_id FROM submissions WHERE is_correct = true),
+        last_solve AS (SELECT team_id, MAX(created_at) AS sub_time FROM submissions WHERE is_correct = true GROUP BY team_id),
+        rank AS (SELECT 
+                t.id, 
+                ROW_NUMBER() OVER (
+                    ORDER BY 
+                        COALESCE(SUM(c_points), 0) DESC,
+                        ls.sub_time ASC NULLS LAST,
+                        t.id ASC
+                )::int AS rank
+            FROM teams t
+            LEFT JOIN solves ON t.id = solves.team_id
+            LEFT JOIN challenges ch ON solves.challenge_id = ch.id
+            LEFT JOIN last_solve ls ON t.id = ls.team_id
+            GROUP BY t.id, ls.sub_time)
+        SELECT name, email, rank FROM teams JOIN rank ON rank.id = teams.id JOIN team ON teams.id = team.id"#,
         pub_id
     )
     .fetch_one(&db)
