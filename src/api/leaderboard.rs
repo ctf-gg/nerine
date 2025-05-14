@@ -16,18 +16,11 @@ async fn leaderboard(db: DB) -> sctf::Result<Vec<LeaderboardEntry>> {
     let leaderboard_entries = sqlx::query_as!(
         LeaderboardEntry,
         r#"
-        WITH solves AS (SELECT team_id, challenge_id, created_at FROM submissions WHERE is_correct = true),
-        last_solve AS (SELECT team_id, MAX(created_at) AS sub_time FROM solves GROUP BY team_id)
-        SELECT t.name, t.public_id, COALESCE(SUM(ch.c_points), 0)::int AS "score!"
+        SELECT t.name, t.public_id, score as "score!"
             FROM teams t 
-            LEFT JOIN solves s ON t.id = s.team_id 
-            LEFT JOIN challenges ch ON s.challenge_id = ch.id
-            LEFT JOIN last_solve ls ON t.id = ls.team_id
-            GROUP BY t.id, ls.sub_time
-            ORDER BY 
-                "score!" DESC,
-                ls.sub_time ASC NULLS LAST,
-                t.id ASC
+            LEFT JOIN compute_leaderboard() lb ON lb.team_id = t.id
+            GROUP BY t.id, score, rank
+            ORDER BY rank DESC
         "#
     )
     .fetch_all(&db)

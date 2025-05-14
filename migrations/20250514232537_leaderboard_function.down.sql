@@ -1,0 +1,1 @@
+DROP FUNCTION compute_leaderboard;

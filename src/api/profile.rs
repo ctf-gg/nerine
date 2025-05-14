@@ -38,7 +38,7 @@ struct Solve {
     points: i32,
 }
 
-async fn get_score_solves(db: &DB, pub_id: &str) -> sctf::Result<(i32, Vec<Solve>)> {
+async fn get_solves(db: &DB, pub_id: &str) -> sctf::Result<Vec<Solve>> {
     let solves = sqlx::query_as!(
         Solve,
         r#"WITH 
@@ -48,7 +48,7 @@ async fn get_score_solves(db: &DB, pub_id: &str) -> sctf::Result<(i32, Vec<Solve
         pub_id
     ).fetch_all(db).await?;
 
-    return Ok((solves.iter().map(|x| x.points).sum(), solves));
+    return Ok(solves);
 }
 
 // TODO we do want to put placement here
@@ -82,48 +82,34 @@ async fn profile(
         name: String,
         email: String,
         rank: Option<i32>,
+        score: Option<i32>,
     }
 
     let details = sqlx::query_as!(
         TeamDetails,
         r#"
-        WITH
-        team AS (SELECT id FROM teams WHERE public_id = $1),
-        solves AS (SELECT team_id, challenge_id FROM submissions WHERE is_correct = true),
-        last_solve AS (SELECT team_id, MAX(created_at) AS sub_time FROM submissions WHERE is_correct = true GROUP BY team_id),
-        rank AS (SELECT 
-                t.id, 
-                ROW_NUMBER() OVER (
-                    ORDER BY 
-                        COALESCE(SUM(ch.c_points), 0) DESC,
-                        ls.sub_time ASC NULLS LAST,
-                        t.id ASC
-                )::int AS rank
-            FROM teams t
-            LEFT JOIN solves ON t.id = solves.team_id
-            LEFT JOIN challenges ch ON solves.challenge_id = ch.id
-            LEFT JOIN last_solve ls ON t.id = ls.team_id
-            GROUP BY t.id, ls.sub_time)
-        SELECT name, email, rank FROM teams JOIN rank ON rank.id = teams.id JOIN team ON teams.id = team.id"#,
+        SELECT name, email, rank, score FROM teams t
+            JOIN compute_leaderboard() lb ON lb.team_id = t.id 
+            WHERE t.id = (SELECT id FROM teams WHERE public_id = $1)"#,
         pub_id
     )
     .fetch_one(&db)
     .await?;
-    let (score, solves) = get_score_solves(&db, &pub_id).await?;
+    let solves = get_solves(&db, &pub_id).await?;
 
     return if team_id == pub_id {
         Ok(Json(Profile::Private {
             name: details.name,
             email: details.email,
             rank: details.rank.unwrap_or(-1),
-            score,
+            score: details.score.unwrap_or(-1),
             solves,
         }))
     } else {
         Ok(Json(Profile::Public {
             name: details.name,
             rank: details.rank.unwrap_or(-1),
-            score,
+            score: details.score.unwrap_or(-1),
             solves,
         }))
     };
