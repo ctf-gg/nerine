@@ -6,9 +6,9 @@ use serde::Serialize;
 // TODO: figure out whether we want pagnation
 #[derive(Serialize)]
 struct LeaderboardEntry {
-    name: String,
     #[serde(rename = "id")]
     public_id: String,
+    name: String,
     score: i32,
 }
 
@@ -20,7 +20,7 @@ async fn leaderboard(db: DB) -> sctf::Result<Vec<LeaderboardEntry>> {
             FROM teams t 
             LEFT JOIN compute_leaderboard() lb ON lb.team_id = t.id
             GROUP BY t.id, score, rank
-            ORDER BY rank DESC
+            ORDER BY rank ASC
         "#
     )
     .fetch_all(&db)

@@ -1,0 +1,17 @@
+---
+export const prerender = false;
+import { isError, challenges } from "../api";
+import Challenge from "../components/Challenge.svelte"
+
+const challs = await challenges(Astro.cookies.get("token")?.value);
+if (isError(challs)) {
+  if (challs.error === "invalid_token") return Astro.redirect("/login", 304);
+  else return new Response("something went wrong");
+}
+---
+
+{
+  challs.map((c) => (
+    <Challenge chall={c} client:idle/>
+  ))
+}

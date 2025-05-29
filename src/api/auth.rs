@@ -19,7 +19,7 @@ struct TeamInfo {
     name: String,
     email: String,
 }
-
+// TODO move this elsewhere and use teamid return only
 #[derive(Deserialize, Serialize)]
 pub struct Team {
     #[serde(skip_serializing)]
@@ -67,17 +67,20 @@ async fn gen_token(Auth(Claims { team_id, .. }): Auth) -> sctf::Result<Json<Toke
     return Ok(Json(Token { token: jwt }));
 }
 
-// TODO(aiden): i'm trying to avoid the extra query to get the team so im just returning a status code here
-// but maybe worth reconsidering it.
+#[derive(Serialize)]
+struct TeamId {
+    id: String,
+}
+
 async fn login(
     jar: CookieJar,
     Json(Token { token: jwt }): Json<Token>,
-) -> sctf::Result<(StatusCode, CookieJar)> {
-    decode_jwt(&jwt)?;
+) -> sctf::Result<(CookieJar, Json<TeamId>)> {
+    let claims = decode_jwt(&jwt)?;
 
     let mut cookie = Cookie::new("token", jwt);
     cookie.set_path("/");
-    Ok((StatusCode::OK, jar.add(cookie)))
+    Ok((jar.add(cookie), Json(TeamId { id: claims.team_id })))
 }
 
 pub fn router() -> Router {

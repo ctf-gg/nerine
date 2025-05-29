@@ -12,6 +12,7 @@ pub struct PublicChallenge {
     #[serde(rename(serialize = "id"))]
     public_id: String,
     name: String,
+    author: String,
     description: String,
     points: i32,
     solves: i32,
@@ -34,6 +35,7 @@ pub async fn list(
         r#"SELECT 
             public_id,
             challenges.name,
+            author,
             description,
             c_points AS points,
             c_solves AS solves,

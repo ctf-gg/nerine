@@ -75,6 +75,18 @@ export const register = async (
   return (await res.json()) as Team | ApiError;
 };
 
+interface TeamId {
+  id: string;
+}
+
+export const login = async (token: string): Promise<TeamId | ApiError> => {
+  const res = await req("POST", "/auth/login", {
+    body: { token },
+  });
+
+  return (await res.json()) as TeamId | ApiError;
+};
+
 interface Solve {
   name: string;
   points: number;
@@ -120,4 +132,35 @@ export const genToken = async (): Promise<Token | ApiError> => {
   const res = await req("GET", "/auth/gen_token");
 
   return (await res.json()) as Token | ApiError;
+};
+
+export interface Challenge {
+  id: string;
+  name: string;
+  author: string;
+  description: string;
+  points: number;
+  solves: number;
+  attachments: any;
+  category: string;
 }
+
+export const challenges = async (
+  token?: string
+): Promise<Challenge[] | ApiError> => {
+  const res = await req("GET", "/challs", tokenToOptions(token));
+  return (await res.json()) as Challenge[] | ApiError;
+};
+
+interface LeaderboardEntry {
+  id: string;
+  name: string;
+  score: number;
+}
+
+export const leaderboard = async (
+  token?: string
+): Promise<LeaderboardEntry[] | ApiError> => {
+  const res = await req("GET", "/leaderboard", tokenToOptions(token));
+  return (await res.json()) as LeaderboardEntry[] | ApiError;
+};

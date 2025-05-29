@@ -12,6 +12,7 @@ struct Challenge {
     id: i32,
     public_id: String,
     name: String,
+    author: String,
     description: String,
     points_min: i32,
     points_max: i32,
@@ -29,6 +30,7 @@ impl FromRow<'_, PgRow> for Challenge {
             id: row.try_get("id")?,
             public_id: row.try_get("public_id")?,
             name: row.try_get("name")?,
+            author: row.try_get("author")?,
             description: row.try_get("description")?,
             points_min: row.try_get("points_min")?,
             points_max: row.try_get("points_max")?,
@@ -71,6 +73,7 @@ async fn get_challenges(
                 m.id,
                 m.public_id,
                 m.name,
+                m.author,
                 m.description,
                 m.points_min,
                 m.points_max,
@@ -96,6 +99,7 @@ async fn get_challenges(
 struct UpsertChallenge {
     id: Option<String>,
     name: String,
+    author: String,
     description: String,
     points_min: i32,
     points_max: i32,
@@ -117,6 +121,7 @@ async fn upsert_challenge(
             INSERT INTO challenges (
                 public_id,
                 name,
+                author,
                 description,
                 points_min,
                 points_max,
@@ -124,23 +129,25 @@ async fn upsert_challenge(
                 attachments,
                 visible,
                 category_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
             ON CONFLICT(public_id) DO UPDATE 
             SET 
                 name = $2,
-                description = $3,
-                points_min = $4,
-                points_max = $5,
-                flag = $6,
-                attachments = $7,
-                visible = $8,
-                category_id = $9
+                author = $3
+                description = $4,
+                points_min = $5,
+                points_max = $6,
+                flag = $7,
+                attachments = $8,
+                visible = $9,
+                category_id = $10
                 RETURNING *
             )
             SELECT 
                 m.id,
                 m.public_id,
                 m.name,
+                m.author,
                 m.description,
                 m.points_min,
                 m.points_max,
@@ -158,6 +165,7 @@ async fn upsert_challenge(
     )
     .bind(payload.id.unwrap_or_else(|| nanoid!()))
     .bind(payload.name)
+    .bind(payload.author)
     .bind(payload.description)
     .bind(payload.points_min)
     .bind(payload.points_max)

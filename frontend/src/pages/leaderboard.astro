@@ -1,0 +1,22 @@
+---
+export const prerender = false;
+import { isError, leaderboard } from "../api";
+
+const teams = await leaderboard(Astro.cookies.get("token")?.value);
+if (isError(teams)) {
+  if (teams.error === "invalid_token") return Astro.redirect("/login", 304);
+  else return new Response("something went wrong");
+}
+---
+
+{
+  teams.map((t, i) => (
+    <div>
+      <h2>
+        <a href={"/profile/" + t.id}>
+          {i + 1}. {t.name} / {t.score} pts
+        </a>
+      </h2>
+    </div>
+  ))
+}

@@ -87,8 +87,8 @@ for i in range(CHALL_COUNT):
 
 cur.execute("SELECT * FROM categories")
 print(f"[+] Creating {CHALL_COUNT} challenges")
-execute_batch(cur,"""INSERT INTO challenges (public_id, name, points_min, points_max, flag, attachments, visible, category_id) 
-              VALUES (%s, %s, 100, 500, %s, '[]', true, %s)""", challs)
+execute_batch(cur,"""INSERT INTO challenges (public_id, name, author, points_min, points_max, flag, attachments, visible, category_id) 
+              VALUES (%s, %s, 'seed', 100, 500, %s, '[]', true, %s)""", challs)
 conn.commit()
 
 
