@@ -161,7 +161,7 @@ for i in tick_iter:
 
         needed_solves_this_tick_i = int(needed_solves_this_tick)
         needed_solves_this_tick_f = needed_solves_this_tick - needed_solves_this_tick_i
-        if random.random() < needed_solves_this_tick_f:
+        if random.random() < needed_solves_this_tick_f and solves_so_far + needed_solves_this_tick_i < expected_solves:
             needed_solves_this_tick_i += 1
         challs_solved_this_tick = challenges[solves_so_far:solves_so_far+needed_solves_this_tick_i]
         #submissions_this_tick = [(flag_from_chall_name(c[1]), True, j+1, solves_so_far+k+1) for k, c in enumerate(challs_solved_this_tick)]
