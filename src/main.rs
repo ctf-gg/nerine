@@ -11,7 +11,8 @@ mod deploy;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv()?;
+    pretty_env_logger::init();
+    dotenvy::dotenv().ok();
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
