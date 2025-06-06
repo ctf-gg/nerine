@@ -2,36 +2,46 @@
 export const prerender = false;
 import { isError, profile } from "../../api";
 import TokenReveal from "../../components/TokenReveal.svelte";
+import Layout from "../../layouts/Layout.astro";
+import { jwtDecode } from "jwt-decode";
 
 const { id } = Astro.params;
+const token = Astro.cookies.get("token")?.value;
 
-if (!id) return Astro.redirect("/", 307);
-const prof = await profile(id, Astro.cookies.get("token")?.value);
+if (!id || !token) return Astro.redirect("/", 307);
+
+if (id === "me")
+  return Astro.redirect(
+    `/profile/${jwtDecode<{ team_id: number }>(token).team_id}`
+  );
+const prof = await profile(id, token);
 if (isError(prof)) {
   if (prof.error === "invalid_token") return Astro.redirect("/login", 304);
   else return new Response("profile not found", { status: 404 });
 }
 ---
 
-<h1>{prof.name}</h1>
-{
-  prof.type === "private" && (
-    <>
-      <h2>{prof.email}</h2>
-      <div>
-        Reveal Token: <TokenReveal client:idle />
-      </div>
-    </>
-  )
-}
-
-<h2>Solves:</h2>
-<ul>
+<Layout>
+  <h1 class="heading">{prof.name}</h1>
   {
-    prof.solves.map((solve) => (
-      <li>
-        {solve.name} - {solve.points}
-      </li>
-    ))
+    prof.type === "private" && (
+      <>
+        <h2>{prof.email}</h2>
+        <div>
+          Reveal Token: <TokenReveal client:idle />
+        </div>
+      </>
+    )
   }
-</ul>
+
+  <h2>Solves:</h2>
+  <ul>
+    {
+      prof.solves.map((solve) => (
+        <li>
+          {solve.name} - {solve.points}
+        </li>
+      ))
+    }
+  </ul>
+</Layout>

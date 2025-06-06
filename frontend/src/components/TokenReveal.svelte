@@ -26,11 +26,9 @@
 <style>
   button {
     overflow: hidden;
-    max-width: 80ch;
     padding: 0.5rem;
+    font-size: 1rem;
     text-align: left;
-    background: transparent;
-    border: 1px solid black;
     font-family: monospace;
     cursor: pointer;
   }

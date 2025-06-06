@@ -39,7 +39,8 @@ pub async fn list(
             c_solves AS solves,
             attachments, 
             categories.name AS category 
-        FROM challenges JOIN categories ON categories.id = category_id"#
+        FROM challenges JOIN categories ON categories.id = category_id
+        ORDER BY solves DESC"#
     )
     .fetch_all(&state.db)
     .await?;

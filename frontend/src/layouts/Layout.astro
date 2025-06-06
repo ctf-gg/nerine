@@ -1,3 +1,9 @@
+---
+import "../base.css";
+
+const token = Astro.cookies.get("token")?.value;
+---
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -8,84 +14,66 @@
     <title>Astro Basics</title>
   </head>
   <body>
-    <slot />
+    <div class="navbar">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="/challenges">challenges</a></li>
+        <li><a href="/leaderboard">leaderboard</a></li>
+        {
+          token ? (
+            <>
+              <li>
+                <a href="/profile/me">profile</a>
+              </li>
+              <li>
+                <a href="/logout">logout</a>
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <a href="/login">login</a>
+              </li>
+              <li>
+                <a href="/register">register</a>
+              </li>
+            </>
+          )
+        }
+      </ul>
+    </div>
+    <div class="content">
+      <slot />
+    </div>
   </body>
 </html>
+<style>
+  .navbar {
+    font-family: "Smiley Sans", sans-serif;
+    font-size: 1.5rem;
+    border-image: url("/border-big-off-white.png") 12 / 8px round;
+    border-image-outset: 2px;
+    background-color: #f1f1df;
+    padding: 1rem;
+    margin-bottom: 2rem;
 
-<style is:global>
-  /* 1. Use a more-intuitive box-sizing model */
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
+    ul {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
 
-  /* 2. Remove default margin */
-  * {
-    margin: 0;
-  }
+    li {
+      list-style: none;
+    }
 
-  /* 3. Enable keyword animations */
-  @media (prefers-reduced-motion: no-preference) {
-    html {
-      interpolate-size: allow-keywords;
+    a {
+      color: inherit;
     }
   }
-
-  body {
-    /* 4. Add accessible line-height */
-    line-height: 1.5;
-    /* 5. Improve text rendering */
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* 6. Improve media defaults */
-  img,
-  picture,
-  video,
-  canvas,
-  svg {
-    display: block;
-    max-width: 100%;
-  }
-
-  /* 7. Inherit fonts for form controls */
-  input,
-  button,
-  textarea,
-  select {
-    font: inherit;
-  }
-
-  /* 8. Avoid text overflows */
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    overflow-wrap: break-word;
-  }
-
-  /* 9. Improve line wrapping */
-  p {
-    text-wrap: pretty;
-  }
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    text-wrap: balance;
-  }
-
-  /*
-  10. Create a root stacking context
-*/
-  #root,
-  #__next {
-    isolation: isolate;
+  .content {
+    max-width: 90ch;
+    margin: auto;
   }
 </style>

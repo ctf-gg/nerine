@@ -1,7 +1,8 @@
 ---
 export const prerender = false;
 import { isError, challenges } from "../api";
-import Challenge from "../components/Challenge.svelte"
+import Challenge from "../components/Challenge.svelte";
+import Layout from "../layouts/Layout.astro";
 
 const challs = await challenges(Astro.cookies.get("token")?.value);
 if (isError(challs)) {
@@ -10,8 +11,16 @@ if (isError(challs)) {
 }
 ---
 
-{
-  challs.map((c) => (
-    <Challenge chall={c} client:idle/>
-  ))
-}
+<Layout>
+  <div class="challenges">
+    {challs.map((c) => <Challenge chall={c} client:idle />)}
+  </div>
+</Layout>
+
+<style>
+  .challenges {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+</style>

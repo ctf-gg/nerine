@@ -14,6 +14,9 @@ importers:
       astro:
         specifier: ^5.7.13
         version: 5.7.13(@types/node@22.15.17)(rollup@4.40.2)(typescript@5.8.3)
+      jwt-decode:
+        specifier: ^4.0.0
+        version: 4.0.0
       svelte:
         specifier: ^5.30.0
         version: 5.30.0
@@ -887,6 +890,10 @@ packages:
   js-yaml@4.1.0:
     resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
     hasBin: true
+
+  jwt-decode@4.0.0:
+    resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
+    engines: {node: '>=18'}
 
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
@@ -2449,6 +2456,8 @@ snapshots:
   js-yaml@4.1.0:
     dependencies:
       argparse: 2.0.1
+
+  jwt-decode@4.0.0: {}
 
   kleur@3.0.3: {}
 

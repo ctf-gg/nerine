@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import { isError, leaderboard } from "../api";
+import Layout from "../layouts/Layout.astro";
 
 const teams = await leaderboard(Astro.cookies.get("token")?.value);
 if (isError(teams)) {
@@ -9,14 +10,122 @@ if (isError(teams)) {
 }
 ---
 
-{
-  teams.map((t, i) => (
-    <div>
-      <h2>
-        <a href={"/profile/" + t.id}>
-          {i + 1}. {t.name} / {t.score} pts
-        </a>
-      </h2>
-    </div>
-  ))
-}
+<Layout>
+  <table class="leaderboard">
+    <tr class="headers">
+      <th>Rank</th>
+      <th>Name</th>
+      <th>Points</th>
+      <th>Badges</th>
+    </tr>
+
+    {
+      teams.map((t, i) => (
+        <tr class="entry">
+          <td>
+            <a href={"/profile/" + t.id}>{i + 1}</a>
+          </td>
+          <td>
+            <a href={"/profile/" + t.id}>{t.name}</a>
+          </td>
+          <td>
+            <a href={"/profile/" + t.id}>{t.score}</a>
+          </td>
+          <td>
+            <a href={"/profile/" + t.id}>
+              <div class="badges">
+                <div class="row">
+                  <div class="badge" />
+                  <div class="badge" />
+                  <div class="badge" />
+                  <div class="badge" />
+                </div>
+                <div class="row">
+                  <div class="badge" />
+                  <div class="badge" />
+                  <div class="badge" />
+                </div>
+              </div>
+            </a>
+          </td>
+        </tr>
+      ))
+    }
+  </table>
+</Layout>
+
+<style>
+  .badges {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+    }
+
+    .badge {
+      width: 1.25rem;
+      height: 1.25rem;
+      background: #4d4d4b;
+      border-radius: 100%;
+    }
+  }
+
+  .leaderboard {
+    width: 100%;
+    font-size: 1.5rem;
+    text-align: center;
+    font-family: "Smiley Sans";
+    border-spacing: 0;
+
+    th {
+      padding: 0;
+    }
+
+    .entry {
+      border-bottom: 1px solid #f1f1df;
+
+      td {
+        a {
+          color: inherit;
+          width: 100%;
+          display: block;
+          padding: 0.5rem 0;
+          text-decoration: none;
+        }
+      }
+    }
+
+    .headers {
+      th {
+        border-image: url("/border-big-off-white.png") 12 / 8px round;
+        border-image-outset: 2px;
+        background-color: #f1f1df;
+      }
+    }
+  }
+
+  .leaderboard :nth-child(2) {
+    td {
+      padding: 1.5rem 0;
+      background: yellow;
+    }
+  }
+
+  .leaderboard :nth-child(3) {
+    td {
+      padding: 1rem 0;
+      background: silver;
+    }
+  }
+
+  .leaderboard :nth-child(4) {
+    td {
+      padding: 0.75rem 0;
+      background: #cd7f32;
+    }
+  }
+</style>
