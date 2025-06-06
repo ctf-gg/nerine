@@ -5,7 +5,7 @@ mod challenges;
 mod profile;
 mod leaderboard;
 
-pub fn router() -> Router {
+pub fn router() -> Router<crate::State> {
     Router::new()
         .nest("/admin", crate::admin::router())
         .nest("/auth", auth::router())

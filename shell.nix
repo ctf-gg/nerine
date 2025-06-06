@@ -16,4 +16,5 @@
   DATABASE_URL = "postgres://postgres:postgres@localhost/sctf";
   # example_secret in base64
   JWT_SECRET = "ZXhhbXBsZV9zZWNyZXQK";
+  ADMIN_TOKEN = "example_admin_token";
 }

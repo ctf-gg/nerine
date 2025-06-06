@@ -14,6 +14,7 @@ pub struct Event {
     pub end_time: NaiveDateTime,
 }
 
+// TODO(ani): make this configurable
 pub static EVENT: LazyLock<Event> = LazyLock::new(|| Event {
     name: String::from("smileyCTF"),
     start_time: NaiveDateTime::from_str("2025-04-25T22:36:51.356942").unwrap(),

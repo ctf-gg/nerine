@@ -3,7 +3,7 @@ use axum::{
     Extension, Json, Router,
 };
 use nanoid::nanoid;
-use sctf::{db::update_chall_cache, extractors::Admin, DB};
+use crate::{db::update_chall_cache, extractors::Admin, DB, Result};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
@@ -67,7 +67,7 @@ struct ChallengeGroup {
 async fn get_challenges(
     Extension(db): Extension<DB>,
     _: Admin,
-) -> sctf::Result<Json<Vec<Challenge>>> {
+) -> Result<Json<Vec<Challenge>>> {
     let challs: Vec<Challenge> = sqlx::query_as(
         "WITH chall AS (SELECT * FROM challenges) SELECT 
                 m.id,
@@ -114,7 +114,7 @@ async fn upsert_challenge(
     Extension(db): Extension<DB>,
     _: Admin,
     Json(payload): Json<UpsertChallenge>,
-) -> sctf::Result<Json<Challenge>> {
+) -> Result<Json<Challenge>> {
     // sqlx query macro cannot understand the custom challenge fromRow
     let chall: Challenge = sqlx::query_as(
         "WITH merged AS (
@@ -190,7 +190,7 @@ async fn delete_challenge(
     Extension(db): Extension<DB>,
     _: Admin,
     Json(payload): Json<DeleteChallenge>,
-) -> sctf::Result<()> {
+) -> Result<()> {
     sqlx::query!("DELETE FROM challenges WHERE public_id = $1", payload.id)
         .execute(&db)
         .await?;
@@ -207,7 +207,7 @@ async fn create_category(
     Extension(db): Extension<DB>,
     _: Admin,
     Json(payload): Json<CreateCategory>,
-) -> sctf::Result<Json<Category>> {
+) -> Result<Json<Category>> {
     Ok(Json(sqlx::query_as!(
         Category,
         "INSERT INTO categories (name) VALUES ($1) RETURNING *",
@@ -217,7 +217,7 @@ async fn create_category(
     .await?))
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(get_challenges))
         .route("/", delete(delete_challenge))

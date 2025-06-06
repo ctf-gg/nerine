@@ -1,22 +1,35 @@
-use std::env;
-
 use axum::{http::HeaderValue, Extension, Router};
-use eyre::Result;
+use envconfig::Envconfig;
+use eyre::Context;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 
 mod admin;
 mod api;
+mod config;
+mod db;
 mod deploy;
+mod error;
+mod event;
+mod extractors;
+mod jwt;
+
+use config::State;
+use db::DB;
+use error::{Error, Result};
+use event::EVENT;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> eyre::Result<()> {
     pretty_env_logger::init();
     dotenvy::dotenv().ok();
 
+    let cfg = config::Config::init_from_env()
+        .context("initialize config from environment")?;
+
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect(env::var("DATABASE_URL")?.as_str())
+        .connect(&cfg.database_url)
         .await?;
 
     sqlx::migrate!().run(&pool).await?;
@@ -27,8 +40,9 @@ async fn main() -> Result<()> {
         .allow_headers(Any);
         // .allow_credentials(true);
 
-    let app = Router::new()
+    let app = Router::<State>::new()
         .nest("/api", api::router())
+        .with_state(State::new(cfg))
         .layer(Extension(pool))
         .layer(cors);
 

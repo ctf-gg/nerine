@@ -4,7 +4,7 @@ use axum::{
 };
 use axum::{Extension, Json};
 use chrono::Utc;
-use sctf::{db::update_chall_cache, extractors::Auth, DB, EVENT};
+use crate::{db::update_chall_cache, extractors::Auth, DB, EVENT, Result, Error};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -25,9 +25,9 @@ pub struct PublicChallenge {
 pub async fn list(
     Extension(db): Extension<DB>,
     Auth(_): Auth,
-) -> sctf::Result<Json<Vec<PublicChallenge>>> {
+) -> Result<Json<Vec<PublicChallenge>>> {
     if Utc::now().naive_utc() < EVENT.start_time {
-        return Err(sctf::Error::EventNotStarted);
+        return Err(Error::EventNotStarted);
     }
 
     let challs = sqlx::query_as!(
@@ -59,13 +59,13 @@ pub async fn submit(
     Extension(db): Extension<DB>,
     Auth(claims): Auth,
     Json(submission): Json<Submission>,
-) -> sctf::Result<()> {
+) -> Result<()> {
     let now = Utc::now().naive_utc();
     if now < EVENT.start_time {
-        return Err(sctf::Error::EventNotStarted);
+        return Err(Error::EventNotStarted);
     }
     if now > EVENT.end_time {
-        return Err(sctf::Error::EventEnded);
+        return Err(Error::EventEnded);
     }
 
     struct AnswerInfo {
@@ -98,11 +98,11 @@ pub async fn submit(
         update_chall_cache(&db, answer_info.id).await?;
         Ok(())
     } else {
-        Err(sctf::Error::WrongFlag)
+        Err(Error::WrongFlag)
     }
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(list))
         .route("/submit", post(submit))

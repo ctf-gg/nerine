@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Extension, Json, Router,
 };
-use sctf::{extractors::Auth, jwt::Claims, DB};
+use crate::{extractors::Auth, jwt::Claims, DB, Result};
 use serde::{Deserialize, Serialize};
 
 use super::auth::Team;
@@ -18,7 +18,7 @@ async fn update(
     Extension(db): Extension<DB>,
     Auth(Claims { team_id, .. }): Auth,
     Json(payload): Json<UpdateProfile>,
-) -> sctf::Result<Json<Team>> {
+) -> Result<Json<Team>> {
     let team = sqlx::query_as!(
         Team,
         "UPDATE teams SET name = $1, email = $2 WHERE public_id = $3 RETURNING *",
@@ -38,7 +38,7 @@ struct Solve {
     points: i32,
 }
 
-async fn get_solves(db: &DB, pub_id: &str) -> sctf::Result<Vec<Solve>> {
+async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {
     let solves = sqlx::query_as!(
         Solve,
         r#"WITH 
@@ -77,7 +77,7 @@ async fn profile(
     Extension(db): Extension<DB>,
     Auth(Claims { team_id, .. }): Auth,
     Path(pub_id): Path<String>,
-) -> sctf::Result<Json<Profile>> {
+) -> Result<Json<Profile>> {
     struct TeamDetails {
         name: String,
         email: String,
@@ -115,7 +115,7 @@ async fn profile(
     };
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/update", post(update))
         .route("/{id}", get(profile))
