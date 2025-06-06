@@ -90,7 +90,7 @@ pub async fn submit(
         claims.team_id,
         answer_info.id,
     )
-    .fetch_one(&state.db)
+    .execute(&state.db)
     .await?;
 
     if is_correct {

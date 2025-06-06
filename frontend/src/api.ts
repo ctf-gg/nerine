@@ -164,3 +164,22 @@ export const leaderboard = async (
   const res = await req("GET", "/leaderboard", tokenToOptions(token));
   return (await res.json()) as LeaderboardEntry[] | ApiError;
 };
+
+export async function submitFlag(
+  challengeId: string,
+  flag: string,
+  token?: string,
+): Promise<{} | ApiError> {
+  const res = await req("POST", "/challs/submit", {
+    ...tokenToOptions(token),
+    body: {
+      challenge_id: challengeId,
+      flag,
+    },
+  });
+  if (res.status == 200) {
+    return {};
+  } else {
+    return await res.json();
+  }
+}

@@ -18,7 +18,7 @@ pub struct Event {
 pub static EVENT: LazyLock<Event> = LazyLock::new(|| Event {
     name: String::from("smileyCTF"),
     start_time: NaiveDateTime::from_str("2025-04-25T22:36:51.356942").unwrap(),
-    end_time: NaiveDateTime::from_str("2025-04-27T22:36:51.356942").unwrap(),
+    end_time: NaiveDateTime::from_str("2025-06-27T22:36:51.356942").unwrap(),
 });
 
 pub fn point_formula(

@@ -1,8 +1,19 @@
 <script lang="ts">
-  import { type Challenge } from "../api";
+  import { type Challenge, isError, submitFlag } from "../api";
+  import Cookie from "js-cookie";
   const { chall: c }: { chall: Challenge } = $props();
 
-  const submit = () => {};
+  let flagInput: HTMLInputElement;
+  let correct = $state<boolean | null>(null);
+  async function submit(e: SubmitEvent) {
+    e.preventDefault();
+    const j = await submitFlag(c.id, flagInput.value, Cookie.get("token"));;
+    flagInput.value = "";
+    if (isError(j)) {
+      alert("uwuups! " + j.message);
+    }
+    correct = !isError(j);
+  }
 </script>
 
 <div class="challenge">
@@ -12,8 +23,11 @@
   </div>
   <h2 class="author">{c.author}</h2>
   <p class="description">{c.description}</p>
-  <form class="submit">
-    <input type="text" name="flag" placeholder="flag" />
+  <form class="submit" onsubmit={submit}>
+    <input type="text" name="flag" placeholder="flag"
+      onchange={() => correct = null}
+      bind:this={flagInput}
+      class={[{ correct: correct === true, incorrect: correct === false }]} />
     <button type="submit">submit</button>
   </form>
 </div>
@@ -52,6 +66,16 @@
     input {
       flex-grow: 1;
       background-color: #f1f1df;
+
+      transition: background-color 300ms ease-out;
+
+      &.correct {
+        background-color: lightgreen;
+      }
+
+      &.incorrect {
+        background-color: pink;
+      }
     }
   }
 </style>
