@@ -1,6 +1,6 @@
-use axum::{routing::get, Extension, Json, Router};
+use axum::{extract::{State as StateE}, routing::get, Json, Router};
 use chrono::Utc;
-use crate::{extractors::Auth, DB, EVENT, Result, Error};
+use crate::{extractors::Auth, DB, EVENT, Result, Error, State};
 use serde::Serialize;
 
 // TODO: figure out whether we want pagnation
@@ -12,7 +12,7 @@ struct LeaderboardEntry {
     score: i32,
 }
 
-async fn leaderboard(db: DB) -> Result<Vec<LeaderboardEntry>> {
+async fn leaderboard(db: &DB) -> Result<Vec<LeaderboardEntry>> {
     let leaderboard_entries = sqlx::query_as!(
         LeaderboardEntry,
         r#"
@@ -23,21 +23,21 @@ async fn leaderboard(db: DB) -> Result<Vec<LeaderboardEntry>> {
             ORDER BY rank ASC
         "#
     )
-    .fetch_all(&db)
+    .fetch_all(db)
     .await?;
 
     Ok(leaderboard_entries)
 }
 
 async fn get_lb(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     Auth(_): Auth,
 ) -> Result<Json<Vec<LeaderboardEntry>>> {
     if Utc::now().naive_utc() < EVENT.start_time {
         return Err(Error::EventNotStarted);
     }
 
-    return leaderboard(db).await.map(Json);
+    return leaderboard(&state.db).await.map(Json);
 }
 
 pub fn router() -> Router<crate::State> {

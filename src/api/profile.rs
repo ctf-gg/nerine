@@ -1,9 +1,9 @@
 use axum::{
-    extract::Path,
+    extract::{State as StateE, Path},
     routing::{get, post},
-    Extension, Json, Router,
+    Json, Router,
 };
-use crate::{extractors::Auth, jwt::Claims, DB, Result};
+use crate::{extractors::Auth, jwt::Claims, DB, Result, State};
 use serde::{Deserialize, Serialize};
 
 use super::auth::Team;
@@ -15,7 +15,7 @@ struct UpdateProfile {
 }
 
 async fn update(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
     Json(payload): Json<UpdateProfile>,
 ) -> Result<Json<Team>> {
@@ -26,7 +26,7 @@ async fn update(
         payload.email,
         team_id
     )
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?;
 
     Ok(Json(team))
@@ -74,7 +74,7 @@ enum Profile {
 }
 
 async fn profile(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
     Path(pub_id): Path<String>,
 ) -> Result<Json<Profile>> {
@@ -93,9 +93,9 @@ async fn profile(
             WHERE t.id = (SELECT id FROM teams WHERE public_id = $1)"#,
         pub_id
     )
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?;
-    let solves = get_solves(&db, &pub_id).await?;
+    let solves = get_solves(&state.db, &pub_id).await?;
 
     return if team_id == pub_id {
         Ok(Json(Profile::Private {

@@ -1,10 +1,8 @@
 use axum::{
-    routing::{get, post},
-    Router,
+    extract::State as StateE, routing::{get, post}, Json, Router
 };
-use axum::{Extension, Json};
 use chrono::Utc;
-use crate::{db::update_chall_cache, extractors::Auth, DB, EVENT, Result, Error};
+use crate::{db::update_chall_cache, extractors::Auth, EVENT, Result, Error, State};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -23,7 +21,7 @@ pub struct PublicChallenge {
 // NOTE: All of the routes in this file are PUBLICALLY
 // ACCESSABLE!! Do not leak any important information.
 pub async fn list(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     Auth(_): Auth,
 ) -> Result<Json<Vec<PublicChallenge>>> {
     if Utc::now().naive_utc() < EVENT.start_time {
@@ -43,7 +41,7 @@ pub async fn list(
             categories.name AS category 
         FROM challenges JOIN categories ON categories.id = category_id"#
     )
-    .fetch_all(&db)
+    .fetch_all(&state.db)
     .await?;
 
     Ok(Json(challs))
@@ -56,7 +54,7 @@ pub struct Submission {
 }
 
 pub async fn submit(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     Auth(claims): Auth,
     Json(submission): Json<Submission>,
 ) -> Result<()> {
@@ -78,7 +76,7 @@ pub async fn submit(
         "SELECT id, flag FROM challenges WHERE public_id = $1",
         submission.challenge_id
     )
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?;
 
     let is_correct = answer_info.flag == submission.flag;
@@ -91,11 +89,11 @@ pub async fn submit(
         claims.team_id,
         answer_info.id,
     )
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?;
 
     if is_correct {
-        update_chall_cache(&db, answer_info.id).await?;
+        update_chall_cache(&state.db, answer_info.id).await?;
         Ok(())
     } else {
         Err(Error::WrongFlag)

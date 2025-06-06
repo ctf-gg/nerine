@@ -1,9 +1,8 @@
 use axum::{
-    routing::{delete, get, patch, post},
-    Extension, Json, Router,
+    extract::{State as StateE}, routing::{delete, get, patch, post}, Json, Router
 };
 use nanoid::nanoid;
-use crate::{db::update_chall_cache, extractors::Admin, DB, Result};
+use crate::{db::update_chall_cache, extractors::Admin, Result, State};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
@@ -65,7 +64,7 @@ struct ChallengeGroup {
 }
 
 async fn get_challenges(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     _: Admin,
 ) -> Result<Json<Vec<Challenge>>> {
     let challs: Vec<Challenge> = sqlx::query_as(
@@ -89,7 +88,7 @@ async fn get_challenges(
                 JOIN categories c ON m.category_id = c.id
                 LEFT JOIN challenge_groups g ON m.group_id = g.id",
     )
-    .fetch_all(&db)
+    .fetch_all(&state.db)
     .await?;
 
     return Ok(Json(challs));
@@ -111,7 +110,7 @@ struct UpsertChallenge {
 }
 
 async fn upsert_challenge(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     _: Admin,
     Json(payload): Json<UpsertChallenge>,
 ) -> Result<Json<Challenge>> {
@@ -173,10 +172,10 @@ async fn upsert_challenge(
     .bind(payload.attachments)
     .bind(payload.visible)
     .bind(payload.category_id)
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?;
 
-    update_chall_cache(&db, chall.id).await?;
+    update_chall_cache(&state.db, chall.id).await?;
 
     Ok(Json(chall))
 }
@@ -187,12 +186,12 @@ struct DeleteChallenge {
 }
 
 async fn delete_challenge(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     _: Admin,
     Json(payload): Json<DeleteChallenge>,
 ) -> Result<()> {
     sqlx::query!("DELETE FROM challenges WHERE public_id = $1", payload.id)
-        .execute(&db)
+        .execute(&state.db)
         .await?;
 
     Ok(())
@@ -204,7 +203,7 @@ struct CreateCategory {
 }
 
 async fn create_category(
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     _: Admin,
     Json(payload): Json<CreateCategory>,
 ) -> Result<Json<Category>> {
@@ -213,7 +212,7 @@ async fn create_category(
         "INSERT INTO categories (name) VALUES ($1) RETURNING *",
         payload.name
     )
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?))
 }
 

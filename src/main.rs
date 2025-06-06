@@ -1,4 +1,4 @@
-use axum::{http::HeaderValue, Extension, Router};
+use axum::{http::HeaderValue, Router};
 use envconfig::Envconfig;
 use eyre::Context;
 use sqlx::postgres::PgPoolOptions;
@@ -42,8 +42,10 @@ async fn main() -> eyre::Result<()> {
 
     let app = Router::<State>::new()
         .nest("/api", api::router())
-        .with_state(State::new(cfg))
-        .layer(Extension(pool))
+        .with_state(State::new(config::StateInner {
+            config: cfg,
+            db: pool,
+        }))
         .layer(cors);
 
     // run our app with hyper, listening globally on port 3000

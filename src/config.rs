@@ -3,6 +3,8 @@ use std::{str::FromStr, sync::Arc};
 use envconfig::Envconfig;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
+use crate::DB;
+
 pub struct JwtKeys {
     pub encoding: EncodingKey,
     pub decoding: DecodingKey,
@@ -31,5 +33,22 @@ pub struct Config {
     pub admin_token: String,
 }
 
+pub struct StateInner {
+    pub config: Config,
+    pub db: DB,
+}
+
+impl AsRef<Config> for StateInner {
+    fn as_ref(&self) -> &Config {
+        &self.config
+    }
+}
+
+impl AsRef<DB> for StateInner {
+    fn as_ref(&self) -> &DB {
+        &self.db
+    }
+}
+
 /* subject to change */
-pub type State = Arc<Config>;
+pub type State = Arc<StateInner>;

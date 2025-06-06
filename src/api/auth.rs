@@ -1,5 +1,5 @@
 use axum::{
-    extract::{State as StateE}, http::StatusCode, routing::{get, post}, Extension, Json, Router
+    extract::{State as StateE}, http::StatusCode, routing::{get, post}, Json, Router
 };
 use axum_extra::extract::{cookie::Cookie, CookieJar};
 use chrono::{Duration, NaiveDateTime};
@@ -7,7 +7,7 @@ use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    State, extractors::Auth, jwt::{decode_jwt, generate_jwt, Claims}, Result, DB
+    State, extractors::Auth, jwt::{decode_jwt, generate_jwt, Claims}, Result
 };
 
 #[derive(Deserialize)]
@@ -29,8 +29,7 @@ pub struct Team {
 
 // TODO also enforce email constraints here for workarounds like caps & a cleaner error message.
 async fn register(
-    StateE(cfg): StateE<State>,
-    Extension(db): Extension<DB>,
+    StateE(state): StateE<State>,
     jar: CookieJar,
     Json(payload): Json<TeamInfo>,
 ) -> Result<(StatusCode, CookieJar, Json<Team>)> {
@@ -41,11 +40,11 @@ async fn register(
         payload.name,
         payload.email
     )
-    .fetch_one(&db)
+    .fetch_one(&state.db)
     .await?;
 
     // TODO(aiden): if the duration is long, we'll need a way to revoke all jwts
-    let jwt = generate_jwt(&cfg.jwt_keys, &team.public_id, Duration::days(30))?;
+    let jwt = generate_jwt(&state.config.jwt_keys, &team.public_id, Duration::days(30))?;
 
     let mut cookie = Cookie::new("token", jwt);
     cookie.set_path("/");
@@ -59,10 +58,10 @@ struct Token {
 }
 
 async fn gen_token(
-    StateE(cfg): StateE<State>,
+    StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
 ) -> Result<Json<Token>> {
-    let jwt = generate_jwt(&cfg.jwt_keys, &team_id, Duration::days(30))?;
+    let jwt = generate_jwt(&state.config.jwt_keys, &team_id, Duration::days(30))?;
 
     return Ok(Json(Token { token: jwt }));
 }
@@ -73,11 +72,11 @@ struct TeamId {
 }
 
 async fn login(
-    StateE(cfg): StateE<State>,
+    StateE(state): StateE<State>,
     jar: CookieJar,
     Json(Token { token: jwt }): Json<Token>,
 ) -> Result<(CookieJar, Json<TeamId>)> {
-    let claims = decode_jwt(&cfg.jwt_keys, &jwt)?;
+    let claims = decode_jwt(&state.config.jwt_keys, &jwt)?;
 
     let mut cookie = Cookie::new("token", jwt);
     cookie.set_path("/");
