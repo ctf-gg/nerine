@@ -16,19 +16,23 @@ pub struct PublicChallenge {
     solves: i32,
     attachments: serde_json::Value,
     category: String,
+    #[serde(rename(serialize = "selfSolved"))]
+    self_solved: bool,
 }
 
 // NOTE: All of the routes in this file are PUBLICALLY
 // ACCESSABLE!! Do not leak any important information.
 pub async fn list(
     StateE(state): StateE<State>,
-    Auth(_): Auth,
+    Auth(claims): Auth,
 ) -> Result<Json<Vec<PublicChallenge>>> {
     if Utc::now().naive_utc() < EVENT.start_time {
         return Err(Error::EventNotStarted);
     }
 
-    let challs = sqlx::query_as!(
+    let solves = super::profile::get_solves(&state.db, &claims.team_id).await?;
+
+    let mut challs = sqlx::query_as!(
         PublicChallenge,
         r#"SELECT 
             public_id,
@@ -38,12 +42,19 @@ pub async fn list(
             c_points AS points,
             c_solves AS solves,
             attachments, 
-            categories.name AS category 
+            categories.name AS category,
+            FALSE as "self_solved!"
         FROM challenges JOIN categories ON categories.id = category_id
-        ORDER BY solves DESC"#
+        ORDER BY solves DESC"#,
     )
     .fetch_all(&state.db)
     .await?;
+
+    for c in &mut challs {
+        if solves.iter().any(|s| s.public_id == c.public_id) {
+            c.self_solved = true;
+        }
+    }
 
     Ok(Json(challs))
 }

@@ -143,6 +143,7 @@ export interface Challenge {
   solves: number;
   attachments: any;
   category: string;
+  selfSolved: boolean;
 }
 
 export const challenges = async (

@@ -33,18 +33,20 @@ async fn update(
 }
 
 #[derive(Serialize)]
-struct Solve {
+pub(crate) struct Solve {
+    // FIXME(ani): shouldn't be here
+    pub(crate) public_id: String,
     name: String,
     points: i32,
 }
 
-async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {
+pub(crate) async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {
     let solves = sqlx::query_as!(
         Solve,
         r#"WITH 
             team AS (SELECT id FROM teams WHERE public_id = $1),
             solved_challs AS (SELECT challenge_id AS id FROM submissions, team WHERE is_correct = true AND team_id = team.id)
-        SELECT name, c_points AS points FROM challenges c JOIN solved_challs sc ON sc.id = c.id"#,
+        SELECT public_id, name, c_points AS points FROM challenges c JOIN solved_challs sc ON sc.id = c.id"#,
         pub_id
     ).fetch_all(db).await?;
 

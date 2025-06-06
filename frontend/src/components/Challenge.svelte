@@ -19,6 +19,9 @@
 <div class="challenge">
   <div class="header">
     <h1>{c.category}/{c.name}</h1>
+    {#if c.selfSolved}
+      <h2>Solved by you!</h2>
+    {/if}
     <h2>{c.solves} solves / {c.points} points</h2>
   </div>
   <h2 class="author">{c.author}</h2>
