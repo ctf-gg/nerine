@@ -11,6 +11,9 @@
     nodejs
     pnpm
     nginx
+    postgresql
+    # for dev
+    expect
   ];
 
   DATABASE_URL = "postgres://postgres:postgres@localhost/sctf";
