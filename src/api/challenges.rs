@@ -1,8 +1,10 @@
+use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
-    extract::State as StateE, routing::{get, post}, Json, Router
+    extract::State as StateE,
+    routing::{get, post},
+    Json, Router,
 };
 use chrono::Utc;
-use crate::{db::update_chall_cache, extractors::Auth, Result, Error, State};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -81,11 +83,12 @@ pub async fn submit(
     struct AnswerInfo {
         id: i32,
         flag: String,
+        solves: i32,
     }
 
     let answer_info: AnswerInfo = sqlx::query_as!(
         AnswerInfo,
-        "SELECT id, flag FROM challenges WHERE public_id = $1",
+        "SELECT id, flag, c_solves AS solves FROM challenges WHERE public_id = $1",
         submission.challenge_id
     )
     .fetch_one(&state.db)
@@ -106,6 +109,9 @@ pub async fn submit(
 
     if is_correct {
         update_chall_cache(&state.db, answer_info.id).await?;
+        if answer_info.solves == 0 {
+            award_badge(&state.db, answer_info.id, claims.team_id).await?;
+        }
         Ok(())
     } else {
         Err(Error::WrongFlag)

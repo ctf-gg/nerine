@@ -10,13 +10,15 @@ struct LeaderboardEntry {
     public_id: String,
     name: String,
     score: i32,
+    #[serde(rename(serialize = "extra"))]
+    extra_data: serde_json::Value,
 }
 
 async fn leaderboard(db: &DB) -> Result<Vec<LeaderboardEntry>> {
     let leaderboard_entries = sqlx::query_as!(
         LeaderboardEntry,
         r#"
-        SELECT t.name, t.public_id, score as "score!"
+        SELECT t.name, t.public_id, score as "score!", t.extra_data
             FROM teams t 
             LEFT JOIN compute_leaderboard() lb ON lb.team_id = t.id
             GROUP BY t.id, score, rank

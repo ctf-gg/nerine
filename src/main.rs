@@ -13,6 +13,7 @@ mod error;
 mod event;
 mod extractors;
 mod jwt;
+mod badges;
 
 use config::State;
 use db::DB;

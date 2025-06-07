@@ -82,7 +82,6 @@
     display: grid;
     align-items: center;
     justify-content: center;
-    font-family: "Smiley Sans", sans-serif;
     padding: 1rem 0;
   }
 

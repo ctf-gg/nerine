@@ -72,7 +72,7 @@ h6 {
 @font-face {
   font-family: "Smiley Sans";
   src: url("/fonts/SmileySans.otf") format("opentype"),
-  url("/fonts/SmileySans.ttf") format("truetype");
+    url("/fonts/SmileySans.ttf") format("truetype");
   font-weight: 300 900;
   font-style: normal;
   font-display: swap;
@@ -89,18 +89,19 @@ h6 {
 }
 
 html {
-  font-family: "Satoshi", sans-serif;
+  font-family: "Smiley Sans", sans-serif;
 }
 
 input {
   border-image: url("/border-big.png") 12 / 8px round;
   border-image-outset: 2px;
   padding: 0.5rem;
-  background-color: #F8F8F1;
+  background-color: #f8f8f1;
+  font-family: "Satoshi", sans-serif;
 }
 
-label {
-    font-family: "Smiley Sans", sans-serif;
+a {
+  color: inherit;
 }
 
 button {
@@ -121,5 +122,5 @@ button {
 }
 
 body {
-    background-color: #F8F8F1
+  background-color: #f8f8f1;
 }

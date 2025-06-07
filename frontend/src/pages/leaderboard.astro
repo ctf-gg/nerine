@@ -2,6 +2,7 @@
 import { isError, leaderboard, getEvent } from "../api";
 import Layout from "../layouts/Layout.astro";
 import Countdown from "../components/Countdown.svelte";
+import Badges from "../components/Badges.svelte";
 
 let teams;
 const event = await getEvent();
@@ -37,21 +38,11 @@ if (new Date().getTime() >= event.start_time.getTime()) {
               <a href={"/profile/" + t.id}>{t.score}</a>
             </td>
             <td>
-              <a href={"/profile/" + t.id}>
-                <div class="badges">
-                  <div class="row">
-                    <div class="badge" />
-                    <div class="badge" />
-                    <div class="badge" />
-                    <div class="badge" />
-                  </div>
-                  <div class="row">
-                    <div class="badge" />
-                    <div class="badge" />
-                    <div class="badge" />
-                  </div>
-                </div>
-              </a>
+              {/*
+                if anyone is wondering whats ballooning leaderboard load times, its probably this.
+                i'll refactor this later since it turns out islands are hella expensive (might only be dev side though)
+              */}
+              <Badges badges={t?.extra.badges} client:idle />
             </td>
           </tr>
         ))}
@@ -63,25 +54,6 @@ if (new Date().getTime() >= event.start_time.getTime()) {
 </Layout>
 
 <style>
-  .badges {
-    display: grid;
-    grid-template-rows: 1fr 1fr;
-
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem;
-    }
-
-    .badge {
-      width: 1.25rem;
-      height: 1.25rem;
-      background: #dedec4;
-      border-radius: 100%;
-    }
-  }
-
   .leaderboard {
     width: 100%;
     font-size: 1.5rem;
@@ -100,7 +72,7 @@ if (new Date().getTime() >= event.start_time.getTime()) {
           color: inherit;
           width: 100%;
           display: block;
-          padding: 0.5rem 0;
+          padding: 0.75rem 0;
           text-decoration: none;
         }
       }
@@ -111,6 +83,7 @@ if (new Date().getTime() >= event.start_time.getTime()) {
       position: sticky;
       top: 1px;
       th {
+        padding: 0 0.5rem;
         border-image: url("/border-big-off-white.png") 12 / 8px round;
         border-image-outset: 2px;
         background-color: #e6e6d2;
@@ -120,21 +93,21 @@ if (new Date().getTime() >= event.start_time.getTime()) {
 
   .leaderboard :nth-child(2) {
     td {
-      padding: 1.5rem 0;
+      padding: 2rem 0;
       background: rgba(255, 255, 0, 0.2);
     }
   }
 
   .leaderboard :nth-child(3) {
     td {
-      padding: 1rem 0;
+      padding: 1.5rem 0;
       background: rgb(192, 192, 192, 0.2);
     }
   }
 
   .leaderboard :nth-child(4) {
     td {
-      padding: 0.75rem 0;
+      padding: 1.25rem 0;
       background: rgb(205, 127, 50, 0.2);
     }
   }

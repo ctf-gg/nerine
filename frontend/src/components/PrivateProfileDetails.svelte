@@ -23,11 +23,11 @@
   </aside>
   <div class="detail-contents">
     <div class="reveal">
-      <h2 class="ss">Token:</h2>
+      <h2>Token:</h2>
       <TokenReveal />
     </div>
     <div>
-      <h2 class="ss">Update Team Details:</h2>
+      <h2>Update Team Details:</h2>
       <form id="update" onsubmit={submit}>
         <label for="update-email">Email:</label>
         <input
@@ -62,7 +62,6 @@
     padding: 1rem;
 
     aside {
-      font-family: "Smiley Sans", sans-serif;
       margin-bottom: 0.5rem;
       text-align: center;
       position: absolute;
@@ -84,9 +83,6 @@
       margin-top: 2rem;
     }
 
-    .ss {
-      font-family: "Smiley Sans", sans-serif;
-    }
 
     .reveal {
       display: flex;

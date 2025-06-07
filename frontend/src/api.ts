@@ -104,7 +104,6 @@ export const updateProfile = async (
   return (await res.json()) as Team | ApiError;
 };
 
-
 interface Solve {
   name: string;
   points: number;
@@ -172,10 +171,17 @@ export const challenges = async (
   return (await res.json()) as Challenge[] | ApiError;
 };
 
-interface LeaderboardEntry {
+export interface Badge {
+  type: string;
+  obtained: string;
+  chall: string;
+}
+
+export interface LeaderboardEntry {
   id: string;
   name: string;
   score: number;
+  extra: { badges: Badge[] };
 }
 
 export const leaderboard = async (
@@ -188,7 +194,7 @@ export const leaderboard = async (
 export async function submitFlag(
   challengeId: string,
   flag: string,
-  token?: string,
+  token?: string
 ): Promise<{} | ApiError> {
   const res = await req("POST", "/challs/submit", {
     ...tokenToOptions(token),
