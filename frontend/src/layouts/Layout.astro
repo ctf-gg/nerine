@@ -2,6 +2,7 @@
 import { jwtDecode } from "jwt-decode";
 import { isError, profile } from "../api";
 import "../base.css";
+import { ClientRouter } from "astro:transitions";
 
 const token = Astro.cookies.get("token")?.value;
 let currentTeam = token ? await profile(jwtDecode<{ team_id: string }>(token).team_id, token) : null;
@@ -17,6 +18,7 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     <link rel="preload" href="/fonts/SmileySans.otf" as="font" type="font/otf" crossorigin="anonymous">
     <link rel="preload" href="/fonts/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
     <meta name="generator" content={Astro.generator} />
+    <ClientRouter />
     <title>smileyCTF</title>
   </head>
   <body>
