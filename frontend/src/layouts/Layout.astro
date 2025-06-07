@@ -3,7 +3,6 @@ import { jwtDecode } from "jwt-decode";
 import { isError, profile } from "../api";
 import "../base.css";
 import { ClientRouter } from "astro:transitions";
-import Image from "astro/components/Image.astro";
 
 const token = Astro.cookies.get("token")?.value;
 let currentTeam = token
@@ -47,9 +46,9 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
       </ul>
       <ul class="end">
         {
-          token ? (
+          currentTeam ? (
             <>
-              <li>{currentTeam!.name}</li>
+              <li>{currentTeam.name}</li>
               <li>
                 <a href="/profile/me">profile</a>
               </li>

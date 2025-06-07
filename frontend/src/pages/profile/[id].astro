@@ -7,7 +7,7 @@ import { jwtDecode } from "jwt-decode";
 const { id } = Astro.params;
 const token = Astro.cookies.get("token")?.value;
 
-if (!id || !token) return Astro.redirect("/", 307);
+if (!id || !token) return Astro.redirect("/login", 307);
 
 if (id === "me")
   return Astro.redirect(
@@ -15,7 +15,7 @@ if (id === "me")
   );
 const prof = await profile(id, token);
 if (isError(prof)) {
-  if (prof.error === "invalid_token") return Astro.redirect("/login", 304);
+  if (prof.error === "invalid_token") return Astro.redirect("/login", 307);
   else return new Response("profile not found", { status: 404 });
 }
 ---
