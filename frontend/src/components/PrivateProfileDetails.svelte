@@ -58,7 +58,7 @@
     margin-top: 1rem;
     border-image: url("/border-big-off-white.png") 12 / 8px round;
     border-image-outset: 2px;
-    background-color: #f1f1df;
+    background-color: #e6e6d2;
     padding: 1rem;
 
     aside {
@@ -70,7 +70,7 @@
       h2 {
         border-image: url("/border-big-off-white.png") 12 / 8px round;
         border-image-outset: 2px;
-        background-color: #f1f1df;
+        background-color: #e6e6d2;
         padding: 0.25rem 0.5rem;
         position: relative;
         left: -6rem;

@@ -38,7 +38,7 @@
   .challenge {
     border-image: url("/border-big-off-white.png") 12 / 8px round;
     border-image-outset: 2px;
-    background-color: #f1f1df;
+    background-color: #e6e6d2;
     padding: 1rem;
 
     .header {
