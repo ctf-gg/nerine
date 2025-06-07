@@ -74,15 +74,13 @@
         position: relative;
         left: -6rem;
         top: -2rem;
-      rotate: -4deg;
-
+        rotate: -4deg;
       }
     }
 
     .detail-contents {
       margin-top: 2rem;
     }
-
 
     .reveal {
       display: flex;
