@@ -4,12 +4,24 @@ import Countdown from "../components/Countdown.svelte";
 import { getEvent } from "../api";
 
 const event = await getEvent();
+const token = Astro.cookies.get("token")?.value;
 ---
 
 <Layout>
   <h1 class="title">smileyCTF</h1>
   <div>
     <Countdown client:idle {event} showHeading={false} />
+    {
+      token ? (
+        <a href="/profile/me">
+          <button class="big-button"> See Your Profile </button>
+        </a>
+      ) : (
+        <a href="/register">
+          <button class="big-button"> Register </button>
+        </a>
+      )
+    }
     <div class="description">
       <p>
         Welcome to smileyCTF, The first ever CTF hosted by .;,;. — America's #1
@@ -44,10 +56,21 @@ const event = await getEvent();
           is.
         </li>
       </ol>
+
+      <h2>Sponsors</h2>
+      <p>smileyCTF is only possible thanks to our generous sponsors.</p>
+      <div class="sponsors">
+        <a href="https://verialabs.com">
+          <img src="/sponsors/veria.svg" />
+        </a>
+        <a href="https://zellic.io">
+          <img src="/sponsors/zellic.png" />
+        </a>
+        <a href="https://osec.io">
+          <img src="/sponsors/osec.svg" class="be-normal" />
+        </a>
+      </div>
     </div>
-    <a href="/register">
-      <button class="to-register"> Register </button>
-    </a>
   </div>
 </Layout>
 
@@ -55,6 +78,25 @@ const event = await getEvent();
   .title {
     font-size: 9rem;
     text-align: center;
+  }
+
+  .sponsors {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+    & > a {
+      border-image: url("/border-big-off-white.png") 12 / 8px round;
+      border-image-outset: 2px;
+      background-color: #e6e6d2;
+      padding: 2rem;
+      display: grid;
+      align-items: center;
+      justify-content: center;
+
+      .be-normal {
+        height: 100%;
+      }
+    }
   }
 
   .description {
@@ -76,9 +118,9 @@ const event = await getEvent();
     }
   }
 
-  .to-register {
+  .big-button {
     width: 100%;
-    margin-top: 1rem;
+    margin-bottom: 1rem;
     font-size: 2rem;
   }
 </style>
