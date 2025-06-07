@@ -8,7 +8,9 @@ const token = Astro.cookies.get("token")?.value;
 ---
 
 <Layout>
-  <h1 class="title">smileyCTF</h1>
+  <h1 class="title">
+    <span class="smiley">smiley</span><span class="ctf">CTF</span>
+  </h1>
   <div>
     <Countdown client:idle {event} showHeading={false} />
     {
@@ -24,7 +26,7 @@ const token = Astro.cookies.get("token")?.value;
     }
     <div class="description">
       <p>
-        Welcome to smileyCTF, The first ever CTF hosted by .;,;. — America's #1
+        Welcome to smileyCTF, the first ever CTF hosted by .;,;. — America's #1
         CTF team*!
       </p>
 
@@ -80,6 +82,17 @@ const token = Astro.cookies.get("token")?.value;
     text-align: center;
   }
 
+  @media (max-width: 768px) {
+    .title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title .ctf {
+      margin-top: -6.5rem;
+    }
+  }
+
   .sponsors {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -89,9 +102,16 @@ const token = Astro.cookies.get("token")?.value;
       border-image-outset: 2px;
       background-color: #e6e6d2;
       padding: 2rem;
-      display: grid;
+      display: flex;
       align-items: center;
       justify-content: center;
+      height: 160px;
+
+      & > img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+      }
 
       .be-normal {
         height: 100%;
@@ -122,5 +142,22 @@ const token = Astro.cookies.get("token")?.value;
     width: 100%;
     margin-bottom: 1rem;
     font-size: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .sponsors {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .sponsors > a {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+      padding-left: 4rem;
+      padding-right: 4rem;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      width: 100%;
+    }
   }
 </style>

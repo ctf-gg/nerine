@@ -20,7 +20,9 @@
     if (distance > 0) {
       timeLeft = {
         days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        hours: Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        ),
         minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
         seconds: Math.floor((distance % (1000 * 60)) / 1000),
       };
@@ -56,22 +58,30 @@
   {/if}
   <div class="countdown-display">
     <div class="time-unit">
-      <span class="number">{timeLeft ? timeLeft.days.toString().padStart(2, "0") : "--"}</span>
+      <span class="number"
+        >{timeLeft ? timeLeft.days.toString().padStart(2, "0") : "--"}</span
+      >
       <span class="label">Days</span>
     </div>
     <div class="separator">:</div>
     <div class="time-unit">
-      <span class="number">{timeLeft ? timeLeft.hours.toString().padStart(2, "0") : "--"}</span>
+      <span class="number"
+        >{timeLeft ? timeLeft.hours.toString().padStart(2, "0") : "--"}</span
+      >
       <span class="label">Hours</span>
     </div>
     <div class="separator">:</div>
     <div class="time-unit">
-      <span class="number">{timeLeft ? timeLeft.minutes.toString().padStart(2, "0") : "--"}</span>
+      <span class="number"
+        >{timeLeft ? timeLeft.minutes.toString().padStart(2, "0") : "--"}</span
+      >
       <span class="label">Minutes</span>
     </div>
     <div class="separator">:</div>
     <div class="time-unit">
-      <span class="number">{timeLeft ? timeLeft.seconds.toString().padStart(2, "0") : "--"}</span>
+      <span class="number"
+        >{timeLeft ? timeLeft.seconds.toString().padStart(2, "0") : "--"}</span
+      >
       <span class="label">Seconds</span>
     </div>
   </div>
@@ -115,5 +125,27 @@
   .separator {
     font-size: 4rem;
     padding-bottom: 2.5rem;
+  }
+
+  @media (max-width: 440px) {
+    .countdown-heading {
+      font-size: 2rem;
+    }
+    .countdown-display {
+      gap: 0.5rem;
+    }
+    .time-unit {
+      padding: 0.5rem;
+    }
+    .number {
+      font-size: 2.5rem;
+    }
+    .label {
+      font-size: 0.875rem;
+    }
+    .separator {
+      font-size: 2.5rem;
+      padding-bottom: 1.5rem;
+    }
   }
 </style>

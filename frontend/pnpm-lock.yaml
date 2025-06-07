@@ -14,6 +14,9 @@ importers:
       '@astrojs/svelte':
         specifier: ^7.0.13
         version: 7.0.13(@types/node@22.15.17)(astro@5.7.13(@types/node@22.15.17)(rollup@4.40.2)(typescript@5.8.3))(svelte@5.30.0)(typescript@5.8.3)
+      '@lucide/astro':
+        specifier: ^0.513.0
+        version: 0.513.0(astro@5.7.13(@types/node@22.15.17)(rollup@4.40.2)(typescript@5.8.3))
       astro:
         specifier: ^5.7.13
         version: 5.7.13(@types/node@22.15.17)(rollup@4.40.2)(typescript@5.8.3)
@@ -358,6 +361,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@lucide/astro@0.513.0':
+    resolution: {integrity: sha512-UFXmRjELW8q/Npc0Yfm5Oqer+kPnetbPK39vJ7LcsfHtMCZx2gZG/YNMnjHDhk2QHScClgo8RmQrf8xQZG99dA==}
+    peerDependencies:
+      astro: ^4 || ^5
 
   '@oslojs/encoding@1.1.0':
     resolution: {integrity: sha512-70wQhgYmndg4GCPxPPxPGevRKqTIJ2Nh4OkiMWmDAVYsTQ+Ta7Sq+rPevXyXGdzr30/qZBnyOalCszoMxlyldQ==}
@@ -1900,6 +1908,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@lucide/astro@0.513.0(astro@5.7.13(@types/node@22.15.17)(rollup@4.40.2)(typescript@5.8.3))':
+    dependencies:
+      astro: 5.7.13(@types/node@22.15.17)(rollup@4.40.2)(typescript@5.8.3)
 
   '@oslojs/encoding@1.1.0': {}
 
