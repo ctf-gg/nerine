@@ -1,4 +1,4 @@
-use std::{cmp::max, fs, sync::LazyLock};
+use std::{cmp::max, fs};
 use serde::Deserialize;
 use toml;
 
@@ -16,11 +16,13 @@ pub struct Event {
     pub end_time: NaiveDateTime,
 }
 
-// TODO(aiden): make path configurable
-pub static EVENT: LazyLock<Event> = LazyLock::new(|| {
-    let event_cfg = fs::read_to_string("event.toml").expect("Expected event.toml in working directory");
-    toml::from_str(&event_cfg).unwrap()
-});
+impl Event {
+    // NOTE(ani): ought to be AsRef<Path> but I don't care
+    pub fn read_from_path(path: &str) -> eyre::Result<Self> {
+        let cfg = fs::read_to_string(path)?;
+        Ok(toml::from_str(&cfg)?)
+    }
+}
 
 pub fn point_formula(
     points_min: i32, points_max: i32, solves: i32,

@@ -17,7 +17,6 @@ mod jwt;
 use config::State;
 use db::DB;
 use error::{Error, Result};
-use event::EVENT;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -26,6 +25,9 @@ async fn main() -> eyre::Result<()> {
 
     let cfg = config::Config::init_from_env()
         .context("initialize config from environment")?;
+
+    let event = event::Event::read_from_path(&cfg.event_path)
+        .context("read event from environment")?;
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -44,6 +46,7 @@ async fn main() -> eyre::Result<()> {
         .nest("/api", api::router())
         .with_state(State::new(config::StateInner {
             config: cfg,
+            event,
             db: pool,
         }))
         .layer(cors);

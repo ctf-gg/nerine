@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 use envconfig::Envconfig;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
-use crate::DB;
+use crate::{event::Event, DB};
 
 pub struct JwtKeys {
     pub encoding: EncodingKey,
@@ -31,10 +31,14 @@ pub struct Config {
 
     #[envconfig(from = "ADMIN_TOKEN")]
     pub admin_token: String,
+
+    #[envconfig(from = "EVENT_PATH", default = "event.toml")]
+    pub event_path: String,
 }
 
 pub struct StateInner {
     pub config: Config,
+    pub event: Event,
     pub db: DB,
 }
 

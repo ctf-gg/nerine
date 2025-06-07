@@ -1,6 +1,6 @@
 use axum::{extract::{State as StateE}, routing::get, Json, Router};
 use chrono::Utc;
-use crate::{extractors::Auth, DB, EVENT, Result, Error, State};
+use crate::{extractors::Auth, DB, Result, Error, State};
 use serde::Serialize;
 
 // TODO: figure out whether we want pagnation
@@ -33,8 +33,8 @@ async fn get_lb(
     StateE(state): StateE<State>,
     Auth(_): Auth,
 ) -> Result<Json<Vec<LeaderboardEntry>>> {
-    if Utc::now().naive_utc() < EVENT.start_time {
-        return Err(Error::EventNotStarted);
+    if Utc::now().naive_utc() < state.event.start_time {
+        return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
 
     return leaderboard(&state.db).await.map(Json);

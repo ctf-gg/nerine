@@ -7,8 +7,6 @@ use chrono::NaiveDateTime;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::EVENT;
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("{0}")]
@@ -21,8 +19,8 @@ pub enum Error {
     NotFoundChallenge,
     #[error("team not found")]
     NotFoundTeam,
-    #[error("the event has not started")]
-    EventNotStarted,
+    #[error("the event has not started, starts at {0}")]
+    EventNotStarted(NaiveDateTime),
     #[error("the event has ended")]
     EventEnded,
     #[error("wrong flag")]
@@ -52,14 +50,14 @@ impl IntoResponse for Error {
             Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
             Error::NotFoundChallenge | Error::NotFoundTeam => (StatusCode::NOT_FOUND, "not_found"),
-            Error::EventNotStarted => {
+            Error::EventNotStarted(start_time) => {
                 // Event not started special cased to return start time
                 return (
                     StatusCode::UNAUTHORIZED,
                     Json(EventNotStartedResponse {
                         error: "event_not_started",
                         message,
-                        data: EVENT.start_time,
+                        data: start_time,
                     }),
                 )
                     .into_response();

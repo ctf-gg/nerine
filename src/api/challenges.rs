@@ -2,7 +2,7 @@ use axum::{
     extract::State as StateE, routing::{get, post}, Json, Router
 };
 use chrono::Utc;
-use crate::{db::update_chall_cache, extractors::Auth, EVENT, Result, Error, State};
+use crate::{db::update_chall_cache, extractors::Auth, Result, Error, State};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -26,8 +26,8 @@ pub async fn list(
     StateE(state): StateE<State>,
     Auth(claims): Auth,
 ) -> Result<Json<Vec<PublicChallenge>>> {
-    if Utc::now().naive_utc() < EVENT.start_time {
-        return Err(Error::EventNotStarted);
+    if Utc::now().naive_utc() < state.event.start_time {
+        return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
 
     let solves = super::profile::get_solves(&state.db, &claims.team_id).await?;
@@ -71,10 +71,10 @@ pub async fn submit(
     Json(submission): Json<Submission>,
 ) -> Result<()> {
     let now = Utc::now().naive_utc();
-    if now < EVENT.start_time {
-        return Err(Error::EventNotStarted);
+    if now < state.event.start_time {
+        return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
-    if now > EVENT.end_time {
+    if now > state.event.end_time {
         return Err(Error::EventEnded);
     }
 
