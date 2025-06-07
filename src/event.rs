@@ -1,4 +1,6 @@
-use std::{cmp::max, str::FromStr, sync::LazyLock};
+use std::{cmp::max, fs, sync::LazyLock};
+use serde::Deserialize;
+use toml;
 
 use chrono::NaiveDateTime;
 
@@ -7,18 +9,17 @@ use chrono::NaiveDateTime;
 // frontend.
 
 // also eventually it should go to an event.toml somewhere
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct Event {
     pub name: String,
     pub start_time: NaiveDateTime,
     pub end_time: NaiveDateTime,
 }
 
-// TODO(ani): make this configurable
-pub static EVENT: LazyLock<Event> = LazyLock::new(|| Event {
-    name: String::from("smileyCTF"),
-    start_time: NaiveDateTime::from_str("2025-04-25T22:36:51.356942").unwrap(),
-    end_time: NaiveDateTime::from_str("2025-06-27T22:36:51.356942").unwrap(),
+// TODO(aiden): make path configurable
+pub static EVENT: LazyLock<Event> = LazyLock::new(|| {
+    let event_cfg = fs::read_to_string("event.toml").expect("Expected event.toml in working directory");
+    toml::from_str(&event_cfg).unwrap()
 });
 
 pub fn point_formula(
