@@ -26,11 +26,11 @@
 <style>
   button {
     overflow: hidden;
-    padding: 0.5rem;
     font-size: 1rem;
     text-align: left;
     font-family: monospace;
     cursor: pointer;
+    white-space: nowrap;
   }
 
   span {

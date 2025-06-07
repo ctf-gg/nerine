@@ -6,7 +6,9 @@ import Layout from "../layouts/Layout.astro";
   <h1 class="heading">Login</h1>
 
   <form id="login">
-    <input type="text" name="token" placeholder="token" />
+    <label for="token">Token:</label>
+
+    <input type="text" name="token" id="token" placeholder="token" />
     <button type="submit">login</button>
   </form>
 
@@ -29,6 +31,8 @@ import Layout from "../layouts/Layout.astro";
   #login {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    input {
+      margin-bottom: 1rem;
+    }
   }
 </style>

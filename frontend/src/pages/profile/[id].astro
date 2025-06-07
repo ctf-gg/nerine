@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import { isError, profile } from "../../api";
-import TokenReveal from "../../components/TokenReveal.svelte";
+import PrivateProfileDetails from "../../components/PrivateProfileDetails.svelte";
 import Layout from "../../layouts/Layout.astro";
 import { jwtDecode } from "jwt-decode";
 
@@ -23,25 +23,47 @@ if (isError(prof)) {
 
 <Layout>
   <h1 class="heading">{prof.name}</h1>
-  {
-    prof.type === "private" && (
-      <>
-        <h2>{prof.email}</h2>
-        <div>
-          Reveal Token: <TokenReveal client:idle />
-        </div>
-      </>
-    )
-  }
+  {prof.type === "private" && <PrivateProfileDetails client:load prof={prof} />}
 
-  <h2>Solves:</h2>
-  <ul>
-    {
-      prof.solves.map((solve) => (
-        <li>
-          {solve.name} - {solve.points}
-        </li>
-      ))
-    }
-  </ul>
+  <div class="stats">
+    Rank {prof.rank} / {prof.score} points
+  </div>
+  <div class="solves">
+    <h2>Solves:</h2>
+    <ul>
+      {
+        prof.solves.map((solve) => (
+          <li class="solve">
+            <span>{solve.name}</span>
+            <span>{solve.points} pts</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 </Layout>
+
+<style>
+  .solves {
+    margin-top: 2rem;
+    font-family: "Smiley Sans", sans-serif;
+
+    h2 {
+      font-size: 3rem;
+      text-align: center;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+
+    .solve {
+      list-style: none;
+      font-size: 1.75rem;
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+</style>

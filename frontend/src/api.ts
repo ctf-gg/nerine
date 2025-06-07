@@ -87,6 +87,18 @@ export const login = async (token: string): Promise<TeamId | ApiError> => {
   return (await res.json()) as TeamId | ApiError;
 };
 
+export const updateProfile = async (
+  email: string,
+  name: string
+): Promise<Team | ApiError> => {
+  const res = await req("POST", "/profile/update", {
+    body: { email, name },
+  });
+
+  return (await res.json()) as Team | ApiError;
+};
+
+
 interface Solve {
   name: string;
   points: number;

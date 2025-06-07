@@ -99,6 +99,10 @@ input {
   background-color: #F8F8F1;
 }
 
+label {
+    font-family: "Smiley Sans", sans-serif;
+}
+
 button {
   font-family: "Smiley Sans", sans-serif;
   border-image: url("/border-big.png") 12 / 8px round;

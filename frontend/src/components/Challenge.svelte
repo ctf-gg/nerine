@@ -67,8 +67,6 @@
 
     input {
       flex-grow: 1;
-      background-color: #f1f1df;
-
       transition: background-color 300ms ease-out;
 
       &.correct {
