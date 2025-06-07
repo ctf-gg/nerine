@@ -25,6 +25,7 @@ pub struct Team {
     pub name: String,
     pub email: String,
     pub created_at: NaiveDateTime,
+    pub extra_data: serde_json::Value,
 }
 
 // TODO also enforce email constraints here for workarounds like caps & a cleaner error message.
