@@ -1,4 +1,10 @@
-export const API_BASE = "http://sctf.localhost/api";
+export function getApiBase(): string {
+  if (globalThis.window) {
+    return "/api";
+  } else {
+    return import.meta.env.API_BASE ?? "http://sctf.localhost/api";
+  }
+}
 
 export type ApiError = GenericApiError | EventNotStartedApiError;
 
@@ -47,10 +53,10 @@ type Req = {
 const req: Req = (method, path, options = {}) => {
   if (method == "GET") {
     const { headers } = options;
-    return fetch(`${API_BASE}${path}`, { method, headers });
+    return fetch(`${getApiBase()}${path}`, { method, headers });
   } else {
     const { body, headers } = options as RequestOptions;
-    return fetch(`${API_BASE}${path}`, {
+    return fetch(`${getApiBase()}${path}`, {
       method,
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json", ...headers },
