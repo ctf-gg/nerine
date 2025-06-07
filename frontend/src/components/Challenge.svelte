@@ -26,7 +26,7 @@
   <h2 class="author">{c.author}</h2>
   <p class="description">{c.description}</p>
   <form class="submit" onsubmit={submit}>
-    <input type="text" name="flag" placeholder="flag"
+    <input type="text" name="flag" placeholder="flag" autocomplete="off"
       onchange={() => correct = null}
       bind:this={flagInput}
       class={[{ correct: correct === true, incorrect: correct === false }]} />
