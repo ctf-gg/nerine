@@ -1537,6 +1537,7 @@ dependencies = [
  "envconfig",
  "eyre",
  "jsonwebtoken",
+ "log",
  "nanoid",
  "pretty_env_logger",
  "serde",
