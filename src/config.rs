@@ -34,6 +34,9 @@ pub struct Config {
 
     #[envconfig(from = "EVENT_PATH", default = "event.toml")]
     pub event_path: String,
+
+    #[envconfig(from = "CORS_ORIGIN", default = "http://sctf.localhost")]
+    pub cors_origin: String,
 }
 
 pub struct StateInner {

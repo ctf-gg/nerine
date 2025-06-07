@@ -38,7 +38,7 @@ async fn main() -> eyre::Result<()> {
 
     let cors = CorsLayer::new()
         .allow_methods(Any)
-        .allow_origin(["http://sctf.localhost".parse::<HeaderValue>().unwrap()])
+        .allow_origin([cfg.cors_origin.parse::<HeaderValue>().unwrap()])
         .allow_headers(Any);
         // .allow_credentials(true);
 
