@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH chall AS (SELECT name, category_id FROM challenges WHERE id = $1) \n        SELECT categories.name AS category_name, chall.name AS chall_name FROM categories, chall WHERE id = chall.category_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "category_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "chall_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "788d44d54a4c7c402fd7aa2b3a0c68be7c7bbf19f212d5e9323ad586e01a0b70"
+}

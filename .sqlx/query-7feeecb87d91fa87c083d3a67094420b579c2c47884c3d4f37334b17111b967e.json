@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE teams \n        SET extra_data = \n            jsonb_set(\n                extra_data, \n                array['badges'],\n                extra_data->'badges' || $1\n            ) \n        WHERE public_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7feeecb87d91fa87c083d3a67094420b579c2c47884c3d4f37334b17111b967e"
+}
