@@ -2,12 +2,14 @@
 import { isError, leaderboard, getEvent } from "../api";
 import Layout from "../layouts/Layout.astro";
 import Countdown from "../components/Countdown.svelte";
-import Badges from "../components/Badges.svelte";
+import LeaderboardDisplay from "../components/Leaderboard.svelte";
+import { jwtDecode } from "jwt-decode";
 
 let teams;
 const event = await getEvent();
+const token = Astro.cookies.get("token")?.value;
 if (new Date().getTime() >= event.start_time.getTime()) {
-  teams = await leaderboard(Astro.cookies.get("token")?.value);
+  teams = await leaderboard(token);
   if (isError(teams)) {
     if (teams.error === "invalid_token") return Astro.redirect("/login", 307);
     else return new Response("something went wrong");
@@ -18,96 +20,13 @@ if (new Date().getTime() >= event.start_time.getTime()) {
 <Layout>
   {
     teams ? (
-      <table class="leaderboard">
-        <tr class="headers">
-          <th>Rank</th>
-          <th>Name</th>
-          <th>Points</th>
-          <th>Badges</th>
-        </tr>
-
-        {teams.map((t, i) => (
-          <tr class="entry">
-            <td>
-              <a href={"/profile/" + t.id}>{i + 1}</a>
-            </td>
-            <td>
-              <a href={"/profile/" + t.id}>{t.name}</a>
-            </td>
-            <td>
-              <a href={"/profile/" + t.id}>{t.score}</a>
-            </td>
-            <td>
-              {/*
-                if anyone is wondering whats ballooning leaderboard load times, its probably this.
-                i'll refactor this later since it turns out islands are hella expensive (might only be dev side though)
-              */}
-              <Badges badges={t?.extra?.badges} client:idle />
-            </td>
-          </tr>
-        ))}
-      </table>
+      <LeaderboardDisplay
+        teams={teams.slice(0, 500)}
+        yourTeam={jwtDecode<{ team_id: string }>(token!).team_id}
+        client:load
+      />
     ) : (
-      <Countdown {event} client:idle />
+      <Countdown {event} client:load />
     )
   }
 </Layout>
-
-<style>
-  .leaderboard {
-    width: 100%;
-    font-size: 1.5rem;
-    text-align: center;
-    border-spacing: 0;
-
-    th {
-      padding: 0;
-    }
-
-    .entry {
-      td {
-        border-bottom: 1px solid #e6e6d2;
-        a {
-          color: inherit;
-          width: 100%;
-          display: block;
-          padding: 0.75rem 0;
-          text-decoration: none;
-        }
-      }
-    }
-
-    .headers {
-      z-index: 10;
-      position: sticky;
-      top: 1px;
-      th {
-        padding: 0 0.5rem;
-        border-image: url("/border-big-off-white.png") 12 / 8px round;
-        border-image-outset: 2px;
-        background-color: #e6e6d2;
-      }
-    }
-  }
-
-  .leaderboard :nth-child(2) {
-    td {
-      padding: 2rem 0;
-      background: rgba(255, 255, 0, 0.2);
-    }
-  }
-
-  .leaderboard :nth-child(3) {
-    td {
-      padding: 1.5rem 0;
-      background: rgb(192, 192, 192, 0.2);
-    }
-  }
-
-  .leaderboard :nth-child(4) {
-    td {
-      padding: 1.25rem 0;
-      background: rgb(205, 127, 50, 0.2);
-    }
-  }
-</style>

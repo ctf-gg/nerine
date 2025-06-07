@@ -1,6 +1,6 @@
 ---
 import { isError, challenges, getEvent } from "../api";
-import Challenge from "../components/Challenge.svelte";
+import ChallengesDisplay from "../components/Challenges.svelte";
 import Countdown from "../components/Countdown.svelte";
 import Layout from "../layouts/Layout.astro";
 
@@ -18,13 +18,9 @@ if (new Date().getTime() >= event.start_time.getTime()) {
 <Layout>
   {
     challs ? (
-      <div class="challenges">
-        {challs.map((c) => (
-          <Challenge chall={c} client:idle />
-        ))}
-      </div>
+      <ChallengesDisplay challs={challs} client:load />
     ) : (
-      <Countdown {event} client:idle />
+      <Countdown {event} client:load />
     )
   }
 </Layout>

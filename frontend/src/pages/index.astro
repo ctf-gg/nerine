@@ -9,7 +9,7 @@ const token = Astro.cookies.get("token")?.value;
 
 <Layout>
   <h1 class="title">
-    <span class="smiley">smiley</span><span class="ctf">CTF</span>
+    smileyCTF
   </h1>
   <div>
     <Countdown client:idle {event} showHeading={false} />
@@ -84,12 +84,7 @@ const token = Astro.cookies.get("token")?.value;
 
   @media (max-width: 768px) {
     .title {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .title .ctf {
-      margin-top: -6.5rem;
+      font-size: 5rem;
     }
   }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Challenge, isError, submitFlag } from "../api";
+  import { type Challenge, challenges, isError, submitFlag } from "../api";
   const { chall: c }: { chall: Challenge } = $props();
 
   let flagInput: HTMLInputElement;
@@ -18,18 +18,26 @@
 <div class="challenge">
   <div class="header">
     <h1>{c.category}/{c.name}</h1>
-    {#if c.selfSolved}
-      <h2>Solved by you!</h2>
-    {/if}
+
     <h2>{c.solves} solves / {c.points} points</h2>
   </div>
-  <h2 class="author">{c.author}</h2>
+  <div class="subheader">
+    <h2 class="author">{c.author}</h2>
+    {#if c.selfSolved}
+      <h2 class="solve-text">Solved by you!</h2>
+    {/if}
+  </div>
   <p class="description">{c.description}</p>
   <form class="submit" onsubmit={submit}>
-    <input type="text" name="flag" placeholder="flag" autocomplete="off"
-      onchange={() => correct = null}
+    <input
+      type="text"
+      name="flag"
+      placeholder="flag"
+      autocomplete="off"
+      onchange={() => (correct = null)}
       bind:this={flagInput}
-      class={[{ correct: correct === true, incorrect: correct === false }]} />
+      class={[{ correct: correct === true, incorrect: correct === false }]}
+    />
     <button type="submit">submit</button>
   </form>
 </div>
@@ -49,7 +57,14 @@
         font-size: 2rem;
       }
     }
-    .author {
+
+    .subheader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .author, .solve-text {
       margin-top: -0.5rem;
     }
 

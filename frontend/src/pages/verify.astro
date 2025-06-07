@@ -1,90 +1,69 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { getVerificationDetails, verifyEmail, isError } from "../api";
 
 const url = new URL(Astro.request.url);
 const token = url.searchParams.get("token");
 
 if (!token) {
-    return Astro.redirect("/register");
+  return Astro.redirect("/register");
+}
+
+const detailsRes = await getVerificationDetails(token);
+
+if (isError(detailsRes)) {
+  return Astro.redirect("/register");
 }
 ---
 
 <Layout>
-    <h1 class="heading">Verify Email</h1>
-    <div id="confirmation-section" style="display: none;">
-        <p class="confirmation-text">
-            Are you sure you want to register team "<strong id="team-name"
-            ></strong>" with email "<strong id="team-email"></strong>"?
-        </p>
-        <form id="verify-form">
-            <button type="submit">Verify and Register</button>
-        </form>
-    </div>
-    <script>
-        import { getVerificationDetails, verifyEmail, isError } from "../api";
+  <h1 class="heading">Verify Email</h1>
+  <div id="confirmation-section">
+    <p class="confirmation-text">
+      Are you sure you want to register team "<strong id="team-name">{detailsRes.name}</strong>"
+      with email "<strong id="team-email">{detailsRes.email}</strong>"?
+    </p>
+    <form id="verify-form">
+      <button type="submit">Verify and Register</button>
+    </form>
+  </div>
+  <script>
+    import { verifyEmail, isError } from "../api";
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("token");
 
-        const url = new URL(window.location.href);
-        const token = url.searchParams.get("token");
+    const verifyForm = document.getElementById("verify-form");
 
-        const confirmationSectionDiv = document.getElementById(
-            "confirmation-section",
-        );
-        const teamNameEl = document.getElementById("team-name");
-        const teamEmailEl = document.getElementById("team-email");
-        const verifyForm = document.getElementById("verify-form");
-
-        async function initVerification() {
-            if (!token) {
-                window.location.href = "/register";
-                return;
-            }
-
-            const detailsRes = await getVerificationDetails(token);
-
-            if (isError(detailsRes)) {
-                window.location.href = "/register";
-                return;
-            }
-
-            if (teamNameEl && teamEmailEl && confirmationSectionDiv) {
-                teamNameEl.textContent = detailsRes.name;
-                teamEmailEl.textContent = detailsRes.email;
-                confirmationSectionDiv.style.display = "block";
-            }
+    if (verifyForm) {
+      verifyForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!token) {
+          window.location.href = "/register";
+          return;
         }
 
-        if (verifyForm) {
-            verifyForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                if (!token) {
-                    window.location.href = "/register";
-                    return;
-                }
+        const verifyRes = await verifyEmail(token);
 
-                const verifyRes = await verifyEmail(token);
-
-                if (isError(verifyRes)) {
-                    window.location.href = "/register";
-                } else {
-                    window.location.href = `/profile/${verifyRes.id}`;
-                }
-            });
+        if (isError(verifyRes)) {
+          window.location.href = "/register";
+        } else {
+          window.location.href = `/profile/${verifyRes.id}`;
         }
-
-        initVerification();
-    </script>
+      });
+    }
+  </script>
 </Layout>
 
 <style>
-    form {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: center;
-    }
+  form {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+  }
 
-    .confirmation-text {
-        font-family: "Satoshi", sans-serif;
-        text-align: center;
-        margin-bottom: 3rem;
-    }
+  .confirmation-text {
+    font-family: "Satoshi", sans-serif;
+    text-align: center;
+    margin-bottom: 3rem;
+  }
 </style>

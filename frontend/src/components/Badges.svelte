@@ -36,6 +36,7 @@
 <style>
   .badges {
     display: grid;
+    padding: 0 0.5rem;
     grid-template-rows: 1fr 1fr;
 
     .row {

@@ -3,7 +3,6 @@ import { jwtDecode } from "jwt-decode";
 import { isError, profile } from "../api";
 import "../base.css";
 import { ClientRouter } from "astro:transitions";
-import { ChevronDown, ChevronUp } from "@lucide/astro";
 
 const token = Astro.cookies.get("token")?.value;
 let currentTeam = token
@@ -53,12 +52,36 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
           aria-controls="auth-menu-items"
         >
           <span class="sr-only">Toggle user menu</span>
-          <span class="chevron-down-icon"
-            ><ChevronDown color="#333" size={24} /></span
-          >
-          <span class="chevron-up-icon"
-            ><ChevronUp color="#333" size={24} /></span
-          >
+          <span class="chevron-down-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-chevron-down-icon lucide-chevron-down"
+              ><path d="m6 9 6 6 6-6"></path></svg
+            >
+          </span>
+          <span class="chevron-up-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-chevron-up-icon lucide-chevron-up"
+              ><path d="m18 15-6-6-6 6"></path></svg
+            >
+          </span>
         </button>
         <ul class="auth-menu-items" id="auth-menu-items">
           {
@@ -127,11 +150,10 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     list-style: none;
     padding: 0;
     margin: 0;
-  }
 
-  .nav-main-links a {
-    color: inherit;
-    text-decoration: none;
+    a {
+      color: inherit;
+    }
   }
 
   .nav-auth-area {
@@ -149,6 +171,11 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     padding: 10px;
     z-index: 1001;
     line-height: 1;
+  }
+
+  .chevron-up-icon,
+  .chevron-down-icon {
+    color: black;
   }
 
   .mobile-auth-toggle .chevron-up-icon {
@@ -182,16 +209,15 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     list-style: none;
     padding: 0;
     margin: 0;
-  }
 
-  .auth-menu-items a,
-  .auth-menu-items li {
-    color: inherit;
-    text-decoration: none;
+    a,
+    li {
+      color: inherit;
+    }
   }
 
   .content {
-    max-width: 100ch;
+    max-width: 140ch;
     margin: auto;
     margin-bottom: 8rem;
   }
