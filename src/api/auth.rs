@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Deserialize, Validate)]
 pub struct TeamInfo {
-    #[validate(length(min = 1))]
+    #[validate(length(min = 1, max = 72))]
     pub name: String,
     #[validate(email)]
     pub email: String,
