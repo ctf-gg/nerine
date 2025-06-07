@@ -1,57 +1,66 @@
 ---
 export const prerender = false;
 import { isError, leaderboard } from "../api";
+import { EVENT_START } from "../event";
 import Layout from "../layouts/Layout.astro";
+import Countdown from "../components/Countdown.svelte";
 
-const teams = await leaderboard(Astro.cookies.get("token")?.value);
-if (isError(teams)) {
-  if (teams.error === "invalid_token") return Astro.redirect("/login", 304);
-  else return new Response("something went wrong");
+let teams;
+if (new Date().getTime() >= EVENT_START.getTime()) {
+  teams = await leaderboard(Astro.cookies.get("token")?.value);
+  if (isError(teams)) {
+    if (teams.error === "invalid_token") return Astro.redirect("/login", 304);
+    else return new Response("something went wrong");
+  }
 }
 ---
 
 <Layout>
-  <table class="leaderboard">
-    <tr class="headers">
-      <th>Rank</th>
-      <th>Name</th>
-      <th>Points</th>
-      <th>Badges</th>
-    </tr>
-
-    {
-      teams.map((t, i) => (
-        <tr class="entry">
-          <td>
-            <a href={"/profile/" + t.id}>{i + 1}</a>
-          </td>
-          <td>
-            <a href={"/profile/" + t.id}>{t.name}</a>
-          </td>
-          <td>
-            <a href={"/profile/" + t.id}>{t.score}</a>
-          </td>
-          <td>
-            <a href={"/profile/" + t.id}>
-              <div class="badges">
-                <div class="row">
-                  <div class="badge" />
-                  <div class="badge" />
-                  <div class="badge" />
-                  <div class="badge" />
-                </div>
-                <div class="row">
-                  <div class="badge" />
-                  <div class="badge" />
-                  <div class="badge" />
-                </div>
-              </div>
-            </a>
-          </td>
+  {
+    teams ? (
+      <table class="leaderboard">
+        <tr class="headers">
+          <th>Rank</th>
+          <th>Name</th>
+          <th>Points</th>
+          <th>Badges</th>
         </tr>
-      ))
-    }
-  </table>
+
+        {teams.map((t, i) => (
+          <tr class="entry">
+            <td>
+              <a href={"/profile/" + t.id}>{i + 1}</a>
+            </td>
+            <td>
+              <a href={"/profile/" + t.id}>{t.name}</a>
+            </td>
+            <td>
+              <a href={"/profile/" + t.id}>{t.score}</a>
+            </td>
+            <td>
+              <a href={"/profile/" + t.id}>
+                <div class="badges">
+                  <div class="row">
+                    <div class="badge" />
+                    <div class="badge" />
+                    <div class="badge" />
+                    <div class="badge" />
+                  </div>
+                  <div class="row">
+                    <div class="badge" />
+                    <div class="badge" />
+                    <div class="badge" />
+                  </div>
+                </div>
+              </a>
+            </td>
+          </tr>
+        ))}
+      </table>
+    ) : (
+        <Countdown client:idle />
+    )
+  }
 </Layout>
 
 <style>

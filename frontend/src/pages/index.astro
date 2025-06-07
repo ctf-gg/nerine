@@ -1,12 +1,13 @@
 ---
 export const prerender = false;
 import Layout from "../layouts/Layout.astro";
-const START_DATE = "";
+import Countdown from "../components/Countdown.svelte";
 ---
 
 <Layout>
   <h1 class="title">smileyCTF</h1>
   <div>
+    <Countdown client:idle showHeading={false} />
     <p>cookedCTF</p>
     <a href="/register">
       <button class="to-register"> Register </button>
@@ -19,7 +20,7 @@ const START_DATE = "";
     font-size: 12rem;
     text-align: center;
     font-family: "Smiley Sans";
-	line-height: 1;
+    line-height: 1;
   }
   .to-register {
     width: 100%;
