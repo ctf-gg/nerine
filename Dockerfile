@@ -9,9 +9,9 @@ FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN --mount=type=cache,id=cargo,target=/app/target cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN --mount=type=cache,id=cargo,target=/app/target cargo build --release
+RUN --mount=type=cache,id=cargo,target=/app/target cargo build --release && cp /app/target/release/sctf /app/sctf
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/sctf /usr/local/bin/sctf
+COPY --from=builder /app/sctf /usr/local/bin/sctf
 CMD ["/usr/local/bin/sctf"]
