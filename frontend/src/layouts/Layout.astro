@@ -1,7 +1,11 @@
 ---
+import { jwtDecode } from "jwt-decode";
+import { isError, profile } from "../api";
 import "../base.css";
 
 const token = Astro.cookies.get("token")?.value;
+let currentTeam = token ? await profile(jwtDecode<{ team_id: string }>(token).team_id, token) : null;
+if (currentTeam != null && isError(currentTeam)) currentTeam = null;
 ---
 
 <!doctype html>
@@ -15,13 +19,20 @@ const token = Astro.cookies.get("token")?.value;
   </head>
   <body>
     <div class="navbar">
+      <!-- placeholder -->
+      <ul></ul>
       <ul>
         <li><a href="/">home</a></li>
         <li><a href="/challenges">challenges</a></li>
         <li><a href="/leaderboard">leaderboard</a></li>
+      </ul>
+      <ul class="end">
         {
           token ? (
             <>
+              <li>
+                {currentTeam!.name}
+              </li>
               <li>
                 <a href="/profile/me">profile</a>
               </li>
@@ -56,12 +67,27 @@ const token = Astro.cookies.get("token")?.value;
     background-color: #f1f1df;
     padding: 1rem;
     margin-bottom: 2rem;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1fr 2fr 1fr;
 
     ul {
       display: flex;
       gap: 1rem;
       align-items: center;
       justify-content: center;
+    }
+
+    :nth-child(1) {
+      justify-self: start;
+    }
+
+    :nth-child(2) {
+      justify-self: center;
+    }
+
+    :nth-child(3) {
+      justify-self: end;
     }
 
     li {

@@ -12,7 +12,7 @@ if (!id || !token) return Astro.redirect("/", 307);
 
 if (id === "me")
   return Astro.redirect(
-    `/profile/${jwtDecode<{ team_id: number }>(token).team_id}`
+    `/profile/${jwtDecode<{ team_id: string }>(token).team_id}`
   );
 const prof = await profile(id, token);
 if (isError(prof)) {
