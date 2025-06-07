@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 use envconfig::Envconfig;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
-use crate::{event::Event, DB};
+use crate::{email, event::Event, DB};
 
 pub struct JwtKeys {
     pub encoding: EncodingKey,
@@ -37,12 +37,19 @@ pub struct Config {
 
     #[envconfig(from = "CORS_ORIGIN", default = "http://sctf.localhost")]
     pub cors_origin: String,
+
+    #[envconfig(from = "SMTP_URL", default = "")]
+    pub smtp_url: String,
+
+    #[envconfig(from = "FROM_EMAIL", default = "noreply@sctf.localhost")]
+    pub from_email: String,
 }
 
 pub struct StateInner {
     pub config: Config,
     pub event: Event,
     pub db: DB,
+    pub email: email::EmailService,
 }
 
 impl AsRef<Config> for StateInner {

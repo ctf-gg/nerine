@@ -1,5 +1,8 @@
 use axum::{
-    extract::{State as StateE}, http::StatusCode, routing::{get, post}, Json, Router
+    extract::State as StateE,
+    http::StatusCode,
+    routing::{get, post},
+    Json, Router,
 };
 use axum_extra::extract::{cookie::Cookie, CookieJar};
 use chrono::{Duration, NaiveDateTime};
@@ -8,7 +11,10 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::{
-    State, extractors::Auth, jwt::{decode_jwt, generate_jwt, Claims}, Result
+    email::PendingTeamVerification,
+    extractors::Auth,
+    jwt::{decode_jwt, generate_jwt, Claims},
+    Result, State,
 };
 
 #[derive(Deserialize, Validate)]
@@ -31,20 +37,55 @@ pub struct Team {
     pub extra_data: serde_json::Value,
 }
 
-// TODO also enforce email constraints here for workarounds like caps & a cleaner error message.
 async fn register(
     StateE(state): StateE<State>,
-    jar: CookieJar,
     Json(payload): Json<TeamInfo>,
-) -> Result<(StatusCode, CookieJar, Json<Team>)> {
+) -> Result<(StatusCode, Json<serde_json::Value>)> {
     payload.validate()?;
+
+    state
+        .email
+        .send_verification_email(
+            &payload.email,
+            &payload.name,
+            PendingTeamVerification {
+                name: payload.name.clone(),
+                email: payload.email.clone(),
+            },
+        )
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "email": payload.email
+        })),
+    ))
+}
+
+#[derive(Serialize, Deserialize)]
+struct VerificationRequest {
+    token: String,
+}
+
+async fn verify_email(
+    StateE(state): StateE<State>,
+    jar: CookieJar,
+    Json(VerificationRequest {
+        token: verification_token,
+    }): Json<VerificationRequest>,
+) -> Result<(CookieJar, Json<TeamId>)> {
+    let team_details = state
+        .email
+        .consume_pending_verification(&verification_token)
+        .await?;
 
     let team = sqlx::query_as!(
         Team,
         "INSERT INTO teams (public_id, name, email) VALUES ($1, $2, $3) RETURNING *",
         nanoid!(),
-        payload.name,
-        payload.email
+        team_details.name,
+        team_details.email
     )
     .fetch_one(&state.db)
     .await?;
@@ -54,8 +95,31 @@ async fn register(
 
     let mut cookie = Cookie::new("token", jwt);
     cookie.set_path("/");
+    Ok((jar.add(cookie), Json(TeamId { id: team.public_id })))
+}
 
-    Ok((StatusCode::CREATED, jar.add(cookie), Json(team)))
+#[derive(Serialize, Deserialize)]
+struct VerificationDetailsRequest {
+    token: String,
+}
+
+#[derive(Serialize)]
+struct VerificationDetailsResponse {
+    name: String,
+    email: String,
+}
+
+async fn get_verification_details(
+    StateE(state): StateE<State>,
+    Json(VerificationDetailsRequest { token }): Json<VerificationDetailsRequest>,
+) -> Result<Json<VerificationDetailsResponse>> {
+    match state.email.get_pending_verification_details(&token) {
+        Some(details) => Ok(Json(VerificationDetailsResponse {
+            name: details.name,
+            email: details.email,
+        })),
+        None => Err(crate::error::Error::InvalidToken),
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -93,5 +157,7 @@ pub fn router() -> Router<State> {
     Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
+        .route("/verify_email", post(verify_email))
         .route("/gen_token", get(gen_token))
+        .route("/verification_details", post(get_verification_details))
 }

@@ -11,6 +11,11 @@ dotenvy = "0.15.7"
 envconfig = "0.11.0"
 eyre = "0.6.12"
 jsonwebtoken = "9.3.1"
+lettre = { version = "0.11", features = [
+    "tokio1",
+    "smtp-transport",
+    "tokio1-native-tls",
+] }
 log = { version = "0.4.27", features = ["std"] }
 nanoid = "0.4.0"
 pretty_env_logger = "0.5.0"
@@ -23,4 +28,6 @@ tokio = { version = "1.44.2", features = ["rt-multi-thread"] }
 toml = "0.8.20"
 tower-http = { version = "0.6.4", features = ["cors"] }
 tracing = "0.1.41"
+url = "2.5"
 validator = { version = "0.20.0", features = ["derive"] }
+cached = { version = "0.52.0" }

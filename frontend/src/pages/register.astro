@@ -15,19 +15,34 @@ import Layout from "../layouts/Layout.astro";
   <script>
     import { register, isError } from "../api";
     const registerForm = document.getElementById(
-      "register"
+      "register",
     )! as HTMLFormElement;
+
+    function setFormDisabled(disabled: boolean) {
+      const inputs = registerForm.querySelectorAll("input, button");
+      inputs.forEach((input) => {
+        (input as HTMLInputElement | HTMLButtonElement).disabled = disabled;
+      });
+    }
+
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(registerForm);
 
+      setFormDisabled(true);
+
       const res = await register(
         formData.get("email") as string,
-        formData.get("name") as string
+        formData.get("name") as string,
       );
-      if (isError(res))
+
+      if (isError(res)) {
+        setFormDisabled(false);
         return alert(`wuh oh! ${res.message}`); // tell user they messed up
-      else window.location.href = `/profile/${res.id}`;
+      } else {
+        alert(`Verification email sent to ${formData.get("email")}.`);
+        window.location.href = "/";
+      }
     });
   </script>
 </Layout>
@@ -36,7 +51,7 @@ import Layout from "../layouts/Layout.astro";
   #register {
     display: flex;
     flex-direction: column;
-    
+
     input {
       margin-bottom: 1rem;
     }

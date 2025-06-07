@@ -9,6 +9,7 @@ mod api;
 mod config;
 mod db;
 mod deploy;
+mod email;
 mod error;
 mod event;
 mod extractors;
@@ -46,6 +47,7 @@ async fn main() -> eyre::Result<()> {
     let app = Router::<State>::new()
         .nest("/api", api::router())
         .with_state(State::new(config::StateInner {
+            email: email::EmailService::new(&cfg),
             config: cfg,
             event,
             db: pool,

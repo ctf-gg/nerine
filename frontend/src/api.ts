@@ -10,12 +10,12 @@ export type ApiError = GenericApiError | EventNotStartedApiError;
 
 export interface GenericApiError {
   error:
-    | "database_error"
-    | "jwt_error"
-    | "invalid_token"
-    | "not_found"
-    | "event_ended"
-    | "wrong_flag";
+  | "database_error"
+  | "jwt_error"
+  | "invalid_token"
+  | "not_found"
+  | "event_ended"
+  | "wrong_flag";
   message: string;
 }
 
@@ -93,6 +93,27 @@ export const login = async (token: string): Promise<TeamId | ApiError> => {
   return (await res.json()) as TeamId | ApiError;
 };
 
+export const verifyEmail = async (token: string): Promise<TeamId | ApiError> => {
+  const res = await req("POST", "/auth/verify_email", {
+    body: { token },
+  });
+  return (await res.json()) as TeamId | ApiError;
+};
+
+export interface VerificationDetails {
+  name: string;
+  email: string;
+}
+
+export const getVerificationDetails = async (
+  token: string
+): Promise<VerificationDetails | ApiError> => {
+  const res = await req("POST", "/auth/verification_details", {
+    body: { token },
+  });
+  return (await res.json()) as VerificationDetails | ApiError;
+};
+
 export const updateProfile = async (
   email: string,
   name: string
@@ -112,21 +133,21 @@ interface Solve {
 
 type Profile =
   | {
-      type: "private";
-      name: string;
-      email: string;
-      score: number;
-      rank: number;
-      solves: Solve[];
-    }
+    type: "private";
+    name: string;
+    email: string;
+    score: number;
+    rank: number;
+    solves: Solve[];
+  }
   | {
-      type: "public";
+    type: "public";
 
-      name: string;
-      score: number;
-      rank: number;
-      solves: Solve[];
-    };
+    name: string;
+    score: number;
+    rank: number;
+    solves: Solve[];
+  };
 
 const tokenToOptions = (
   token?: string
