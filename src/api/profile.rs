@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use serde::Serialize;
 use validator::Validate;
 
@@ -16,7 +16,7 @@ async fn update(
     Json(payload): Json<TeamInfo>,
 ) -> Result<Json<Team>> {
     payload.validate()?;
-    
+
     let team = sqlx::query_as!(
         Team,
         "UPDATE teams SET name = $1, email = $2 WHERE public_id = $3 RETURNING *",
@@ -99,19 +99,25 @@ async fn profile(
     .await?;
     let solves = get_solves(&state.db, &pub_id).await?;
 
+    let (rank, score) = if Utc::now().naive_utc() < state.event.start_time {
+        (-1, -1)
+    } else {
+        (details.rank.unwrap_or(-1), details.score.unwrap_or(-1))
+    };
+
     return if team_id == pub_id {
         Ok(Json(Profile::Private {
             name: details.name,
             email: details.email,
-            rank: details.rank.unwrap_or(-1),
-            score: details.score.unwrap_or(-1),
+            rank,
+            score,
             solves,
         }))
     } else {
         Ok(Json(Profile::Public {
             name: details.name,
-            rank: details.rank.unwrap_or(-1),
-            score: details.score.unwrap_or(-1),
+            rank,
+            score,
             solves,
         }))
     };

@@ -105,7 +105,6 @@ a {
 }
 
 button {
-  font-family: "Smiley Sans", sans-serif;
   border-image: url("/border-big.png") 12 / 8px round;
   border-image-outset: 2px;
   background-color: black;
@@ -115,7 +114,6 @@ button {
 }
 
 .heading {
-  font-family: "Smiley Sans", sans-serif;
   font-size: 4rem;
   text-align: center;
   -webkit-font-smoothing: none;

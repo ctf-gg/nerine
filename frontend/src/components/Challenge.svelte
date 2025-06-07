@@ -45,17 +45,16 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: "Smiley Sans";
       h1 {
         font-size: 2rem;
       }
     }
     .author {
-      font-family: "Smiley Sans";
       margin-top: -0.5rem;
     }
 
     .description {
+      font-family: "Satoshi", sans-serif;
       margin-top: 0.25rem;
       margin-bottom: 1.25rem;
     }

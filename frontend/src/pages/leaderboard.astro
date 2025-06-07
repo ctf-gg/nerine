@@ -9,7 +9,7 @@ const event = await getEvent();
 if (new Date().getTime() >= event.start_time.getTime()) {
   teams = await leaderboard(Astro.cookies.get("token")?.value);
   if (isError(teams)) {
-    if (teams.error === "invalid_token") return Astro.redirect("/login", 304);
+    if (teams.error === "invalid_token") return Astro.redirect("/login", 307);
     else return new Response("something went wrong");
   }
 }
@@ -58,7 +58,6 @@ if (new Date().getTime() >= event.start_time.getTime()) {
     width: 100%;
     font-size: 1.5rem;
     text-align: center;
-    font-family: "Smiley Sans";
     border-spacing: 0;
 
     th {

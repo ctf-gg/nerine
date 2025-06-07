@@ -24,9 +24,13 @@ if (isError(prof)) {
   <h1 class="heading">{prof.name}</h1>
   {prof.type === "private" && <PrivateProfileDetails client:load prof={prof} />}
 
-  <div class="stats">
-    Rank {prof.rank} / {prof.score} points
-  </div>
+  {
+    prof.rank !== -1 && (
+      <div class="stats">
+        Rank {prof.rank} / {prof.score} points
+      </div>
+    )
+  }
   <div class="solves">
     <h2>Solves:</h2>
     <table>

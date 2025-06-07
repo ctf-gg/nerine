@@ -9,7 +9,7 @@ const event = await getEvent();
 if (new Date().getTime() >= event.start_time.getTime()) {
   challs = await challenges(Astro.cookies.get("token")?.value);
   if (isError(challs)) {
-    if (challs.error === "invalid_token") return Astro.redirect("/login", 304);
+    if (challs.error === "invalid_token") return Astro.redirect("/login", 307);
     else return new Response("something went wrong");
   }
 }
