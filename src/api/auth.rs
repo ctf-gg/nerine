@@ -5,15 +5,18 @@ use axum_extra::extract::{cookie::Cookie, CookieJar};
 use chrono::{Duration, NaiveDateTime};
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 use crate::{
     State, extractors::Auth, jwt::{decode_jwt, generate_jwt, Claims}, Result
 };
 
-#[derive(Deserialize)]
-struct TeamInfo {
-    name: String,
-    email: String,
+#[derive(Deserialize, Validate)]
+pub struct TeamInfo {
+    #[validate(length(min = 1))]
+    pub name: String,
+    #[validate(email)]
+    pub email: String,
 }
 // TODO move this elsewhere and use teamid return only
 #[derive(Deserialize, Serialize)]
@@ -34,6 +37,8 @@ async fn register(
     jar: CookieJar,
     Json(payload): Json<TeamInfo>,
 ) -> Result<(StatusCode, CookieJar, Json<Team>)> {
+    payload.validate()?;
+
     let team = sqlx::query_as!(
         Team,
         "INSERT INTO teams (public_id, name, email) VALUES ($1, $2, $3) RETURNING *",

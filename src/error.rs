@@ -11,8 +11,10 @@ use thiserror::Error;
 pub enum Error {
     #[error("{0}")]
     Database(#[from] sqlx::Error),
-    #[error("{}", _0.to_string().to_lowercase())] // TODO(aiden): nit: this is not lowercase, (but it could be)
+    #[error("{}", _0.to_string().to_lowercase())]
     Jwt(#[from] jsonwebtoken::errors::Error),
+    #[error("{0}")]
+    Validation(#[from] validator::ValidationErrors),
     #[error("invalid token")]
     InvalidToken,
     #[error("challenge not found")]
@@ -48,6 +50,7 @@ impl IntoResponse for Error {
         let (status, error) = match self {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
             Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
+            Error::Validation(_) => (StatusCode::BAD_REQUEST, "validation_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
             Error::NotFoundChallenge | Error::NotFoundTeam => (StatusCode::NOT_FOUND, "not_found"),
             Error::EventNotStarted(start_time) => {

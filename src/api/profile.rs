@@ -1,25 +1,22 @@
+use crate::{extractors::Auth, jwt::Claims, Result, State, DB};
 use axum::{
-    extract::{State as StateE, Path},
+    extract::{Path, State as StateE},
     routing::{get, post},
     Json, Router,
 };
 use chrono::NaiveDateTime;
-use crate::{extractors::Auth, jwt::Claims, DB, Result, State};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use validator::Validate;
 
-use super::auth::Team;
-
-#[derive(Deserialize)]
-struct UpdateProfile {
-    name: String,
-    email: String,
-}
+use super::auth::{Team, TeamInfo};
 
 async fn update(
     StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
-    Json(payload): Json<UpdateProfile>,
+    Json(payload): Json<TeamInfo>,
 ) -> Result<Json<Team>> {
+    payload.validate()?;
+    
     let team = sqlx::query_as!(
         Team,
         "UPDATE teams SET name = $1, email = $2 WHERE public_id = $3 RETURNING *",
