@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH solves as (SELECT count(*)::int AS solves FROM submissions WHERE is_correct = true AND challenge_id = $1)\n        SELECT points_min, points_max, solves AS \"solves!\" FROM challenges c, solves WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "points_min",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "points_max",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "solves!",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "2c5431246b718e20fcd66e14460acd73a9afd4d242cdf0ffefd0ab78be5d82ae"
+}

@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n            public_id,\n            challenges.name,\n            author,\n            description,\n            c_points AS points,\n            c_solves AS solves,\n            attachments, \n            categories.name AS category,\n            FALSE as \"self_solved!\"\n        FROM challenges JOIN categories ON categories.id = category_id\n        ORDER BY solves DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "public_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "author",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "points",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "solves",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "attachments",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "category",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "self_solved!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "4604f39e14dbb8e8f9382a3d61941d9e434f4bad704327ead1ea0da2392ff3be"
+}
