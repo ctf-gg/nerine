@@ -36,7 +36,7 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     <ClientRouter />
     <title>smileyCTF</title>
   </head>
-  <body style="display: flex; flex-direction: column; min-height: 100vh;">
+  <body>
     <div class="navbar">
       <!-- placeholder -->
       <ul></ul>
@@ -73,14 +73,17 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     <div class="content">
       <slot />
     </div>
-    <footer>
+    <!-- <footer>
       <p class="footer-text">
         &copy; 2025 smiley foundation &bull; Powered by sCTF
       </p>
-    </footer>
+    </footer> -->
   </body>
 </html>
 <style>
+  body {
+    min-height: 100vh;
+  }
   .navbar {
     font-size: 1.5rem;
     border-image: url("/border-big-off-white.png") 12 / 8px round;
@@ -119,11 +122,10 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
       color: inherit;
     }
   }
+
   .content {
     max-width: 100ch;
     margin: auto;
-    padding-bottom: 5rem;
-    flex-grow: 1;
   }
 
   footer {

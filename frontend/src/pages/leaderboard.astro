@@ -42,7 +42,7 @@ if (new Date().getTime() >= event.start_time.getTime()) {
                 if anyone is wondering whats ballooning leaderboard load times, its probably this.
                 i'll refactor this later since it turns out islands are hella expensive (might only be dev side though)
               */}
-              <Badges badges={t?.extra.badges} client:idle />
+              <Badges badges={t?.extra?.badges} client:idle />
             </td>
           </tr>
         ))}
