@@ -13,5 +13,6 @@ RUN --mount=type=cache,id=cargo,target=/app/target cargo build --release && cp /
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
+RUN apt-get update && apt-get install libssl3 ca-certificates -y
 COPY --from=builder /app/sctf /usr/local/bin/sctf
 CMD ["/usr/local/bin/sctf"]
