@@ -102,6 +102,7 @@ export const updateProfile = async (
 interface Solve {
   name: string;
   points: number;
+  solvedAt: string;
 }
 
 type Profile =

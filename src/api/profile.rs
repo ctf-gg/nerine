@@ -3,6 +3,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use chrono::NaiveDateTime;
 use crate::{extractors::Auth, jwt::Claims, DB, Result, State};
 use serde::{Deserialize, Serialize};
 
@@ -38,6 +39,8 @@ pub(crate) struct Solve {
     pub(crate) public_id: String,
     name: String,
     points: i32,
+    #[serde(rename(serialize = "solvedAt"))]
+    solved_at: NaiveDateTime,
 }
 
 pub(crate) async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {
@@ -45,8 +48,8 @@ pub(crate) async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {
         Solve,
         r#"WITH 
             team AS (SELECT id FROM teams WHERE public_id = $1),
-            solved_challs AS (SELECT challenge_id AS id FROM submissions, team WHERE is_correct = true AND team_id = team.id)
-        SELECT public_id, name, c_points AS points FROM challenges c JOIN solved_challs sc ON sc.id = c.id"#,
+            solved_challs AS (SELECT challenge_id AS id, created_at FROM submissions, team WHERE is_correct = true AND team_id = team.id)
+        SELECT public_id, name, c_points AS points, created_at AS solved_at FROM challenges c JOIN solved_challs sc ON sc.id = c.id"#,
         pub_id
     ).fetch_all(db).await?;
 
