@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 import { isError, profile } from "../api";
 import "../base.css";
 import { ClientRouter } from "astro:transitions";
+import Image from "astro/components/Image.astro";
 
 const token = Astro.cookies.get("token")?.value;
 let currentTeam = token
@@ -35,7 +36,7 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     <ClientRouter />
     <title>smileyCTF</title>
   </head>
-  <body>
+  <body style="display: flex; flex-direction: column; min-height: 100vh;">
     <div class="navbar">
       <!-- placeholder -->
       <ul></ul>
@@ -72,6 +73,11 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     <div class="content">
       <slot />
     </div>
+    <footer>
+      <p class="footer-text">
+        &copy; 2025 smiley foundation &bull; Powered by sCTF
+      </p>
+    </footer>
   </body>
 </html>
 <style>
@@ -116,6 +122,32 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
   .content {
     max-width: 100ch;
     margin: auto;
-    margin-bottom: 8rem;
+    padding-bottom: 5rem;
+    flex-grow: 1;
+  }
+
+  footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: #e6e6d2;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-image: url("/border-big-off-white.png") 12 / 8px round;
+    border-image-outset: 2px;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .discord-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .footer-text {
+    margin: 0;
   }
 </style>
