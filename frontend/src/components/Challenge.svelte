@@ -1,13 +1,12 @@
 <script lang="ts">
   import { type Challenge, isError, submitFlag } from "../api";
-  import Cookie from "js-cookie";
   const { chall: c }: { chall: Challenge } = $props();
 
   let flagInput: HTMLInputElement;
   let correct = $state<boolean | null>(null);
   async function submit(e: SubmitEvent) {
     e.preventDefault();
-    const j = await submitFlag(c.id, flagInput.value, Cookie.get("token"));;
+    const j = await submitFlag(c.id, flagInput.value);
     flagInput.value = "";
     if (isError(j)) {
       alert("uwuups! " + j.message);
