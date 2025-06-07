@@ -30,40 +30,85 @@ if (isError(prof)) {
   </div>
   <div class="solves">
     <h2>Solves:</h2>
-    <ul>
+    <table>
+      <tr class="headers">
+        <th class="chall-name">Challenge</th>
+        <th>Points</th>
+        <th class="solved-at">Solved At</th>
+      </tr>
+
       {
         prof.solves.map((solve) => (
-          <li class="solve">
-            <span>{solve.name}</span>
-            <span>{solve.points} pts</span>
-          </li>
+          <tr class="solve">
+            <td class="chall-name">{solve.name}</td>
+            <td class="points">{solve.points} pts</td>
+            <td class="solved-at">
+              {new Date(solve.solvedAt).toLocaleString()}
+            </td>
+          </tr>
         ))
       }
-    </ul>
+    </table>
   </div>
 </Layout>
 
 <style>
-  .solves {
-    margin-top: 2rem;
+  .stats {
     font-family: "Smiley Sans", sans-serif;
+    border-image: url("/border-big-off-white.png") 12 / 8px round;
+    border-image-outset: 2px;
+    background-color: #f1f1df;
+    width: fit-content;
+    font-size: 2rem;
+    padding: 1rem 2rem;
+    margin: 1rem auto;
+    text-align: center;
+  }
+
+  .solves {
+    margin-top: 1rem;
+    font-family: "Smiley Sans", sans-serif;
+
+    table {
+      width: 100%;
+      border-spacing: 0;
+      font-size: 1.5rem;
+
+      .headers {
+        th {
+          border-image: url("/border-big-off-white.png") 12 / 8px round;
+          border-image-outset: 2px;
+          background-color: #f1f1df;
+        }
+      }
+    }
 
     h2 {
       font-size: 3rem;
       text-align: center;
     }
+  }
 
-    ul {
-      display: flex;
-      flex-direction: column;
-      padding: 0;
+  .solve {
+    list-style: none;
+    & > * {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #f1f1df;
     }
+  }
 
-    .solve {
-      list-style: none;
-      font-size: 1.75rem;
-      display: flex;
-      justify-content: space-between;
-    }
+  .chall-name {
+    padding-left: 2rem;
+    text-align: left;
+  }
+
+  .points {
+    text-align: center;
+  }
+
+  .solved-at {
+    padding-right: 2rem;
+    text-align: right;
   }
 </style>
