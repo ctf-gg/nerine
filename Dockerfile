@@ -1,9 +1,17 @@
-FROM rust@sha256:25038aa450210c53cf05dbf7b256e1df1ee650a58bb46cbc7d6fa79c1d98d083 AS builder
-WORKDIR /usr/src/myapp
-COPY . .
-RUN cargo install --path .
+FROM lukemathwalker/cargo-chef@sha256:cf4bd956000c0b18613ce4e485e4a0c7719921fcc5e34ba0e7e08e3dfcff8964 AS chef
+WORKDIR /app
 
-FROM debian:bookworm-slim
-#RUN apt-get update && apt-get install -y libc6 && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /usr/local/cargo/bin/sctf /usr/local/bin/sctf
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/release/sctf /usr/local/bin/sctf
 CMD ["/usr/local/bin/sctf"]
