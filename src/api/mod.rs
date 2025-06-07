@@ -10,6 +10,7 @@ pub fn router() -> Router<crate::State> {
         .nest("/admin", crate::admin::router())
         .nest("/auth", auth::router())
         .nest("/challs", challenges::router())
+        .nest("/event", crate::event::router())
         .nest("/profile", profile::router())
         .nest("/leaderboard", leaderboard::router())
 }

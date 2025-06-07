@@ -1,8 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { EVENT_START } from "../event";
-
-  const { showHeading = true } = $props();
+  const { showHeading = true, event } = $props();
 
   type Counter = {
     days: number;
@@ -17,7 +15,7 @@
 
   function updateCountdown() {
     const now = new Date().getTime();
-    const distance = EVENT_START.getTime() - now;
+    const distance = event.start_time.getTime() - now;
 
     if (distance > 0) {
       timeLeft = {

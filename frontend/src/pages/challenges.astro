@@ -1,13 +1,13 @@
 ---
 export const prerender = false;
-import { EVENT_START } from "../event";
-import { isError, challenges } from "../api";
+import { isError, challenges, getEvent } from "../api";
 import Challenge from "../components/Challenge.svelte";
 import Countdown from "../components/Countdown.svelte";
 import Layout from "../layouts/Layout.astro";
 
 let challs;
-if (new Date().getTime() >= EVENT_START.getTime()) {
+const event = await getEvent();
+if (new Date().getTime() >= event.start_time.getTime()) {
   challs = await challenges(Astro.cookies.get("token")?.value);
   if (isError(challs)) {
     if (challs.error === "invalid_token") return Astro.redirect("/login", 304);
@@ -25,7 +25,7 @@ if (new Date().getTime() >= EVENT_START.getTime()) {
         ))}
       </div>
     ) : (
-      <Countdown client:idle />
+      <Countdown {event} client:idle />
     )
   }
 </Layout>

@@ -196,3 +196,20 @@ export async function submitFlag(
     return await res.json();
   }
 }
+
+export interface Event {
+  name: string;
+  start_time: Date;
+  end_time: Date;
+}
+
+// TODO(ani): don't assume this always succeeds
+export async function getEvent(): Promise<Event> {
+  const res = await req("GET", "/event");
+  const j = await res.json();
+  return {
+    name: j.name,
+    start_time: new Date(j.start_time),
+    end_time: new Date(j.end_time),
+  };
+}

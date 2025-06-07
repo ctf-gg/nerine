@@ -1,12 +1,12 @@
 ---
 export const prerender = false;
-import { isError, leaderboard } from "../api";
-import { EVENT_START } from "../event";
+import { isError, leaderboard, getEvent } from "../api";
 import Layout from "../layouts/Layout.astro";
 import Countdown from "../components/Countdown.svelte";
 
 let teams;
-if (new Date().getTime() >= EVENT_START.getTime()) {
+const event = await getEvent();
+if (new Date().getTime() >= event.start_time.getTime()) {
   teams = await leaderboard(Astro.cookies.get("token")?.value);
   if (isError(teams)) {
     if (teams.error === "invalid_token") return Astro.redirect("/login", 304);
@@ -58,7 +58,7 @@ if (new Date().getTime() >= EVENT_START.getTime()) {
         ))}
       </table>
     ) : (
-        <Countdown client:idle />
+      <Countdown {event} client:idle />
     )
   }
 </Layout>

@@ -2,12 +2,15 @@
 export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import Countdown from "../components/Countdown.svelte";
+import { getEvent } from "../api";
+
+const event = await getEvent();
 ---
 
 <Layout>
   <h1 class="title">smileyCTF</h1>
   <div>
-    <Countdown client:idle showHeading={false} />
+    <Countdown client:idle {event} showHeading={false} />
     <p>cookedCTF</p>
     <a href="/register">
       <button class="to-register"> Register </button>
