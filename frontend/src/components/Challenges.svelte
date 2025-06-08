@@ -25,6 +25,9 @@
 
   let showSolved = $state(false);
   let showOnlyUnsolved = $state(false);
+  const unblooded = $derived(
+    challs.reduce((acc, c) => acc + (c.solves === 0 ? 1 : 0), 0)
+  );
 
   const fileteredChalls = $derived.by(() => {
     let res = challs;
@@ -64,18 +67,15 @@
         >Show Solved ({challs.reduce((acc, c) => acc + +c.selfSolved, 0)} / {challs.length})</label
       >
     </div>
-    <div>
-      <input
-        type="checkbox"
-        id="show-unsolved"
-        bind:checked={showOnlyUnsolved}
-      /><label for="show-unsolved"
-        >Show Only Unsolved ({challs.reduce(
-          (acc, c) => acc + (c.solves === 0 ? 1 : 0),
-          0
-        )})</label
-      >
-    </div>
+    {#if unblooded}
+      <div>
+        <input
+          type="checkbox"
+          id="show-unsolved"
+          bind:checked={showOnlyUnsolved}
+        /><label for="show-unsolved">Show Only Unblooded ({unblooded})</label>
+      </div>
+    {/if}
   </div>
 </div>
 <div class="challenges">
