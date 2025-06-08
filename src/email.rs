@@ -84,9 +84,9 @@ impl EmailService {
         let verification_link =
             format!("{}/verify?token={}", self.app_base_url, verification_token);
 
-        let subject = format!("Verify your email for smileyCTF - {}", team_name_display);
+        let subject = "Verify your email for smileyCTF";
         let body = format!(
-            "Hello {},\n\nPlease verify your email address to complete your registration for smileyCTF by clicking the link below:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
+            "Hello {},\n\nPlease click the link below to finish registering for smileyCTF:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
             team_name_display,
             verification_link
         );
