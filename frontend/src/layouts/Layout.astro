@@ -305,40 +305,44 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
   }
 </style>
 
-<script is:inline>
-  const authToggleButton = document.querySelector(".mobile-auth-toggle");
-  const authMenuItems = document.querySelector(".auth-menu-items");
+<script is:inline data-astro-rerun>
+  function initDropdown() {
+    const authToggleButton = document.querySelector(".mobile-auth-toggle");
+    const authMenuItems = document.querySelector(".auth-menu-items");
 
-  if (authToggleButton && authMenuItems) {
-    authToggleButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const isOpened = authMenuItems.classList.toggle("open");
-      authToggleButton.classList.toggle("open");
-      authToggleButton.setAttribute("aria-expanded", isOpened.toString());
-    });
+    if (authToggleButton && authMenuItems) {
+      authToggleButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const isOpened = authMenuItems.classList.toggle("open");
+        authToggleButton.classList.toggle("open");
+        authToggleButton.setAttribute("aria-expanded", isOpened.toString());
+      });
 
-    authMenuItems.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        if (authMenuItems.classList.contains("open")) {
+      authMenuItems.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
+          if (authMenuItems.classList.contains("open")) {
+            authMenuItems.classList.remove("open");
+            authToggleButton.classList.remove("open");
+            authToggleButton.setAttribute("aria-expanded", "false");
+          }
+        });
+      });
+
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (
+          authMenuItems.classList.contains("open") &&
+          target instanceof Node &&
+          !authMenuItems.contains(target) &&
+          !authToggleButton.contains(target)
+        ) {
           authMenuItems.classList.remove("open");
           authToggleButton.classList.remove("open");
           authToggleButton.setAttribute("aria-expanded", "false");
         }
       });
-    });
-
-    document.addEventListener("click", (event) => {
-      const target = event.target;
-      if (
-        authMenuItems.classList.contains("open") &&
-        target instanceof Node &&
-        !authMenuItems.contains(target) &&
-        !authToggleButton.contains(target)
-      ) {
-        authMenuItems.classList.remove("open");
-        authToggleButton.classList.remove("open");
-        authToggleButton.setAttribute("aria-expanded", "false");
-      }
-    });
+    }
   }
+
+  initDropdown();
 </script>
