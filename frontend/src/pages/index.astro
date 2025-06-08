@@ -8,9 +8,7 @@ const token = Astro.cookies.get("token")?.value;
 ---
 
 <Layout>
-  <h1 class="title">
-    smileyCTF
-  </h1>
+  <h1 class="title">smileyCTF</h1>
   <div>
     <Countdown client:idle {event} showHeading={false} />
     {
@@ -62,16 +60,19 @@ const token = Astro.cookies.get("token")?.value;
       <h2>Sponsors</h2>
       <p>smileyCTF is only possible thanks to our generous sponsors.</p>
       <div class="sponsors">
-        <a href="https://verialabs.com">
+        <a href="https://verialabs.com" target="_blank">
           <img src="/sponsors/veria.svg" />
         </a>
-        <a href="https://zellic.io">
+        <a href="https://zellic.io" target="_blank">
           <img src="/sponsors/zellic.png" />
         </a>
-        <a href="https://osec.io">
+        <a href="https://osec.io" target="_blank">
           <img src="/sponsors/osec.svg" class="be-normal" />
         </a>
       </div>
+      <a href="https://discord.gg/5BRJrRSR6n">
+        <button class="big-button">Join Our Discord</button>
+      </a>
     </div>
   </div>
 </Layout>
