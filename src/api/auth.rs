@@ -64,8 +64,8 @@ async fn register(
 }
 
 #[derive(Serialize, Deserialize)]
-struct VerificationRequest {
-    token: String,
+pub struct VerificationRequest {
+    pub token: String,
 }
 
 async fn verify_email(
@@ -104,9 +104,18 @@ struct VerificationDetailsRequest {
 }
 
 #[derive(Serialize)]
-struct VerificationDetailsResponse {
-    name: String,
-    email: String,
+#[serde(untagged)]
+pub enum VerificationDetailsResponse {
+    TeamRegistration {
+        name: String,
+        email: String,
+        verification_type: String,
+    },
+    EmailUpdate {
+        name: String,
+        new_email: String,
+        verification_type: String,
+    },
 }
 
 async fn get_verification_details(
@@ -114,10 +123,28 @@ async fn get_verification_details(
     Json(VerificationDetailsRequest { token }): Json<VerificationDetailsRequest>,
 ) -> Result<Json<VerificationDetailsResponse>> {
     match state.email.get_pending_verification_details(&token) {
-        Some(details) => Ok(Json(VerificationDetailsResponse {
-            name: details.name,
-            email: details.email,
-        })),
+        Some(crate::email::PendingVerification::Team(details)) => {
+            Ok(Json(VerificationDetailsResponse::TeamRegistration {
+                name: details.name,
+                email: details.email,
+                verification_type: "team_registration".to_string(),
+            }))
+        }
+
+        Some(crate::email::PendingVerification::EmailUpdate(details)) => {
+            let team_name_record = sqlx::query!(
+                "SELECT name FROM teams WHERE public_id = $1",
+                details.team_id
+            )
+            .fetch_one(&state.db)
+            .await?;
+
+            Ok(Json(VerificationDetailsResponse::EmailUpdate {
+                name: team_name_record.name,
+                new_email: details.new_email,
+                verification_type: "email_update".to_string(),
+            }))
+        }
         None => Err(crate::error::Error::InvalidToken),
     }
 }

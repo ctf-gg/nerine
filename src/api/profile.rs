@@ -8,21 +8,73 @@ use chrono::{NaiveDateTime, Utc};
 use serde::Serialize;
 use validator::Validate;
 
-use super::auth::{Team, TeamInfo};
+use super::auth::{Team, TeamInfo, VerificationRequest};
 
 async fn update(
     StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
     Json(payload): Json<TeamInfo>,
-) -> Result<Json<Team>> {
+) -> Result<Json<serde_json::Value>> {
     payload.validate()?;
+
+    let current_team = sqlx::query!(
+        "SELECT email, name FROM teams WHERE public_id = $1",
+        team_id
+    )
+    .fetch_one(&state.db)
+    .await?;
+
+    if current_team.email != payload.email {
+        if current_team.name != payload.name {
+            sqlx::query!(
+                "UPDATE teams SET name = $1 WHERE public_id = $2",
+                payload.name,
+                team_id
+            )
+            .execute(&state.db)
+            .await?;
+        }
+
+        state
+            .email
+            .send_email_change_verification_email(&team_id, &payload.name, &payload.email)
+            .await?;
+
+        Ok(Json(serde_json::json!({
+            "message": "Verification email sent. Please check your inbox to confirm the new email address.",
+            "name": payload.name
+        })))
+    } else {
+        if current_team.name != payload.name {
+            let team = sqlx::query_as!(
+                Team,
+                "UPDATE teams SET name = $1 WHERE public_id = $2 RETURNING *",
+                payload.name,
+                team_id
+            )
+            .fetch_one(&state.db)
+            .await?;
+            Ok(Json(serde_json::json!(team)))
+        } else {
+            let team = sqlx::query_as!(Team, "SELECT * FROM teams WHERE public_id = $1", team_id)
+                .fetch_one(&state.db)
+                .await?;
+            Ok(Json(serde_json::json!(team)))
+        }
+    }
+}
+
+async fn verify_email_update(
+    StateE(state): StateE<State>,
+    Json(VerificationRequest { token }): Json<VerificationRequest>,
+) -> Result<Json<Team>> {
+    let pending_update = state.email.consume_pending_email_update(&token).await?;
 
     let team = sqlx::query_as!(
         Team,
-        "UPDATE teams SET name = $1, email = $2 WHERE public_id = $3 RETURNING *",
-        payload.name,
-        payload.email,
-        team_id
+        "UPDATE teams SET email = $1 WHERE public_id = $2 RETURNING *",
+        pending_update.new_email,
+        pending_update.team_id
     )
     .fetch_one(&state.db)
     .await?;
@@ -126,5 +178,6 @@ async fn profile(
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/update", post(update))
+        .route("/verify_email_update", post(verify_email_update))
         .route("/{id}", get(profile))
 }

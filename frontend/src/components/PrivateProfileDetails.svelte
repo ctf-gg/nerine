@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isError, updateProfile } from "../api";
+  import { isError, updateProfile, type Team } from "../api";
   import TokenReveal from "./TokenReveal.svelte";
 
   const { prof } = $props();
@@ -11,9 +11,18 @@
     e.preventDefault();
 
     const res = await updateProfile(email, name);
-    if (isError(res))
+    if (isError(res)) {
       return alert(`wuh oh! ${res.message}`); // tell user they messed up
-    else window.location.reload();
+    } else if ("message" in res && typeof res.message === "string") {
+      alert(res.message);
+      prof.name = res.name;
+      window.location.reload();
+    } else {
+      const updatedTeam = res as Team;
+      prof.name = updatedTeam.name;
+      prof.email = updatedTeam.email;
+      window.location.reload();
+    }
   };
 </script>
 

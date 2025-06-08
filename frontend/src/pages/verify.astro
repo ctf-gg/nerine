@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { getVerificationDetails, verifyEmail, isError } from "../api";
+import { getVerificationDetails, isError } from "../api";
 
 const url = new URL(Astro.request.url);
 const token = url.searchParams.get("token");
@@ -14,37 +14,72 @@ const detailsRes = await getVerificationDetails(token);
 if (isError(detailsRes)) {
   return Astro.redirect("/register");
 }
+
+let title = "Verify Action";
+let confirmationText = "";
+let buttonText = "Verify";
+let pageVerificationType: "registration" | "email_update";
+
+if (detailsRes.verification_type === "team_registration") {
+  title = "Verify Email for Registration";
+  confirmationText = `Are you sure you want to register team "<strong>${detailsRes.name}</strong>" with email "<strong>${detailsRes.email}</strong>"?`;
+  buttonText = "Verify and Register";
+  pageVerificationType = "registration";
+} else if (detailsRes.verification_type === "email_update") {
+  title = "Verify New Email Address";
+  confirmationText = `Are you sure you want to update your email to "<strong>${detailsRes.new_email}</strong>" for team "<strong>${detailsRes.name}</strong>"?`;
+  buttonText = "Verify Email Update";
+  pageVerificationType = "email_update";
+} else {
+  return Astro.redirect("/register");
+}
 ---
 
 <Layout>
-  <h1 class="heading">Verify Email</h1>
+  <h1 class="heading">{title}</h1>
   <div id="confirmation-section">
-    <p class="confirmation-text">
-      Are you sure you want to register team "<strong id="team-name">{detailsRes.name}</strong>"
-      with email "<strong id="team-email">{detailsRes.email}</strong>"?
-    </p>
-    <form id="verify-form">
-      <button type="submit">Verify and Register</button>
+    <p class="confirmation-text" set:html={confirmationText} />
+    <form
+      id="verify-form"
+      data-client-verification-type={pageVerificationType}
+      data-verification-token={token}
+    >
+      <button type="submit">{buttonText}</button>
     </form>
   </div>
   <script>
-    import { verifyEmail, isError } from "../api";
-    const url = new URL(window.location.href);
-    const token = url.searchParams.get("token");
+    import { verifyEmail, verifyEmailUpdate, isError } from "../api";
 
-    const verifyForm = document.getElementById("verify-form");
+    const verifyForm = document.getElementById(
+      "verify-form",
+    ) as HTMLFormElement;
 
     if (verifyForm) {
+      const clientVerificationType = verifyForm.dataset.clientVerificationType;
+      const verificationToken = verifyForm.dataset.verificationToken;
+
       verifyForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        if (!token) {
+
+        if (!clientVerificationType || !verificationToken) {
+          alert("Missing verification details.");
           window.location.href = "/register";
           return;
         }
 
-        const verifyRes = await verifyEmail(token);
+        let verifyRes;
+        if (clientVerificationType === "registration") {
+          verifyRes = await verifyEmail(verificationToken);
+        } else if (clientVerificationType === "email_update") {
+          verifyRes = await verifyEmailUpdate(verificationToken);
+        } else {
+          alert("Unknown verification type.");
+          window.location.href = "/register";
+          return;
+        }
 
         if (isError(verifyRes)) {
+          alert(`Verification failed: ${verifyRes.message}`);
           window.location.href = "/register";
         } else {
           window.location.href = `/profile/${verifyRes.id}`;

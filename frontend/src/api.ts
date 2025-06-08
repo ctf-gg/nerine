@@ -100,29 +100,38 @@ export const verifyEmail = async (token: string): Promise<TeamId | ApiError> => 
   return (await res.json()) as TeamId | ApiError;
 };
 
-export interface VerificationDetails {
+export interface VerificationDetailsTeamRegistration {
+  verification_type: "team_registration";
   name: string;
   email: string;
 }
 
+export interface VerificationDetailsEmailUpdate {
+  verification_type: "email_update";
+  name: string;
+  new_email: string;
+}
+
+export type VerificationDetails = VerificationDetailsTeamRegistration | VerificationDetailsEmailUpdate;
+
 export const getVerificationDetails = async (
   token: string
-): Promise<VerificationDetails | ApiError> => {
+): Promise<VerificationDetails> => {
   const res = await req("POST", "/auth/verification_details", {
     body: { token },
   });
-  return (await res.json()) as VerificationDetails | ApiError;
+  return (await res.json()) as VerificationDetails;
 };
 
 export const updateProfile = async (
   email: string,
   name: string
-): Promise<Team | ApiError> => {
+): Promise<Team | ApiError | { message: string; name: string }> => {
   const res = await req("POST", "/profile/update", {
     body: { email, name },
   });
-
-  return (await res.json()) as Team | ApiError;
+  const result = await res.json();
+  return result as Team | ApiError | { message: string; name: string };
 };
 
 interface Solve {
@@ -246,4 +255,11 @@ export async function getEvent(): Promise<Event> {
     start_time: new Date(j.start_time),
     end_time: new Date(j.end_time),
   };
+}
+
+export const verifyEmailUpdate = async (token: string): Promise<Team> => {
+  const res = await req("POST", "/profile/verify_email_update", {
+    body: { token },
+  });
+  return (await res.json()) as Team;
 }

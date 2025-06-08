@@ -14,11 +14,23 @@ pub struct PendingTeamVerification {
     pub email: String,
 }
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct PendingEmailUpdate {
+    pub team_id: String,
+    pub new_email: String,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub enum PendingVerification {
+    Team(PendingTeamVerification),
+    EmailUpdate(PendingEmailUpdate),
+}
+
 pub struct EmailService {
     mailer: Option<AsyncSmtpTransport<Tokio1Executor>>,
     from_email: String,
     app_base_url: String,
-    verification_tokens: Mutex<TimedSizedCache<String, PendingTeamVerification>>,
+    verification_tokens: Mutex<TimedSizedCache<String, PendingVerification>>,
 }
 
 impl EmailService {
@@ -78,7 +90,10 @@ impl EmailService {
 
         {
             let mut tokens_cache = self.verification_tokens.lock().unwrap();
-            tokens_cache.cache_set(verification_token.clone(), pending_team_data);
+            tokens_cache.cache_set(
+                verification_token.clone(),
+                PendingVerification::Team(pending_team_data),
+            );
         }
 
         let verification_link =
@@ -99,14 +114,61 @@ impl EmailService {
         token: &str,
     ) -> Result<PendingTeamVerification> {
         let mut tokens_cache = self.verification_tokens.lock().unwrap();
-        tokens_cache
-            .cache_remove(token)
-            .ok_or(crate::error::Error::InvalidToken)
+        match tokens_cache.cache_remove(token) {
+            Some(PendingVerification::Team(data)) => Ok(data),
+            Some(_) => Err(crate::error::Error::InvalidToken),
+            None => Err(crate::error::Error::InvalidToken),
+        }
     }
 
-    pub fn get_pending_verification_details(&self, token: &str) -> Option<PendingTeamVerification> {
+    pub fn get_pending_verification_details(&self, token: &str) -> Option<PendingVerification> {
         let mut tokens_cache = self.verification_tokens.lock().unwrap();
         tokens_cache.cache_get(token).cloned()
+    }
+
+    pub async fn send_email_change_verification_email(
+        &self,
+        team_id: &str,
+        _new_name: &str,
+        to_new_email_addr: &str,
+    ) -> Result<()> {
+        let verification_token = nanoid!();
+
+        let pending_email_update_data = PendingEmailUpdate {
+            team_id: team_id.to_string(),
+            new_email: to_new_email_addr.to_string(),
+        };
+
+        {
+            let mut tokens_cache = self.verification_tokens.lock().unwrap();
+            tokens_cache.cache_set(
+                verification_token.clone(),
+                PendingVerification::EmailUpdate(pending_email_update_data),
+            );
+        }
+
+        let verification_link = format!(
+            "{}/verify?token={}",
+            self.app_base_url, verification_token
+        );
+
+        let subject = "Verify your new email for smileyCTF";
+        let body = format!(
+            "Hello {},\n\nPlease click the link below to verify your new email address for smileyCTF:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
+            _new_name, 
+            verification_link
+        );
+
+        self.send_email(to_new_email_addr, &subject, &body).await
+    }
+
+    pub async fn consume_pending_email_update(&self, token: &str) -> Result<PendingEmailUpdate> {
+        let mut tokens_cache = self.verification_tokens.lock().unwrap();
+        match tokens_cache.cache_remove(token) {
+            Some(PendingVerification::EmailUpdate(data)) => Ok(data),
+            Some(_) => Err(crate::error::Error::InvalidToken),
+            None => Err(crate::error::Error::InvalidToken),
+        }
     }
 
     async fn send_email(&self, to_email: &str, subject: &str, body: &str) -> Result<()> {
