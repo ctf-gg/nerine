@@ -43,6 +43,15 @@ async fn register(
 ) -> Result<(StatusCode, Json<serde_json::Value>)> {
     payload.validate()?;
 
+    let existing_team = sqlx::query("SELECT id FROM teams WHERE name = $1")
+        .bind(&payload.name)
+        .fetch_optional(&state.db)
+        .await?;
+
+    if existing_team.is_some() {
+        return Err(crate::error::Error::TeamNameTaken);
+    }
+
     state
         .email
         .send_verification_email(

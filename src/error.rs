@@ -27,6 +27,8 @@ pub enum Error {
     EventEnded,
     #[error("wrong flag")]
     WrongFlag,
+    #[error("team name already taken")]
+    TeamNameTaken,
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
@@ -67,6 +69,7 @@ impl IntoResponse for Error {
             }
             Error::EventEnded => (StatusCode::UNAUTHORIZED, "event_ended"),
             Error::WrongFlag => (StatusCode::BAD_REQUEST, "wrong_flag"),
+            Error::TeamNameTaken => (StatusCode::BAD_REQUEST, "team_name_taken"),
         };
 
         (status, Json(ErrorResponse { error, message })).into_response()
