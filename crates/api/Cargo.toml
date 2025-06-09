@@ -1,0 +1,33 @@
+[package]
+name = "sctf-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8.3", features = ["macros"] }
+axum-extra = { version = "0.10.1", features = ["cookie"] }
+chrono = { version = "0.4.40", features = ["serde"] }
+dotenvy = "0.15.7"
+envconfig = "0.11.0"
+eyre = "0.6.12"
+jsonwebtoken = "9.3.1"
+lettre = { version = "0.11", features = [
+    "tokio1",
+    "smtp-transport",
+    "tokio1-native-tls",
+] }
+log = { version = "0.4.27", features = ["std"] }
+nanoid = "0.4.0"
+pretty_env_logger = "0.5.0"
+serde = "1.0.219"
+serde_derive = "1.0.219"
+serde_json = "1.0.140"
+sqlx = { version = "0.8.5", features = ["chrono", "postgres", "runtime-tokio"] }
+thiserror = "2.0.12"
+tokio = { version = "1.44.2", features = ["rt-multi-thread"] }
+toml = "0.8.20"
+tower-http = { version = "0.6.4", features = ["cors"] }
+tracing = "0.1.41"
+url = "2.5"
+validator = { version = "0.20.0", features = ["derive"] }
+cached = { version = "0.52.0" }

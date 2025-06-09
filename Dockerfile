@@ -9,10 +9,10 @@ FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN --mount=type=cache,id=cargo,target=/app/target cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN --mount=type=cache,id=cargo,target=/app/target cargo build --release && cp /app/target/release/sctf /app/sctf
+RUN --mount=type=cache,id=cargo,target=/app/target cargo build --bin sctf-api --release && cp /app/target/release/sctf-api /app/sctf-api
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update && apt-get install libssl3 ca-certificates -y
-COPY --from=builder /app/sctf /usr/local/bin/sctf
-CMD ["/usr/local/bin/sctf"]
+COPY --from=builder /app/sctf-api /usr/local/bin/sctf-api
+CMD ["/usr/local/bin/sctf-api"]
