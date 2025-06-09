@@ -87,6 +87,19 @@
       }
     }
 
+    @media (max-width: 1270px) {
+      aside {
+        position: static;
+        margin-bottom: 1rem;
+        h2 {
+          left: 0;
+          top: 0;
+          rotate: 0deg;
+          margin-bottom: 0.5rem;
+        }
+      }
+    }
+
     .detail-contents {
       margin-top: 2rem;
     }
