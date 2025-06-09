@@ -2,7 +2,6 @@
 import { jwtDecode } from "jwt-decode";
 import { isError, profile } from "../api";
 import "../base.css";
-import { ClientRouter } from "astro:transitions";
 
 const token = Astro.cookies.get("token")?.value;
 let currentTeam = token
@@ -41,7 +40,6 @@ if (currentTeam != null && isError(currentTeam)) currentTeam = null;
     <meta property="og:url" content="https://play.ctf.gg" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <ClientRouter />
     <title>smileyCTF</title>
   </head>
   <body>
