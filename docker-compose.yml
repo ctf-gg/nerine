@@ -1,31 +1,8 @@
 services:
-  api:
-    image: sctf
-    restart: unless-stopped
-    ports:
-      - 127.0.0.1:3000:3000
-    volumes:
-      - ./event.toml:/app/event.toml
-    environment:
-      RUST_LOG: debug
-      CORS_ORIGIN: "http://sctf.localhost"
-      DATABASE_URL: postgres://postgres:postgres@db/sctf
-      JWT_SECRET: ZXhhbXBsZV9zZWNyZXQK
-      ADMIN_TOKEN: example_admin_token
-      EVENT_PATH: /app/event.toml
-  frontend:
-    image: sctf-frontend
-    restart: unless-stopped
-    ports:
-      - 127.0.0.1:4321:4321
-    environment:
-      HOST: 0.0.0.0
-      API_BASE: "http://api:3000/api"
   db:
     image: postgres
     restart: unless-stopped
     shm_size: 128mb
-    # temp
     ports:
       - 127.0.0.1:5432:5432
     environment:
