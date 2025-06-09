@@ -12,6 +12,8 @@
     pnpm
     nginx
     postgresql
+    pkg-config
+    openssl.dev
     # for dev
     expect
   ];
