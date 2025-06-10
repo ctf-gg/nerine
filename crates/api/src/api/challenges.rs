@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
     extract::State as StateE,
@@ -6,6 +8,7 @@ use axum::{
 };
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use bitstream_io::{BitRead, BitReader, LittleEndian};
 
 #[derive(Deserialize, Serialize)]
 pub struct PublicChallenge {
@@ -65,6 +68,12 @@ pub async fn list(
 pub struct Submission {
     flag: String,
     challenge_id: String,
+}
+
+
+
+fn leet<R>(flag: String, bits: BitReader<R, LittleEndian>) -> String {
+    "".to_string()
 }
 
 pub async fn submit(
