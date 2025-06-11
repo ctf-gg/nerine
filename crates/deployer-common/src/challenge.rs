@@ -1,33 +1,34 @@
-use std::{collections::HashMap, fs::File as StdFile, path::PathBuf};
-use eyre::{Context, Result};
+use eyre::{Context, Result, eyre};
 use log::info;
+use std::{collections::HashMap, fs::File as StdFile, path::PathBuf};
 
 use futures_util::StreamExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tempdir::TempDir;
 use tokio::fs::{self, File};
 use tokio_util::io::ReaderStream;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Challenge {
     pub id: String,
     pub name: String,
     pub author: String,
     pub description: String,
     pub flag: Flag,
-    pub hidden: Option<bool>,
+    pub group: Option<String>,
+    pub category: String,
     pub provide: Option<Vec<Attachment>>,
     pub container: Option<Container>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Flag {
     Raw(String),
     File { file: PathBuf },
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Attachment {
     File(PathBuf),
@@ -48,21 +49,27 @@ fn default_archive_name() -> String {
     "chall".to_owned()
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Container {
     pub build: PathBuf,
-    pub limits: Limits,
+    pub limits: Option<Limits>,
     pub env: Option<HashMap<String, String>>,
-    pub expose: Option<HashMap<u16, ExposeType>>,
+    pub expose: Option<Expose>, // i don't like vec because it makes things ugly but in the future might be worth it.
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Limits {
     pub cpu: Option<u64>,
     pub mem: Option<u64>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Expose {
+    pub r#type: ExposeType,
+    pub port: u16,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExposeType {
     Tcp,
@@ -83,6 +90,10 @@ pub struct DeployableContext {
     pub image_prefix: String,
 }
 
+pub fn is_valid_id(id: &str) -> bool {
+    id.chars().all(|c| char::is_alphanumeric(c) || c == '-')
+}
+
 impl DeployableChallenge {
     // FIXME(ani): should this even be async
     pub async fn from_root(root: PathBuf) -> Result<Self> {
@@ -91,17 +102,22 @@ impl DeployableChallenge {
             .await
             .with_context(|| format!("Failed to read challenge.toml in {}", root.display()))?;
         let chall = toml::from_str::<Challenge>(&chall_data)?;
-        Ok(Self {
-            chall,
-            root,
-        })
+
+        if !is_valid_id(&chall.id) {
+            return Err(eyre!("Id must be alphanumeric with -"));
+        }
+
+        Ok(Self { chall, root })
     }
 
     fn image_id(&self, ctx: &DeployableContext) -> String {
         format!("{}{}", ctx.image_prefix, self.chall.id)
     }
 
-    pub async fn build(&self, ctx: &DeployableContext) -> Result<Option<Vec<bollard::models::BuildInfo>>> {
+    pub async fn build(
+        &self,
+        ctx: &DeployableContext,
+    ) -> Result<Option<Vec<bollard::models::BuildInfo>>> {
         let Some(chall_container) = &self.chall.container else {
             return Ok(None);
         };
@@ -114,7 +130,12 @@ impl DeployableChallenge {
             let mut tar_ = tar::Builder::new(tar_file);
             let context_dir_path = self.root.join(&chall_container.build);
             tar_.append_dir_all(".", &context_dir_path)
-                .with_context(|| format!("Failed to read Docker context {}", context_dir_path.display()))?;
+                .with_context(|| {
+                    format!(
+                        "Failed to read Docker context {}",
+                        context_dir_path.display()
+                    )
+                })?;
             tar_.finish()?;
         }
 
@@ -127,7 +148,9 @@ impl DeployableChallenge {
         let tar_file_r = File::open(&context_tar_path).await?;
         let tar_file_r = ReaderStream::new(tar_file_r);
         // TODO: support credentials?
-        let mut build = ctx.docker.build_image(options, None, Some(bollard::body_try_stream(tar_file_r)));
+        let mut build =
+            ctx.docker
+                .build_image(options, None, Some(bollard::body_try_stream(tar_file_r)));
         let mut build_infos = vec![];
         while let Some(build_step) = build.next().await {
             let build_step = build_step.context("Docker build image error")?;
