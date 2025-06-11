@@ -10,7 +10,7 @@ use tokio_util::io::ReaderStream;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Challenge {
-    pub slug: String,
+    pub id: String,
     pub name: String,
     pub author: String,
     pub description: String,
@@ -98,7 +98,7 @@ impl DeployableChallenge {
     }
 
     fn image_id(&self, ctx: &DeployableContext) -> String {
-        format!("{}{}", ctx.image_prefix, self.chall.slug)
+        format!("{}{}", ctx.image_prefix, self.chall.id)
     }
 
     pub async fn build(&self, ctx: &DeployableContext) -> Result<Option<Vec<bollard::models::BuildInfo>>> {
@@ -106,7 +106,7 @@ impl DeployableChallenge {
             return Ok(None);
         };
 
-        let tmp = TempDir::new(&self.chall.slug)?;
+        let tmp = TempDir::new(&self.chall.id)?;
         let context_tar_path = tmp.path().join("docker.tar");
         {
             // ugh
