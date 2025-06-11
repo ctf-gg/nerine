@@ -1,2 +1,2 @@
 -- Add down migration script here
-ALTER TABLE challenges DROP COLUMN extra_data;
+ALTER TABLE teams DROP COLUMN extra_data;
