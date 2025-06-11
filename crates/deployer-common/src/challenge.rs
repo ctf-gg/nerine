@@ -1,12 +1,16 @@
 use eyre::{Context, Result, eyre};
 use log::info;
-use serde_with::{serde_as, DisplayFromStr};
-use std::{collections::HashMap, fs::File as StdFile, path::PathBuf};
+use serde_with::{DisplayFromStr, serde_as};
+use std::{
+    collections::HashMap,
+    fs::{self, File as StdFile},
+    path::PathBuf,
+};
 
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use tempdir::TempDir;
-use tokio::fs::{self, File};
+use tokio::fs::File;
 use tokio_util::io::ReaderStream;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -74,7 +78,6 @@ pub struct Limits {
     pub mem: Option<u64>,
 }
 
-
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExposeType {
@@ -84,8 +87,8 @@ pub enum ExposeType {
 
 #[derive(Debug, Clone)]
 pub struct DeployableChallenge {
-    chall: Challenge,
-    root: PathBuf,
+    pub chall: Challenge,
+    pub root: PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -101,11 +104,8 @@ pub fn is_valid_id(id: &str) -> bool {
 }
 
 impl DeployableChallenge {
-    // FIXME(ani): should this even be async
-    pub async fn from_root(root: PathBuf) -> Result<Self> {
+    pub fn from_root(root: PathBuf) -> Result<Self> {
         let chall_data = fs::read_to_string(root.join("challenge.toml"))
-            // ugh
-            .await
             .with_context(|| format!("Failed to read challenge.toml in {}", root.display()))?;
         let chall = toml::from_str::<Challenge>(&chall_data)?;
 

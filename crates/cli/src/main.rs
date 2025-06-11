@@ -6,7 +6,9 @@ use std::{
 };
 
 use clap::{Parser, Subcommand, command};
-use deployer_common::challenge::{is_valid_id, Challenge, Container, ContainerStrategy, ExposeType, Flag};
+use deployer_common::challenge::{
+    is_valid_id, Challenge, Container, ContainerStrategy, DeployableChallenge, DeployableContext, ExposeType, Flag
+};
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::Result;
 use rustyline::DefaultEditor;
@@ -26,11 +28,12 @@ enum Commands {
         #[arg(default_value = ".")]
         path: PathBuf,
     },
+    BuildAll,
 }
 // todo case sensitive or not?
 fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
     for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
-        let current_filename = &entry.file_name().to_str()?;
+        let current_filename = &entry.file_name();
         if filenames.iter().any(|f| f == current_filename) {
             return Some(entry.path().to_owned());
         }
@@ -38,7 +41,8 @@ fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
     None
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command {
         Commands::Init { mut path } => {
@@ -115,17 +119,23 @@ fn main() -> Result<()> {
             };
 
             let container_strategy_selection = Select::with_theme(&SimpleTheme)
-                .with_prompt("Does your container have one instance for everyone, or one instance per team?")
+                .with_prompt(
+                    "Does your container have one instance for everyone, or one instance per team?",
+                )
                 .default(0)
                 .items(&["Static (one for everyone)", "Instanced (one per team)"])
                 .interact()?;
-            let container_strategy = [ContainerStrategy::Static, ContainerStrategy::Instanced][container_strategy_selection];
+            let container_strategy = [ContainerStrategy::Static, ContainerStrategy::Instanced]
+                [container_strategy_selection];
 
             // let mut expose = HashMap::new();
             // expose.insert(expose_port, expose_type);
 
             let container = Some(Container {
-                build: dockerfile_path.strip_prefix(&path).unwrap_or(&dockerfile_path).to_owned(),
+                build: dockerfile_path
+                    .strip_prefix(&path)
+                    .unwrap_or(&dockerfile_path)
+                    .to_owned(),
                 limits: None,
                 env: None,
                 expose: Some({
@@ -158,6 +168,37 @@ fn main() -> Result<()> {
             write!(file, "{}", toml::to_string_pretty(&chall)?)?;
 
             println!("Created {}", path.to_str().unwrap_or("challenge.toml"));
+        }
+        Commands::BuildAll => {
+            let challs: Vec<Result<DeployableChallenge>> = WalkDir::new(".")
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_name() == "challenge.toml")
+                .map(|e| DeployableChallenge::from_root(e.path().parent().unwrap().to_owned()))
+                .collect();
+
+            println!("Building following challenges:");
+            for chall in &challs {
+                match chall {
+                    Ok(c) => println!("{}", c.chall.id),
+                    Err(e) => println!("{}", e),
+                }
+            }
+
+            let valid_challs: Vec<DeployableChallenge> =
+                challs.into_iter().filter_map(|c| c.ok()).collect();
+            let ctx = DeployableContext {
+                docker: bollard::Docker::connect_with_local_defaults()?,
+                docker_credentials: None,
+                image_prefix: "".to_string(),
+            };
+
+            for chall in valid_challs {
+                println!("building chall {}", chall.chall.id);
+                chall.build(&ctx).await?;
+                println!("pushing chall {}", chall.chall.id);
+                chall.push(&ctx).await?;
+            }
         }
     }
     Ok(())
