@@ -8,6 +8,10 @@ on:
 
 jobs:
   cli-build:
+    permissions:
+      contents: read
+      actions: write
+
     strategy:
       matrix:
         platform:
