@@ -171,6 +171,17 @@ impl EmailService {
         }
     }
 
+    pub async fn send_resend_token_email(&self, to_email: &str, team_name_display: &str, token: &str) -> Result<()> {
+        let subject = "Your team token for smileyCTF";
+        let body = format!(
+            "Hello {},\n\nHere is your team token for logging into smileyCTF:\n{}\n\nPlease keep it safe and do not share it with anyone outside your team.\n\nIf you did not request this, please ignore this email.",
+            team_name_display,
+            token,
+        );
+
+        self.send_email(to_email, &subject, &body).await
+    }
+
     async fn send_email(&self, to_email: &str, subject: &str, body: &str) -> Result<()> {
         if let Some(ref mailer) = self.mailer {
             let email = Message::builder()
