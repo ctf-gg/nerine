@@ -1,5 +1,6 @@
 use eyre::{Context, Result, eyre};
 use log::info;
+use serde_with::{serde_as, DisplayFromStr};
 use std::{collections::HashMap, fs::File as StdFile, path::PathBuf};
 
 use futures_util::StreamExt;
@@ -49,12 +50,14 @@ fn default_archive_name() -> String {
     "chall".to_owned()
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Container {
     pub build: PathBuf,
     pub limits: Option<Limits>,
     pub env: Option<HashMap<String, String>>,
-    pub expose: Option<Expose>, // i don't like vec because it makes things ugly but in the future might be worth it.
+    #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
+    pub expose: Option<HashMap<u16, ExposeType>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -63,13 +66,8 @@ pub struct Limits {
     pub mem: Option<u64>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Expose {
-    pub r#type: ExposeType,
-    pub port: u16,
-}
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExposeType {
     Tcp,

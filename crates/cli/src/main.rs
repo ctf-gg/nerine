@@ -6,7 +6,7 @@ use std::{
 };
 
 use clap::{Parser, Subcommand, command};
-use deployer_common::challenge::{Challenge, Container, Expose, ExposeType, Flag, is_valid_id};
+use deployer_common::challenge::{Challenge, Container, ExposeType, Flag, is_valid_id};
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::Result;
 use rustyline::DefaultEditor;
@@ -119,12 +119,13 @@ fn main() -> Result<()> {
             // expose.insert(expose_port, expose_type);
 
             let container = Some(Container {
-                build: dockerfile_path.strip_prefix(&path)?.to_owned(),
+                build: dockerfile_path.strip_prefix(&path).unwrap_or(&dockerfile_path).to_owned(),
                 limits: None,
                 env: None,
-                expose: Some(Expose {
-                    r#type: expose_type,
-                    port: expose_port,
+                expose: Some({
+                    let mut m = HashMap::new();
+                    m.insert(expose_port, expose_type);
+                    m
                 }),
             });
 
