@@ -53,3 +53,4 @@ jobs:
         with:
           executable-name: sctf-cli
           target: ${{ matrix.platform.target }}
+          changes-file: ""
