@@ -3,6 +3,11 @@
 sudo -v || exit 1
 command -v expect &>/dev/null || (echo "missing expect" && exit 1)
 
+echo "Building api..."
+cargo build --bin sctf-api
+echo "Installing frontend deps..."
+(cd frontend && pnpm i)
+
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 # create some fds
