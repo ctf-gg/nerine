@@ -6,7 +6,7 @@ use std::{
 };
 
 use clap::{Parser, Subcommand, command};
-use deployer_common::challenge::{Challenge, Container, ExposeType, Flag, is_valid_id};
+use deployer_common::challenge::{is_valid_id, Challenge, Container, ContainerStrategy, ExposeType, Flag};
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::Result;
 use rustyline::DefaultEditor;
@@ -101,8 +101,7 @@ fn main() -> Result<()> {
                 .default(0)
                 .items(&["TCP", "HTTP"])
                 .interact()?;
-            let expose_type: ExposeType =
-                [ExposeType::Tcp, ExposeType::Http][expose_type_selection].clone();
+            let expose_type = [ExposeType::Tcp, ExposeType::Http][expose_type_selection];
 
             let expose_port: u16 = {
                 loop {
@@ -114,6 +113,13 @@ fn main() -> Result<()> {
                     }
                 }
             };
+
+            let container_strategy_selection = Select::with_theme(&SimpleTheme)
+                .with_prompt("Does your container have one instance for everyone, or one instance per team?")
+                .default(0)
+                .items(&["Static (one for everyone)", "Instanced (one per team)"])
+                .interact()?;
+            let container_strategy = [ContainerStrategy::Static, ContainerStrategy::Instanced][container_strategy_selection];
 
             // let mut expose = HashMap::new();
             // expose.insert(expose_port, expose_type);
@@ -127,6 +133,7 @@ fn main() -> Result<()> {
                     m.insert(expose_port, expose_type);
                     m
                 }),
+                strategy: container_strategy,
             });
 
             let chall = Challenge {

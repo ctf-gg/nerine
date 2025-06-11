@@ -58,6 +58,14 @@ pub struct Container {
     pub env: Option<HashMap<String, String>>,
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
+    pub strategy: ContainerStrategy,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ContainerStrategy {
+    Static,
+    Instanced,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
