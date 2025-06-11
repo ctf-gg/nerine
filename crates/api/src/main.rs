@@ -8,7 +8,6 @@ mod admin;
 mod api;
 mod config;
 mod db;
-mod deploy;
 mod email;
 mod error;
 mod event;
