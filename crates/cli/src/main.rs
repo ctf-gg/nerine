@@ -8,10 +8,11 @@ use std::{
 use bollard::auth::DockerCredentials;
 use clap::{Parser, Subcommand, command};
 use deployer_common::challenge::{
-    is_valid_id, Challenge, Container, ContainerStrategy, DeployableChallenge, DeployableContext, ExposeType, Flag
+    Challenge, Container, ContainerStrategy, DeployableChallenge, DeployableContext, ExposeType,
+    Flag, is_valid_id,
 };
 use dialoguer::{Select, theme::SimpleTheme};
-use eyre::Result;
+use eyre::{Result, eyre};
 use rustyline::DefaultEditor;
 use walkdir::WalkDir;
 
@@ -56,7 +57,7 @@ async fn main() -> Result<()> {
                     p.replace("./", "")
                         .replace("/", "-")
                         .trim_matches('-')
-                        .to_string()
+                        .to_ascii_lowercase()
                 })
                 .filter(|p| is_valid_id(p));
 
@@ -175,24 +176,44 @@ async fn main() -> Result<()> {
                 .into_iter()
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_name() == "challenge.toml")
-                .map(|e| DeployableChallenge::from_root(e.path().parent().unwrap().to_owned()))
+                .map(|e| {
+                    DeployableChallenge::from_root(e.path().parent().unwrap().to_owned()).map_err(
+                        |err| {
+                            eyre!(
+                                "at {}:\n{}",
+                                e.path().to_str().unwrap().to_string(),
+                                err.to_string()
+                            )
+                        },
+                    )
+                })
                 .collect();
-
-            println!("Building following challenges:");
-            for chall in &challs {
-                match chall {
-                    Ok(c) => println!("{}", c.chall.id),
-                    Err(e) => println!("{}", e),
-                }
+            let parse_errors = challs.iter().filter_map(|c| c.as_ref().err());
+            if parse_errors.size_hint().1 > Some(0) {
+                println!("Toml errors:");
+            }
+            for err in parse_errors {
+                println!("{}", err)
             }
 
-            let valid_challs: Vec<DeployableChallenge> =
-                challs.into_iter().filter_map(|c| c.ok()).collect();
+            let valid_challs: Vec<DeployableChallenge> = challs
+                .into_iter()
+                .filter_map(|c| c.ok())
+                .filter(|c| c.chall.container.is_some())
+                .collect();
+            println!("Building following challenges:");
+            for chall in &valid_challs {
+                println!("{}", chall.chall.id)
+            }
+
             let ctx = DeployableContext {
                 docker: bollard::Docker::connect_with_local_defaults()?,
                 docker_credentials: Some(DockerCredentials {
                     username: Some("_json_key".to_string()),
-                    password: Some(std::fs::read_to_string("service-account-key.json")?),
+                    password: Some(
+                        std::fs::read_to_string("service-account-key.json")
+                            .expect("Missing service-account-key.json in working directory"),
+                    ),
                     email: None,
                     serveraddress: Some("gcr.io".to_string()),
                     ..Default::default()

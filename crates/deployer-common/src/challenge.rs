@@ -47,6 +47,7 @@ pub enum Attachment {
         // without archive extension
         #[serde(default = "default_archive_name")]
         r#as: String,
+        #[serde(default)]
         exclude: Option<Vec<PathBuf>>,
     },
 }
@@ -63,7 +64,12 @@ pub struct Container {
     pub env: Option<HashMap<String, String>>,
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
+    #[serde(default = "default_strategy")]
     pub strategy: ContainerStrategy,
+}
+
+fn default_strategy() -> ContainerStrategy {
+    ContainerStrategy::Static
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
@@ -101,7 +107,7 @@ pub struct DeployableContext {
 }
 
 pub fn is_valid_id(id: &str) -> bool {
-    id.chars().all(|c| char::is_alphanumeric(c) || c == '-')
+    id.chars().all(|c| (!c.is_uppercase() && c.is_alphanumeric()) || c == '-')
 }
 
 impl DeployableChallenge {
@@ -154,7 +160,6 @@ impl DeployableChallenge {
             .build();
         let tar_file_r = File::open(&context_tar_path).await?;
         let tar_file_r = ReaderStream::new(tar_file_r);
-        // TODO: support credentials?
         let mut build =
             ctx.docker
                 .build_image(options, None, Some(bollard::body_try_stream(tar_file_r)));
