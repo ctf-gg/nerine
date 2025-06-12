@@ -10,6 +10,7 @@ import Layout from "../layouts/Layout.astro";
 
     <input type="text" name="token" id="token" placeholder="token" />
     <button type="submit">login</button>
+    <a href="/recover">lost token?</a>
   </form>
 
   <script>
@@ -33,6 +34,12 @@ import Layout from "../layouts/Layout.astro";
     flex-direction: column;
     input {
       margin-bottom: 1rem;
+    }
+    button {
+      margin-bottom: 2rem;
+    }
+    a {
+      text-align: center;
     }
   }
 </style>

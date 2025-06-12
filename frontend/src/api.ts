@@ -263,3 +263,14 @@ export const verifyEmailUpdate = async (token: string): Promise<Team> => {
   });
   return (await res.json()) as Team;
 }
+
+
+export async function resendToken(email: string) {
+  await fetch(`/api/auth/resend_token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  });
+}

@@ -37,6 +37,12 @@ pub struct Team {
     pub extra_data: serde_json::Value,
 }
 
+#[derive(Deserialize, Validate)]
+pub struct ResendTokenRequest {
+    #[validate(email)]
+    pub email: String,
+}
+
 async fn register(
     StateE(state): StateE<State>,
     Json(payload): Json<TeamInfo>,
@@ -189,6 +195,31 @@ async fn login(
     Ok((jar.add(cookie), Json(TeamId { id: claims.team_id })))
 }
 
+async fn resend_token_handler(
+    StateE(state): StateE<State>,
+    Json(payload): Json<ResendTokenRequest>,
+) -> Result<StatusCode> {
+    payload.validate()?;
+
+    let team = sqlx::query_as!(
+        Team,
+        "SELECT id, public_id, name, email, created_at, extra_data FROM teams WHERE email = $1",
+        payload.email
+    )
+    .fetch_optional(&state.db)
+    .await?;
+
+    if let Some(team) = team {
+        let jwt = generate_jwt(&state.config.jwt_keys, &team.public_id, Duration::days(30))?;
+        state
+            .email
+            .send_resend_token_email(&team.email, &team.name, &jwt)
+            .await?;
+    }
+
+    Ok(StatusCode::OK)
+}
+
 pub fn router() -> Router<State> {
     Router::new()
         .route("/register", post(register))
@@ -196,4 +227,5 @@ pub fn router() -> Router<State> {
         .route("/verify_email", post(verify_email))
         .route("/gen_token", get(gen_token))
         .route("/verification_details", post(get_verification_details))
+        .route("/resend_token", post(resend_token_handler))
 }
