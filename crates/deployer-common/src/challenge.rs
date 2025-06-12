@@ -144,6 +144,7 @@ impl DeployableChallenge {
             // ugh
             let tar_file = StdFile::create(&context_tar_path)?;
             let mut tar_ = tar::Builder::new(tar_file);
+            tar_.sparse(false);
             let context_dir_path = self.root.join(&chall_container.build);
             tar_.append_dir_all(".", &context_dir_path)
                 .with_context(|| {

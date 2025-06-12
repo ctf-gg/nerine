@@ -253,7 +253,7 @@ async fn main() -> Result<()> {
                         println!("pushing chall {}", chall.chall.id);
                         chall.push(&ctx).await?;
                     }
-                    Err(e) => eprintln!("failed to build {}: {e}", chall.chall.id),
+                    Err(e) => eprintln!("failed to build {}: {e:?}", chall.chall.id),
                 };
             }
         }
