@@ -35,7 +35,7 @@ async fn main() -> eyre::Result<()> {
         .connect(&cfg.database_url)
         .await?;
 
-    sqlx::migrate!().run(&pool).await?;
+    sqlx::migrate!("../../migrations").run(&pool).await?;
 
     let cors = CorsLayer::new()
         .allow_methods(Any)
