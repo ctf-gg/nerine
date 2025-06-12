@@ -49,7 +49,7 @@ jobs:
         with:
           command: build
           target: ${{ matrix.platform.target }}
-          args: "--locked --release -p sctf-cli"
+          args: "--locked --release --bin sctf-cli"
           strip: true
 
       - name: Publish artifacts
