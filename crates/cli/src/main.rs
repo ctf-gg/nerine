@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bollard::auth::DockerCredentials;
 use clap::{Parser, Subcommand, command};
 use deployer_common::challenge::{
     is_valid_id, Challenge, Container, ContainerStrategy, DeployableChallenge, DeployableContext, ExposeType, Flag
@@ -189,7 +190,13 @@ async fn main() -> Result<()> {
                 challs.into_iter().filter_map(|c| c.ok()).collect();
             let ctx = DeployableContext {
                 docker: bollard::Docker::connect_with_local_defaults()?,
-                docker_credentials: None,
+                docker_credentials: Some(DockerCredentials {
+                    username: Some("_json_key".to_string()),
+                    password: Some(std::fs::read_to_string("service-account-key.json")?),
+                    email: None,
+                    serveraddress: Some("gcr.io".to_string()),
+                    ..Default::default()
+                }),
                 image_prefix: "".to_string(),
             };
 

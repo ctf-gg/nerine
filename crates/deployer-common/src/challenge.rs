@@ -1,3 +1,4 @@
+use bollard::{image::CreateImageOptions, query_parameters::CreateImageOptionsBuilder};
 use eyre::{Context, Result, eyre};
 use log::info;
 use serde_with::{DisplayFromStr, serde_as};
@@ -180,6 +181,23 @@ impl DeployableChallenge {
         while let Some(push_step) = push.next().await {
             let push_step = push_step.context("Docker image push error")?;
             info!("{:?}", push_step);
+        }
+
+        Ok(())
+    }
+
+    pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
+        let options = CreateImageOptionsBuilder::new()
+            .repo("gcr.io")
+            .from_src(&self.image_id(ctx))
+            .build();
+        let mut pull = ctx
+            .docker
+            .create_image(Some(options), None, ctx.docker_credentials.clone());
+
+        while let Some(pull_step) = pull.next().await {
+            let pull_step = pull_step.context("Docker image push error")?;
+            info!("{:?}", pull_step);
         }
 
         Ok(())
