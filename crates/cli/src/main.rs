@@ -250,7 +250,7 @@ async fn main() -> Result<()> {
                 .into_iter()
                 .filter_map(|c| c.ok())
                 .filter(|c| c.chall.container.is_some())
-                .filter(|c| all || paths.len() > 0 || c.chall.build_group == build_group)
+                .filter(|c| all || c.chall.build_group == build_group)
                 .collect();
             println!("Building following challenges:");
             for chall in &valid_challs {
@@ -274,6 +274,7 @@ async fn main() -> Result<()> {
 
             for chall in valid_challs {
                 println!("building chall {}", chall.chall.id);
+                // TODO i suspect this might not be working
                 chall.pull(&ctx).await?;
                 match chall.build(&ctx).await {
                     Ok(_) => {
