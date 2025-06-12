@@ -7,20 +7,20 @@ use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
 #[derive(Deserialize, Serialize)]
-struct Challenge {
-    id: i32,
-    public_id: String,
-    name: String,
-    author: String,
-    description: String,
-    points_min: i32,
-    points_max: i32,
-    flag: String,
-    attachments: serde_json::Value,
-    visible: bool,
+pub struct Challenge {
+    pub id: i32,
+    pub public_id: String,
+    pub name: String,
+    pub author: String,
+    pub description: String,
+    pub points_min: i32,
+    pub points_max: i32,
+    pub flag: String,
+    pub attachments: serde_json::Value,
+    pub visible: bool,
 
-    category: Category,
-    group: Option<ChallengeGroup>,
+    pub category: Category,
+    pub group: Option<ChallengeGroup>,
 }
 
 impl FromRow<'_, PgRow> for Challenge {
@@ -52,15 +52,15 @@ impl FromRow<'_, PgRow> for Challenge {
     }
 }
 #[derive(Deserialize, Serialize)]
-struct Category {
-    id: i32,
-    name: String,
+pub struct Category {
+    pub id: i32,
+    pub name: String,
 }
 
 #[derive(Deserialize, Serialize)]
-struct ChallengeGroup {
-    id: i32,
-    name: String,
+pub struct ChallengeGroup {
+    pub id: i32,
+    pub name: String,
 }
 
 async fn get_challenges(
@@ -95,18 +95,18 @@ async fn get_challenges(
 }
 
 #[derive(Deserialize)]
-struct UpsertChallenge {
-    id: Option<String>,
-    name: String,
-    author: String,
-    description: String,
-    points_min: i32,
-    points_max: i32,
-    flag: String,
-    attachments: serde_json::Value,
-    visible: bool,
+pub struct UpsertChallenge {
+    pub id: Option<String>,
+    pub name: String,
+    pub author: String,
+    pub description: String,
+    pub points_min: i32,
+    pub points_max: i32,
+    pub flag: String,
+    pub attachments: serde_json::Value,
+    pub visible: bool,
 
-    category_id: i32,
+    pub category_id: i32,
 }
 
 async fn upsert_challenge(

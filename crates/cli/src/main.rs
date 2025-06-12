@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    env,
     fs::File,
     io::Write,
     path::{Path, PathBuf},
@@ -33,6 +34,10 @@ enum Commands {
     },
     Build {
         #[arg()]
+        paths: Vec<PathBuf>,
+
+        /// Specifies which build group to use
+        #[arg(short = 'g', long)]
         build_group: Option<String>,
 
         /// Builds all challenges regardless of build group
@@ -43,6 +48,16 @@ enum Commands {
         #[arg(short, long)]
         strict: bool,
     },
+
+    Platform {
+        #[command(subcommand)]
+        command: PlatformCommands,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum PlatformCommands {
+    Update,
 }
 // todo case sensitive or not?
 fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
@@ -55,9 +70,12 @@ fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
     None
 }
 
+// fn get_all_challs() -> Vec<DeployableChallenge> {}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::init();
+    _ = dotenvy::dotenv(); // we don't care whether its there or not
     let args = Cli::parse();
     match args.command {
         Commands::Init { mut path } => {
@@ -186,28 +204,38 @@ async fn main() -> Result<()> {
             println!("Created {}", path.to_str().unwrap_or("challenge.toml"));
         }
         Commands::Build {
+            paths,
             build_group,
             all,
             strict,
         } => {
-            let challs: Vec<Result<DeployableChallenge>> = WalkDir::new(".")
+            let chall_paths: Vec<PathBuf> = if paths.len() == 0 {
+                WalkDir::new(".")
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.file_name() == "challenge.toml")
+                    .map(|e| e.path().parent().unwrap().to_owned())
+                    .collect()
+            } else {
+                paths.clone()
+            };
+
+            let challs: Vec<Result<DeployableChallenge>> = chall_paths
                 .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.file_name() == "challenge.toml")
-                .map(|e| {
-                    DeployableChallenge::from_root(e.path().parent().unwrap().to_owned()).map_err(
-                        |err| {
-                            eyre!(
-                                "at {}:\n{}",
-                                e.path().to_str().unwrap().to_string(),
-                                err.to_string()
-                            )
-                        },
-                    )
+                .map(|p| {
+                    DeployableChallenge::from_root(p.clone()).map_err(|err| {
+                        eyre!(
+                            "at {}:\n{}",
+                            p.join("challenge.toml").to_str().unwrap().to_string(),
+                            err.to_string()
+                        )
+                    })
                 })
                 .collect();
-            let parse_errors = challs.iter().filter_map(|c| c.as_ref().err());
-            if parse_errors.size_hint().1 > Some(0) {
+
+            let parse_errors: Vec<&eyre::ErrReport> =
+                challs.iter().filter_map(|c| c.as_ref().err()).collect();
+            if parse_errors.len() > 0 {
                 eprintln!("Toml errors:");
                 for err in parse_errors {
                     eprintln!("{}", err)
@@ -222,7 +250,7 @@ async fn main() -> Result<()> {
                 .into_iter()
                 .filter_map(|c| c.ok())
                 .filter(|c| c.chall.container.is_some())
-                .filter(|c| all || c.chall.build_group == build_group)
+                .filter(|c| all || paths.len() > 0 || c.chall.build_group == build_group)
                 .collect();
             println!("Building following challenges:");
             for chall in &valid_challs {
@@ -231,23 +259,22 @@ async fn main() -> Result<()> {
 
             let ctx = DeployableContext {
                 docker: bollard::Docker::connect_with_local_defaults()?,
+                // TODO if something not found, default to None
                 docker_credentials: Some(DockerCredentials {
-                    username: Some("_json_key".to_string()),
-                    password: Some(
-                        std::fs::read_to_string("service-account-key.json")
-                            .expect("Missing service-account-key.json in working directory"),
-                    ),
+                    username: Some(env::var("DOCKER_USERNAME")?),
+                    password: Some(env::var("DOCKER_PASSWORD")?),
                     email: None,
-                    serveraddress: Some("https://us-central1-docker.pkg.dev".to_string()),
+                    serveraddress: Some(env::var("DOCKER_SERVERADDRESS")?),
                     ..Default::default()
                 }),
                 // docker_credentials: None,
                 image_prefix: "".to_string(),
-                registry: "us-central1-docker.pkg.dev/eternal-respect-454600-c7/sctf-challs".to_string(),
+                repo: env::var("DOCKER_REPO")?,
             };
 
             for chall in valid_challs {
                 println!("building chall {}", chall.chall.id);
+                chall.pull(&ctx).await?;
                 match chall.build(&ctx).await {
                     Ok(_) => {
                         println!("pushing chall {}", chall.chall.id);
@@ -257,6 +284,9 @@ async fn main() -> Result<()> {
                 };
             }
         }
+        Commands::Platform { command } => match command {
+            PlatformCommands::Update => {}
+        },
     }
     Ok(())
 }

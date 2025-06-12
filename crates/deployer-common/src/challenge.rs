@@ -21,6 +21,8 @@ pub struct Challenge {
     pub author: String,
     pub description: String,
     pub flag: Flag,
+    // TODO in the future we should make this one, each challenge can belong to multiple groups
+    // and if a group is marked as a build group it will be excluded by default.
     pub group: Option<String>,
     pub build_group: Option<String>,
     pub category: String,
@@ -105,7 +107,7 @@ pub struct DeployableContext {
     pub docker: bollard::Docker,
     pub docker_credentials: Option<bollard::auth::DockerCredentials>,
     pub image_prefix: String,
-    pub registry: String,
+    pub repo: String,
 }
 
 pub fn is_valid_id(id: &str) -> bool {
@@ -120,14 +122,14 @@ impl DeployableChallenge {
         let chall = toml::from_str::<Challenge>(&chall_data)?;
 
         if !is_valid_id(&chall.id) {
-            return Err(eyre!("Id must be alphanumeric with -"));
+            return Err(eyre!("Id must be lowercase alphanumeric with -"));
         }
 
         Ok(Self { chall, root })
     }
 
     fn image_id(&self, ctx: &DeployableContext) -> String {
-        format!("{}/{}{}", ctx.registry, ctx.image_prefix, self.chall.id)
+        format!("{}/{}{}", ctx.repo, ctx.image_prefix, self.chall.id)
     }
 
     pub async fn build(
@@ -197,8 +199,7 @@ impl DeployableChallenge {
 
     pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
         let options = CreateImageOptionsBuilder::new()
-            .repo("gcr.io")
-            .from_src(&self.image_id(ctx))
+            .from_image(&self.image_id(ctx))
             .build();
         let mut pull = ctx
             .docker
