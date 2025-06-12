@@ -1,4 +1,4 @@
-use bollard::{image::CreateImageOptions, query_parameters::CreateImageOptionsBuilder};
+use bollard::query_parameters::CreateImageOptionsBuilder;
 use eyre::{Context, Result, eyre};
 use log::info;
 use serde_with::{DisplayFromStr, serde_as};
@@ -22,6 +22,7 @@ pub struct Challenge {
     pub description: String,
     pub flag: Flag,
     pub group: Option<String>,
+    pub build_group: Option<String>,
     pub category: String,
     pub provide: Option<Vec<Attachment>>,
     pub container: Option<Container>,
@@ -107,7 +108,8 @@ pub struct DeployableContext {
 }
 
 pub fn is_valid_id(id: &str) -> bool {
-    id.chars().all(|c| (!c.is_uppercase() && c.is_alphanumeric()) || c == '-')
+    id.chars()
+        .all(|c| (!c.is_uppercase() && c.is_alphanumeric()) || c == '-')
 }
 
 impl DeployableChallenge {

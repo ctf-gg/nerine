@@ -3,6 +3,7 @@ use std::{
     fs::File,
     io::Write,
     path::{Path, PathBuf},
+    process::exit,
 };
 
 use bollard::auth::DockerCredentials;
@@ -30,7 +31,18 @@ enum Commands {
         #[arg(default_value = ".")]
         path: PathBuf,
     },
-    BuildAll,
+    Build {
+        #[arg()]
+        build_group: Option<String>,
+
+        /// Builds all challenges regardless of build group
+        #[arg(short, long)]
+        all: bool,
+
+        /// Exits without building if there are any toml parse errors
+        #[arg(short, long)]
+        strict: bool,
+    },
 }
 // todo case sensitive or not?
 fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
@@ -154,6 +166,7 @@ async fn main() -> Result<()> {
                 flag,
                 author: "You!".to_string(),
                 group: None,
+                build_group: None,
                 category: path
                     .parent()
                     .and_then(|p| p.file_name())
@@ -171,7 +184,11 @@ async fn main() -> Result<()> {
 
             println!("Created {}", path.to_str().unwrap_or("challenge.toml"));
         }
-        Commands::BuildAll => {
+        Commands::Build {
+            build_group,
+            all,
+            strict,
+        } => {
             let challs: Vec<Result<DeployableChallenge>> = WalkDir::new(".")
                 .into_iter()
                 .filter_map(|e| e.ok())
@@ -190,16 +207,23 @@ async fn main() -> Result<()> {
                 .collect();
             let parse_errors = challs.iter().filter_map(|c| c.as_ref().err());
             if parse_errors.size_hint().1 > Some(0) {
-                println!("Toml errors:");
-            }
-            for err in parse_errors {
-                println!("{}", err)
+                eprintln!("Toml errors:");
+                for err in parse_errors {
+                    eprintln!("{}", err)
+                }
+                if strict {
+                    eprintln!("Errors found with strict mode enabled. Exiting.");
+                    exit(1);
+                }
             }
 
             let valid_challs: Vec<DeployableChallenge> = challs
                 .into_iter()
                 .filter_map(|c| c.ok())
                 .filter(|c| c.chall.container.is_some())
+                .filter(|c| {
+                    all || c.chall.build_group == build_group
+                })
                 .collect();
             println!("Building following challenges:");
             for chall in &valid_challs {
