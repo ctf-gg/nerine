@@ -868,6 +868,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast32"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a35a73237400bde66c82e38387343f90d7182a2f2f22729e096a2abd57d75db9"
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2541,6 +2547,28 @@ dependencies = [
  "tokio",
  "tokio-util",
  "toml",
+]
+
+[[package]]
+name = "sctf-deployer-server"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bollard",
+ "chrono",
+ "dotenvy",
+ "envconfig",
+ "eyre",
+ "fast32",
+ "log",
+ "pretty_env_logger",
+ "sctf-deployer-common",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "thiserror 2.0.12",
+ "tokio",
 ]
 
 [[package]]

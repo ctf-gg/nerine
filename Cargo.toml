@@ -3,5 +3,5 @@ resolver = "3"
 members = [
   "crates/api",
   "crates/deployer-common",
-  "crates/cli",
+  "crates/cli", "crates/deployer-server",
 ]
