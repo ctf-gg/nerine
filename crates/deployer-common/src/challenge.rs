@@ -105,6 +105,7 @@ pub struct DeployableContext {
     pub docker: bollard::Docker,
     pub docker_credentials: Option<bollard::auth::DockerCredentials>,
     pub image_prefix: String,
+    pub registry: String,
 }
 
 pub fn is_valid_id(id: &str) -> bool {
@@ -126,7 +127,7 @@ impl DeployableChallenge {
     }
 
     fn image_id(&self, ctx: &DeployableContext) -> String {
-        format!("{}{}", ctx.image_prefix, self.chall.id)
+        format!("{}/{}{}", ctx.registry, ctx.image_prefix, self.chall.id)
     }
 
     pub async fn build(

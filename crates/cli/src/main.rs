@@ -57,6 +57,7 @@ fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    env_logger::init();
     let args = Cli::parse();
     match args.command {
         Commands::Init { mut path } => {
@@ -108,10 +109,10 @@ async fn main() -> Result<()> {
                         "Found {}, using as container Dockerfile",
                         docker_path.to_string_lossy()
                     );
-                    docker_path
+                    docker_path.parent().unwrap().to_owned()
                 } else {
-                    println!("No Dockerfile found, defaulting to ./Dockerfile");
-                    PathBuf::from("./Dockerfile")
+                    println!("No Dockerfile found, defaulting to ./");
+                    PathBuf::from(".")
                 };
 
             let expose_type_selection = Select::with_theme(&SimpleTheme)
@@ -221,9 +222,7 @@ async fn main() -> Result<()> {
                 .into_iter()
                 .filter_map(|c| c.ok())
                 .filter(|c| c.chall.container.is_some())
-                .filter(|c| {
-                    all || c.chall.build_group == build_group
-                })
+                .filter(|c| all || c.chall.build_group == build_group)
                 .collect();
             println!("Building following challenges:");
             for chall in &valid_challs {
@@ -239,17 +238,23 @@ async fn main() -> Result<()> {
                             .expect("Missing service-account-key.json in working directory"),
                     ),
                     email: None,
-                    serveraddress: Some("gcr.io".to_string()),
+                    serveraddress: Some("https://us-central1-docker.pkg.dev".to_string()),
                     ..Default::default()
                 }),
+                // docker_credentials: None,
                 image_prefix: "".to_string(),
+                registry: "us-central1-docker.pkg.dev/eternal-respect-454600-c7/sctf-challs".to_string(),
             };
 
             for chall in valid_challs {
                 println!("building chall {}", chall.chall.id);
-                chall.build(&ctx).await?;
-                println!("pushing chall {}", chall.chall.id);
-                chall.push(&ctx).await?;
+                match chall.build(&ctx).await {
+                    Ok(_) => {
+                        println!("pushing chall {}", chall.chall.id);
+                        chall.push(&ctx).await?;
+                    }
+                    Err(e) => eprintln!("failed to build {}: {e}", chall.chall.id),
+                };
             }
         }
     }
