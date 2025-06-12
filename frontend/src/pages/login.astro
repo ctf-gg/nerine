@@ -1,35 +1,125 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { profile, isError } from "../api";
+import { jwtDecode } from "jwt-decode";
+
+let showAutoLogin = false;
+let teamName: string | null = null;
+let autoLoginToken: string | null = null;
+
+const url = new URL(Astro.request.url);
+const urlToken = url.searchParams.get("token");
+
+if (urlToken) {
+  autoLoginToken = urlToken;
+  const decodedToken = jwtDecode<{ team_id: string }>(urlToken);
+  const teamId = decodedToken.team_id;
+
+  if (teamId) {
+    const profileRes = await profile(teamId, urlToken);
+
+    if (!isError(profileRes)) {
+      teamName = profileRes.name;
+      showAutoLogin = true;
+    }
+  }
+}
 ---
 
 <Layout>
-  <h1 class="heading">Login</h1>
-
-  <form id="login">
-    <label for="token">Token:</label>
-
-    <input type="text" name="token" id="token" placeholder="token" />
-    <button type="submit">login</button>
-    <a href="/recover">lost token?</a>
-  </form>
+  {
+    showAutoLogin && teamName && autoLoginToken ? (
+      <h1 class="heading">Confirm Login</h1>
+      <div id="autologin-confirmation-section">
+        <p
+          class="confirmation-text"
+          set:html={`Are you sure you want to log in as <strong>${teamName}</strong>?`}
+        />
+        <form id="autologin-form" data-token={autoLoginToken}>
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    ) : (
+      <h1 class="heading">Login</h1>
+      <form id="manual-login-form">
+        <label for="manual-token-input">Token:</label>
+        <input
+          type="text"
+          name="token"
+          id="manual-token-input"
+          placeholder="token"
+        />
+        <button type="submit">Login</button>
+        <a href="/recover">Lost token?</a>
+      </form>
+    )
+  }
 
   <script>
     import { login, isError } from "../api";
-    const loginForm = document.getElementById("login")! as HTMLFormElement;
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(loginForm);
 
-      const res = await login(formData.get("token") as string);
-      if (isError(res))
-        return alert(`wuh oh! ${res.message}`); // tell user they messed up
-      else window.location.href = `/profile/${res.id}`;
-    });
+    const autoLoginForm = document.getElementById(
+      "autologin-form",
+    ) as HTMLFormElement | null;
+    const manualLoginForm = document.getElementById(
+      "manual-login-form",
+    ) as HTMLFormElement | null;
+
+    if (autoLoginForm) {
+      const token = autoLoginForm.dataset.token;
+      autoLoginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const res = await login(token!);
+        if (isError(res)) {
+          alert(`Login failed: ${res.message}`);
+          window.location.search = "";
+        } else {
+          window.location.href = `/profile/${res.id}`;
+        }
+      });
+    }
+
+    if (manualLoginForm) {
+      manualLoginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(manualLoginForm);
+        const tokenInput = formData.get("token") as string;
+
+        if (!tokenInput) {
+          alert("Please enter a token.");
+          return;
+        }
+
+        const res = await login(tokenInput);
+        if (isError(res)) {
+          alert(`wuh oh! ${res.message}`); // tell user they messed up
+        } else {
+          window.location.href = `/profile/${res.id}`;
+        }
+      });
+    }
   </script>
 </Layout>
 
 <style>
-  #login {
+  #autologin-confirmation-section {
+    text-align: center;
+  }
+
+  #autologin-confirmation-section .confirmation-text {
+    font-family: "Satoshi", sans-serif;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  #autologin-form {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  #manual-login-form {
     display: flex;
     flex-direction: column;
     input {

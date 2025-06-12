@@ -9,7 +9,7 @@
     }
     const res = await genToken();
     if (isError(res)) return alert(res);
-    token = res.token;
+    token = `${window.location.origin}/login?token=${res.token}`;
   };
 </script>
 
@@ -18,7 +18,7 @@
     {#if token}
       {token}
     {:else}
-      eynEVeRGONnagiVEYouUPNEVeRgoNnalETyouDowN.nEVergOnnarunaroUNDandDeSErTyOUnEvERgONnAmAKeYOUcRY.NEVeRGOnNASAYgOoDbYeNevERGOnNAteLlALiEanDHURtYoU
+      https://play.ctf.gg/login?token=eynEVeRGONnagiVEYouUPNEVeRgoNnalETyouDowN.nEVergOnnarunaroUNDandDeSErTyOUnEvERgONnAmAKeYOUcRY.NEVeRGOnNASAYgOoDbYeNevERGOnNAteLlALiEanDHURtYoU
     {/if}
   </span>
 </button>

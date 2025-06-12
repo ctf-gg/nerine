@@ -32,8 +32,9 @@
   </aside>
   <div class="detail-contents">
     <div class="reveal">
-      <h2>Token:</h2>
+      <h2>Invite URL</h2>
       <TokenReveal />
+      Send this link to your teammates to invite them to your team!
     </div>
     <div>
       <h2>Update Team Details:</h2>
@@ -106,8 +107,9 @@
 
     .reveal {
       display: flex;
+      flex-direction: column;
+      align-items: flex-start;
       gap: 0.5rem;
-      align-items: center;
       overflow: hidden;
       padding: 0.25rem 0.25rem 0.25rem 0;
       margin-bottom: 0.5rem;
