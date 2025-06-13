@@ -149,7 +149,7 @@ async fn upsert_challenge(
                 category_id,
                 group_id,
                 strategy
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::deployment_strategy) 
             ON CONFLICT(public_id) DO UPDATE 
             SET 
                 name = $2,
@@ -162,7 +162,7 @@ async fn upsert_challenge(
                 visible = $9,
                 category_id = $10,
                 group_id = $11,
-                strategy = $12
+                strategy = $12::deployment_strategy
                 RETURNING *
             )
             SELECT 
