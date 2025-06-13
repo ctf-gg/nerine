@@ -12,7 +12,7 @@ use std::{
     collections::HashMap,
     fs::{self, File as StdFile},
     io::{Read, Write},
-    path::PathBuf,
+    path::PathBuf, time::Duration,
 };
 
 use futures_util::StreamExt;
@@ -364,7 +364,9 @@ impl DeployableChallenge {
                     &uploaded.name,
                     None,
                     None,
-                    SignedURLOptions::default(),
+                    SignedURLOptions {
+                        expires: Duration::from_secs(604800)
+                    },
                 )
                 .await?;
 

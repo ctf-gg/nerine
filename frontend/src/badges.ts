@@ -32,4 +32,9 @@ export const badges: { [k: string]: BadgeInfo } = {
     name: "Pickle",
     description: "Dill with it.",
   },
+  guessctf: {
+    icon: "guessctf.png",
+    name: "High Entropy Dice",
+    description: "very unpredictable",
+  },
 };

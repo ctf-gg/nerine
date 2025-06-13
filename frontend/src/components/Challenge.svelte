@@ -32,7 +32,7 @@
   <div class="attachments">
     {#if c.attachments}
       {#each Object.entries(c.attachments) as [name, url]}
-        <a href={url}><button>{name}</button></a>
+        <a href={url} download><button>{name}</button></a>
       {/each}
     {/if}
   </div>
