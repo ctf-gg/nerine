@@ -183,11 +183,13 @@ impl TryInto<bollard::Docker> for DockerData {
                 cert,
                 ca,
             } => {
+                // good enough?
+                let basedir = std::env::temp_dir().join(format!("docker-certs-dir-{}", address.replace(":", "-").replace(".", "-")));
+                std::fs::create_dir_all(&basedir).unwrap();
                 // FIXME(ani): avoid unwraps
-                let dir = tempdir::TempDir::new("docker-certs-dir").unwrap();
-                let key_path = dir.path().join("key.pem");
-                let cert_path = dir.path().join("cert.pem");
-                let ca_path = dir.path().join("ca.pem");
+                let key_path = basedir.join("key.pem");
+                let cert_path = basedir.join("cert.pem");
+                let ca_path = basedir.join("ca.pem");
                 fs::write(&key_path, key).unwrap();
                 fs::write(&cert_path, cert).unwrap();
                 fs::write(&ca_path, ca).unwrap();
