@@ -2838,7 +2838,6 @@ dependencies = [
  "rayon",
  "reqwest",
  "rustyline",
- "sctf-api",
  "sctf-deployer-common",
  "serde",
  "serde_json",
