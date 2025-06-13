@@ -214,7 +214,7 @@ impl DeployableChallenge {
             .create_image(Some(options), None, ctx.docker_credentials.clone());
 
         while let Some(pull_step) = pull.next().await {
-            let pull_step = pull_step.context("Docker image push error")?;
+            let pull_step = pull_step.context("Docker image pull error")?;
             info!("{:?}", pull_step);
         }
 

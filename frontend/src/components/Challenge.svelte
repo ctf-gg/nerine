@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { marked } from "marked";
   import { type Challenge, isError, submitFlag } from "../api";
   const { chall: c }: { chall: Challenge } = $props();
 
@@ -27,7 +28,7 @@
       <h2 class="solve-text">Solved by you!</h2>
     {/if}
   </div>
-  <p class="description">{c.description}</p>
+  <p class="description">{@html marked(c.description)}</p>
   <div class="attachments">
     {#if c.attachments}
       {#each Object.entries(c.attachments) as [name, url]}
@@ -79,7 +80,16 @@
     .description {
       font-family: "Satoshi", sans-serif;
       margin-top: 0.25rem;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .attachments {
+      display: flex;
+      gap: 0.5rem;
+      button {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
     }
   }
 

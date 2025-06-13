@@ -350,7 +350,7 @@ async fn main() -> Result<()> {
                                 Flag::File { file } => fs::read_to_string(root.join(file))?,
                             },
                             attachments: attachments.serialize(serde_json::value::Serializer)?,
-                            visible: false,
+                            visible: true,
                             category_id: match categories.get(&chall.category) {
                                 Some(c) => *c,
                                 None => {
