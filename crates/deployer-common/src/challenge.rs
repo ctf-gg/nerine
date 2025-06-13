@@ -115,6 +115,7 @@ pub struct Container {
     #[serde(default = "default_strategy")]
     pub strategy: ContainerStrategy,
     pub privileged: Option<bool>,
+    pub host: Option<String>,
 }
 
 fn default_strategy() -> ContainerStrategy {

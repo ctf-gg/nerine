@@ -128,8 +128,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
     };
 
     // 4. connect to the appropriate docker socket
-    // TODO: read a host keychain field from the chall data later
-    let host_keychain = &state.config.host_keychains["default"];
+    let host_keychain = &state.config.host_keychains[chall_container.host.as_deref().unwrap_or("default")];
     let ctx: DeployableContext = host_keychain.docker.clone().try_into()?;
 
     // think these steps can be repeated for each container (perhaps create a network?)
@@ -357,8 +356,7 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
     };
 
     // 4. connect to the appropriate docker socket
-    // TODO: read a host keychain field from the chall data later
-    let host_keychain = &state.config.host_keychains["default"];
+    let host_keychain = &state.config.host_keychains[chall_container.host.as_deref().unwrap_or("default")];
     let ctx: DeployableContext = host_keychain.docker.clone().try_into()?;
 
     // think these steps can be repeated for each container (perhaps create a network?)
