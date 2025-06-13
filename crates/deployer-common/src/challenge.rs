@@ -1,7 +1,6 @@
 use bollard::query_parameters::CreateImageOptionsBuilder;
 use eyre::{Context, Result, eyre};
 use flate2::{Compression, write::GzEncoder};
-use glob::glob;
 use google_cloud_storage::{
     client::Client,
     http::objects::upload::{Media, UploadObjectRequest, UploadType},
@@ -12,7 +11,7 @@ use serde_with::{DisplayFromStr, serde_as};
 use std::{
     collections::HashMap,
     fs::{self, File as StdFile},
-    io::Read,
+    io::{Read, Write},
     path::PathBuf,
 };
 
@@ -92,7 +91,7 @@ pub enum Attachment {
         r#as: String,
     },
     Archive {
-        globs: Vec<String>,
+        dir: PathBuf,
         // without archive extension
         #[serde(default = "default_archive_name")]
         r#as: String,
@@ -169,7 +168,7 @@ pub enum DockerData {
         key: String,
         cert: String,
         ca: String,
-    }
+    },
 }
 
 impl TryInto<bollard::Docker> for DockerData {
@@ -178,7 +177,12 @@ impl TryInto<bollard::Docker> for DockerData {
     fn try_into(self) -> std::result::Result<bollard::Docker, Self::Error> {
         match self {
             Self::Local => bollard::Docker::connect_with_local_defaults(),
-            Self::Ssl { address, key, cert, ca } => {
+            Self::Ssl {
+                address,
+                key,
+                cert,
+                ca,
+            } => {
                 // FIXME(ani): avoid unwraps
                 let dir = tempdir::TempDir::new("docker-certs-dir").unwrap();
                 let key_path = dir.path().join("key.pem");
@@ -318,39 +322,21 @@ impl DeployableChallenge {
                     let data = fs::read_to_string(self.root.join(file))?;
                     (r#as.clone(), Vec::from(data.as_bytes()))
                 }
-                Attachment::Archive {
-                    globs,
-                    r#as,
-                    exclude,
-                } => {
+                Attachment::Archive { dir, r#as, exclude } => {
                     let tmp = TempDir::new(&self.chall.id)?;
                     let tar_path = tmp.path().join("chall.tar.gz");
 
                     // ugh
-                    let tar_file = StdFile::create(&tar_path)?;
-                    let enc = GzEncoder::new(tar_file, Compression::default());
-                    let mut tar_ = tar::Builder::new(enc);
-                    let chall_path = PathBuf::from(r#as);
-                    for pattern in globs {
-                        for path in glob(self.root.join(pattern).to_str().unwrap())? {
-                            let path = path?;
-                            if let Some(exclude) = exclude {
-                                let normed_path = path.canonicalize()?;
-                                let stripped = normed_path.strip_prefix(&self.root.canonicalize()?)?;
-                                for excluded_file in exclude {
-                                    if stripped == excluded_file {
-                                        continue;
-                                    }
-                                }
-                            }
-                            tar_.append_path_with_name(
-                                &path,
-                                chall_path.join(&path).to_str().unwrap(),
-                            )?;
-                        }
-                    }
-                    tar_.finish()?;
+                    {
+                        let tar_file = StdFile::create(&tar_path)?;
+                        let enc = GzEncoder::new(tar_file, Compression::default());
+                        let mut tar_ = tar::Builder::new(enc);
+                        // TODO actually support exclude
+                        tar_.append_dir_all(r#as, self.root.join(dir))?;
 
+                        tar_.finish()?;
+                    }
+                    
                     let mut buffer = Vec::new();
                     StdFile::open(&tar_path)?.read_to_end(&mut buffer)?;
 

@@ -8,7 +8,6 @@ bollard = { version = "0.19.0", features = ["ssl"] }
 eyre = "0.6.12"
 flate2 = "1.1.2"
 futures-util = "0.3.31"
-glob = "0.3.2"
 google-cloud-storage = { version = "0.24.0", default-features = false, features = ["auth", "rustls-tls"] }
 log = { version = "0.4.27", features = ["std"] }
 serde = { version = "1.0.219", features = ["derive"] }
