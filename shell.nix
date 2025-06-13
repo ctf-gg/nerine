@@ -16,6 +16,7 @@
     openssl.dev
     # for dev
     expect
+    caddy
   ];
 
   DATABASE_URL = "postgres://postgres:postgres@localhost/sctf";
@@ -27,8 +28,5 @@
   PLATFORM_ADMIN_TOKEN = ADMIN_TOKEN;
 
   CHALLENGES_DIR = "./test-deploy/challenges";
-
-  shellHook = ''
-    export HOST_KEYCHAINS="$(jq -c . < ./keychain-dev-real-certs.json | base64 -w0)"
-  '';
+  HOST_KEYCHAINS = "./keychain-dev-real-certs.json";
 }

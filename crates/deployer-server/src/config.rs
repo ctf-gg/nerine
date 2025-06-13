@@ -74,11 +74,9 @@ impl FromStr for HostKeychainEnv {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> eyre::Result<Self> {
-        use base64::prelude::*;
-
-        let decoded = BASE64_STANDARD.decode(s)?;
+        let contents = std::fs::read_to_string(s)?;
         //debug!("decoded = {}", std::str::from_utf8(&decoded).unwrap());
-        let parsed = serde_json::from_slice::<Vec<HostKeychain>>(&decoded)?;
+        let parsed = serde_json::from_str::<Vec<HostKeychain>>(&contents)?;
         //debug!("parsed = {:?}", parsed);
         let mut m = HashMap::new();
         for chain in parsed {
@@ -109,7 +107,7 @@ impl Deref for HostKeychainEnv {
 pub struct Config {
     #[envconfig(from = "DATABASE_URL")]
     pub database_url: String,
-    // expected as base64
+    // expected as path
     #[envconfig(from = "HOST_KEYCHAINS")]
     pub host_keychains: HostKeychainEnv,
     #[envconfig(from = "CHALLENGES_DIR")]

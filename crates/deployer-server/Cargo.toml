@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 axum = { version = "0.8.4", features = ["macros"] }
-base64 = "0.22.1"
 bollard = { version = "0.19.0", features = ["ssl"] }
 chrono = { version = "0.4.40", features = ["serde"] }
 deployer-common = { path = "../deployer-common", package = "sctf-deployer-common" }
