@@ -32,7 +32,7 @@ export interface Team {
   created_at: Date;
 }
 
-interface RequestOptions {
+export interface RequestOptions {
   body: object;
   headers?: HeadersInit;
 }
@@ -50,7 +50,7 @@ type Req = {
   ): Promise<Response>;
 };
 
-const req: Req = (method, path, options = {}) => {
+export const req: Req = (method, path, options = {}) => {
   if (method == "GET") {
     const { headers } = options;
     return fetch(`${getApiBase()}${path}`, { method, headers });
@@ -274,3 +274,5 @@ export async function resendToken(email: string) {
     body: JSON.stringify({ email }),
   });
 }
+
+

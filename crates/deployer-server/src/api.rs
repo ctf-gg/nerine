@@ -1,14 +1,18 @@
-use axum::{extract::State as StateE, routing::post, Json, Router};
+use axum::{extract::{Path, State as StateE}, routing::{get, post}, Json, Router};
 use chrono::NaiveDateTime;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use sqlx::types::JsonValue;
+use nanoid::nanoid;
 
 use crate::{State, Result, deploy::{self, ChallengeDeployment}};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ChallengeDeploymentRow {
+    // meant to be try_into'd into a proper ChallengeDeployment
+    // so don't care about serialize anyways
     pub id: i32,
+    pub public_id: String,
     pub team_id: Option<i32>,
     pub challenge_id: i32,
     pub deployed: bool,
@@ -25,6 +29,7 @@ impl TryInto<ChallengeDeployment> for ChallengeDeploymentRow {
         let data2 = self.data.map(serde_json::from_value).transpose()?;
         Ok(ChallengeDeployment {
             id: self.id,
+            public_id: self.public_id,
             team_id: self.team_id,
             challenge_id: self.challenge_id,
             deployed: self.deployed,
@@ -45,7 +50,7 @@ struct ChallengeDeploymentReq {
 async fn deploy_challenge(
     StateE(state): StateE<State>,
     Json(payload): Json<ChallengeDeploymentReq>,
-) -> Result<()> {
+) -> Result<Json<ChallengeDeployment>> {
     let mut tx = state.db.begin().await?;
 
     if sqlx::query!(
@@ -59,9 +64,10 @@ async fn deploy_challenge(
         return Err(crate::error::Error::AlreadyDeployed);
     }
 
-    let deployment = sqlx::query_as!(
+    let deployment: ChallengeDeployment = sqlx::query_as!(
         ChallengeDeploymentRow,
-        "INSERT INTO challenge_deployments (team_id, challenge_id) VALUES ($1, $2) RETURNING *",
+        "INSERT INTO challenge_deployments (public_id, team_id, challenge_id) VALUES ($1, $2, $3) RETURNING *",
+        nanoid!(),
         payload.team_id,
         payload.challenge_id,
     )
@@ -74,12 +80,14 @@ async fn deploy_challenge(
     debug!("got back deployment {:?}", deployment);
 
     // start deploying the chall
-    tokio::spawn(deploy::deploy_challenge_task(state, deployment));
+    tokio::spawn(deploy::deploy_challenge_task(state, deployment.clone()));
 
-    //todo
-    Ok(())
+    Ok(Json(deployment.sanitize()))
 }
 
+// NOTE(ani): the reason this doesn't take public_id is because we should only actually have
+// zero/one non-destroyed challenge deployment, and thus this ought to be unique. it also saves us
+// queries on the api side since we'd already have both of these ids.
 async fn destroy_challenge(
     StateE(state): StateE<State>,
     Json(payload): Json<ChallengeDeploymentReq>,
@@ -102,8 +110,25 @@ async fn destroy_challenge(
     Ok(())
 }
 
+async fn get_challenge(
+    StateE(state): StateE<State>,
+    Path(pub_id): Path<String>,
+) -> Result<Json<ChallengeDeployment>> {
+    let deployment: ChallengeDeployment = sqlx::query_as!(
+        ChallengeDeploymentRow,
+        "SELECT * FROM challenge_deployments WHERE public_id = $1",
+        pub_id,
+    )
+        .fetch_one(&state.db)
+        .await?
+        .try_into()?;
+
+    Ok(Json(deployment.sanitize()))
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
-        .route("/deploy_challenge", post(deploy_challenge))
-        .route("/destroy_challenge", post(destroy_challenge))
+        .route("/challenge/deploy", post(deploy_challenge))
+        .route("/challenge/destroy", post(destroy_challenge))
+        .route("/deployment/{id}", get(get_challenge))
 }
