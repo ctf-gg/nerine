@@ -2917,6 +2917,7 @@ dependencies = [
  "fast32",
  "glob",
  "log",
+ "nanoid",
  "pretty_env_logger",
  "reqwest",
  "sctf-deployer-common",

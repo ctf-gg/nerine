@@ -12,14 +12,32 @@ use crate::{api::ChallengeDeploymentRow, State};
 /* db models (sorta) */
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ChallengeDeployment {
+    #[serde(skip_serializing)]
     pub id: i32,
+    #[serde(rename(serialize = "id"))]
+    pub public_id: String,
+    #[serde(skip_serializing)]
     pub team_id: Option<i32>,
+    #[serde(skip_serializing)]
     pub challenge_id: i32,
     pub deployed: bool,
     pub data: Option<DeploymentData>,
     pub created_at: NaiveDateTime,
     pub expired_at: Option<NaiveDateTime>,
     pub destroyed_at: Option<NaiveDateTime>,
+}
+
+impl ChallengeDeployment {
+    // TODO(ani): hacky solution
+    pub fn sanitize(self) -> Self {
+        Self {
+            data: self.data.map(|d| DeploymentData {
+                container_id: "redacted-xxxxx".to_owned(),
+                ..d
+            }),
+            ..self
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -30,6 +48,7 @@ pub struct DeploymentData {
 
 // keep this in sync with ExposeType
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
 pub enum HostMapping {
     Tcp(u16),
     // subdomain name
@@ -57,7 +76,7 @@ fn get_unused_port() -> u16 {
 
 fn calculate_subdomain(
     chall_id: &str,
-    team_id: Option<i32>,
+    pub_team_id: Option<&str>,
     port: u16,
 ) -> String {
     let h = {
@@ -65,7 +84,7 @@ fn calculate_subdomain(
         use sha2::Digest;
 
         let mut hasher = sha2::Sha256::new();
-        write!(hasher, "{}/{}/{}", chall_id, team_id.unwrap_or(-1), port).unwrap();
+        write!(hasher, "{}/{}/{}", chall_id, pub_team_id.unwrap_or(""), port).unwrap();
         hasher.finalize()
     };
     // take first 40 bits (40 mod 5 = 0)
@@ -82,6 +101,17 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
     )
         .fetch_one(&mut **tx)
         .await?;
+
+    // 1.1 get public team id
+    let public_team_id = if let Some(tid) = chall.team_id {
+        Some(sqlx::query!(
+            "SELECT public_id FROM teams WHERE id = $1",
+            tid,
+        )
+            .fetch_one(&mut **tx)
+            .await?.public_id)
+    } else { None };
+
 
     // 2. find the challenge data for that slug
     let chall_data = state.challenge_data.get(&public_chall_partial.public_id)
@@ -113,7 +143,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
                     mappings.insert(p, HostMapping::Tcp(get_unused_port()));
                 }
                 ExposeType::Http => {
-                    mappings.insert(p, HostMapping::Http(calculate_subdomain(&chall_data.id, chall.team_id, p)));
+                    mappings.insert(p, HostMapping::Http(calculate_subdomain(&chall_data.id, public_team_id.as_deref(), p)));
                 }
             }
         }
@@ -281,7 +311,7 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
 
     // this will get dropped if the destroy fails
     sqlx::query!(
-        "UPDATE challenge_deployments SET destroyed_at = NOW() WHERE id = $1",
+        "UPDATE challenge_deployments SET data = NULL, destroyed_at = NOW() WHERE id = $1",
         chall.id,
     )
         .execute(&mut **tx)
