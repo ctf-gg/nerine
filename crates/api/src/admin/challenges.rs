@@ -1,12 +1,26 @@
-use crate::{db::update_chall_cache, extractors::Admin, Result, State};
+use std::str::FromStr;
+
+use crate::{db::{update_chall_cache, DeploymentStrategy}, extractors::Admin, Result, State};
 use axum::{
     extract::State as StateE,
     routing::{delete, get, patch, post},
     Json, Router,
 };
+use eyre::eyre;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
+
+impl FromStr for DeploymentStrategy {
+    type Err = eyre::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
+            "static" => Ok(DeploymentStrategy::Static),
+            "instanced" => Ok(DeploymentStrategy::Instanced),
+            _ => Err(eyre!("{s} is not a valid deployment strategy")),
+        }
+    }
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct Challenge {
@@ -19,6 +33,7 @@ pub struct Challenge {
     pub points_max: i32,
     pub flag: String,
     pub attachments: serde_json::Value,
+    pub strategy: DeploymentStrategy,
     pub visible: bool,
 
     pub category: Category,
@@ -37,6 +52,8 @@ impl FromRow<'_, PgRow> for Challenge {
             points_max: row.try_get("points_max")?,
             flag: row.try_get("flag")?,
             attachments: row.try_get("attachments")?,
+            strategy: DeploymentStrategy::from_str(row.try_get("strategy")?)
+                .unwrap_or(DeploymentStrategy::Static),
             visible: row.try_get("visible")?,
             category: Category {
                 id: row.try_get("category_id")?,
@@ -77,6 +94,7 @@ async fn get_challenges(StateE(state): StateE<State>, _: Admin) -> Result<Json<V
                 m.points_max,
                 m.flag,
                 m.attachments,
+                m.strategy,
                 m.visible,
                 c.id AS category_id,
                 c.name AS category_name,
@@ -103,6 +121,7 @@ pub struct UpsertChallenge {
     pub points_max: i32,
     pub flag: String,
     pub attachments: serde_json::Value,
+    pub strategy: DeploymentStrategy,
     pub visible: bool,
 
     pub category_id: i32,
@@ -128,8 +147,9 @@ async fn upsert_challenge(
                 attachments,
                 visible,
                 category_id,
-                group_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+                group_id,
+                strategy
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
             ON CONFLICT(public_id) DO UPDATE 
             SET 
                 name = $2,
@@ -141,7 +161,8 @@ async fn upsert_challenge(
                 attachments = $8,
                 visible = $9,
                 category_id = $10,
-                group_id = $11
+                group_id = $11,
+                strategy = $12,
                 RETURNING *
             )
             SELECT 
@@ -154,6 +175,7 @@ async fn upsert_challenge(
                 m.points_max,
                 m.flag,
                 m.attachments,
+                m.strategy,
                 m.visible,
                 c.id AS category_id,
                 c.name AS category_name,
@@ -175,6 +197,10 @@ async fn upsert_challenge(
     .bind(payload.visible)
     .bind(payload.category_id)
     .bind(payload.group_id)
+    .bind(match payload.strategy {
+        DeploymentStrategy::Static => "static",
+        DeploymentStrategy::Instanced => "instanced",
+    })
     .fetch_one(&state.db)
     .await?;
 

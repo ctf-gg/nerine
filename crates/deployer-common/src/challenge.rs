@@ -113,18 +113,18 @@ pub struct Container {
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
     #[serde(default = "default_strategy")]
-    pub strategy: ContainerStrategy,
+    pub strategy: DeploymentStrategy,
     pub privileged: Option<bool>,
     pub host: Option<String>,
 }
 
-fn default_strategy() -> ContainerStrategy {
-    ContainerStrategy::Static
+fn default_strategy() -> DeploymentStrategy {
+    DeploymentStrategy::Static
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum ContainerStrategy {
+pub enum DeploymentStrategy {
     Static,
     Instanced,
 }

@@ -15,6 +15,8 @@ pub enum Error {
     Jwt(#[from] jsonwebtoken::errors::Error),
     #[error("{0}")]
     Validation(#[from] validator::ValidationErrors),
+    #[error("{0}")]
+    Deploy(#[from] reqwest::Error), // TODO this might be used for other classes of error, idk yet
     #[error("invalid token")]
     InvalidToken,
     #[error("challenge not found")]
@@ -29,6 +31,8 @@ pub enum Error {
     WrongFlag,
     #[error("team name already taken")]
     TeamNameTaken,
+    #[error("this is a generic error, you shouldn't recieve this is if you're a well behaved client!")]
+    GenericError,
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
@@ -53,6 +57,7 @@ impl IntoResponse for Error {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
             Error::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "jwt_error"),
             Error::Validation(_) => (StatusCode::BAD_REQUEST, "validation_error"),
+            Error::Deploy(_) => (StatusCode::BAD_REQUEST, "deploy_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
             Error::NotFoundChallenge | Error::NotFoundTeam => (StatusCode::NOT_FOUND, "not_found"),
             Error::EventNotStarted(start_time) => {

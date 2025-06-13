@@ -190,6 +190,8 @@ export interface Challenge {
   points: number;
   solves: number;
   attachments: { [name: string]: string };
+  strategy: "static" | "instanced",
+  deploymentId: string | null;
   category: string;
   selfSolved: boolean;
 }

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use bollard::{query_parameters::{CreateContainerOptionsBuilder, InspectContainerOptions, RemoveContainerOptionsBuilder, StartContainerOptions}, secret::{ContainerCreateBody, HostConfig, PortBinding}};
-use deployer_common::challenge::{Container, ContainerStrategy, DeployableContext, ExposeType};
+use deployer_common::challenge::{Container, DeploymentStrategy, DeployableContext, ExposeType};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
@@ -66,8 +66,8 @@ fn calculate_container_name(
     team_id: Option<i32>,
 ) -> String {
     match container.strategy {
-        ContainerStrategy::Static => format!("{}-container", chall_id),
-        ContainerStrategy::Instanced => format!("{}-team-{}-container", chall_id, team_id.unwrap()),
+        DeploymentStrategy::Static => format!("{}-container", chall_id),
+        DeploymentStrategy::Instanced => format!("{}-team-{}-container", chall_id, team_id.unwrap()),
     }
 }
 
@@ -260,8 +260,8 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
     // 10. determine new expiration time if necessary
     let new_expiration_time = match chall_container.strategy {
-        ContainerStrategy::Static => None,
-        ContainerStrategy::Instanced => Some(chrono::Utc::now().naive_utc() + Duration::from_secs(60 * 10)),
+        DeploymentStrategy::Static => None,
+        DeploymentStrategy::Instanced => Some(chrono::Utc::now().naive_utc() + Duration::from_secs(60 * 10)),
     };
     
     // 11. update the db

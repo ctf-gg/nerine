@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
-    extract::State as StateE,
+    extract::{Path, State as StateE},
     routing::{get, post},
     Json, Router,
 };
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
 use bitstream_io::{BitRead, BitReader, LittleEndian};
+use chrono::{NaiveDateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub struct PublicChallenge {
@@ -21,7 +21,10 @@ pub struct PublicChallenge {
     solves: i32,
     attachments: serde_json::Value,
     category: String,
-    #[serde(rename(serialize = "selfSolved"))]
+    #[serde(rename(serialize = "deploymentId"))]
+    deployment_id: Option<String>,
+    strategy: String,
+    #[serde(rename(serialize = "selfSolved"))] // todo use built in camel case in future
     self_solved: bool,
 }
 
@@ -40,17 +43,21 @@ pub async fn list(
     let mut challs = sqlx::query_as!(
         PublicChallenge,
         r#"SELECT 
-            public_id,
-            challenges.name,
+            c.public_id,
+            c.name,
             author,
             description,
             c_points AS points,
             c_solves AS solves,
-            attachments, 
+            attachments,
+            strategy::text AS "strategy!",
+            cd.public_id AS deployment_id,
             categories.name AS category,
             FALSE as "self_solved!"
-        FROM challenges JOIN categories ON categories.id = category_id
+        FROM challenges c JOIN categories ON categories.id = category_id
+        LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))
         ORDER BY solves DESC"#,
+        claims.team_id,
     )
     .fetch_all(&state.db)
     .await?;
@@ -69,8 +76,6 @@ pub struct Submission {
     flag: String,
     challenge_id: String,
 }
-
-
 
 fn leet<R>(flag: String, bits: BitReader<R, LittleEndian>) -> String {
     "".to_string()
@@ -127,8 +132,103 @@ pub async fn submit(
     }
 }
 
+#[derive(Serialize)]
+struct ChallengeDeploymentReq {
+    challenge_id: i32,
+    team_id: Option<i32>,
+}
+// keep in sync with deployer-server/api
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct ChallengeDeployment {
+    pub id: String,
+    pub deployed: bool,
+    pub data: Option<DeploymentData>,
+    pub created_at: NaiveDateTime,
+    pub expired_at: Option<NaiveDateTime>,
+    pub destroyed_at: Option<NaiveDateTime>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct DeploymentData {
+    pub container_id: String,
+    pub ports: HashMap<u16, HostMapping>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase", tag = "type")]
+pub enum HostMapping {
+    Tcp { port: u16 },
+    // subdomain name
+    Http { subdomain: String, base: String },
+}
+
+struct PublicDeploymentInfo {}
+
+pub async fn deploy(
+    StateE(state): StateE<State>,
+    Auth(claims): Auth,
+    Path(pub_id): Path<String>,
+) -> Result<Json<ChallengeDeployment>> {
+    let now = Utc::now().naive_utc();
+    if now < state.event.start_time {
+        return Err(Error::EventNotStarted(state.event.start_time.clone()));
+    }
+
+    let record = sqlx::query!(
+        r#"SELECT teams.id AS team_id, challenges.id AS challenge_id, challenges.strategy::text AS "strategy!"
+FROM teams, challenges 
+WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
+        claims.team_id,
+        pub_id,
+    )
+    .fetch_one(&state.db)
+    .await?;
+
+    let client = reqwest::Client::new();
+
+    if record.strategy == "static" {
+        return Err(Error::GenericError);
+    }
+
+    // TODO unhardcode this later
+    let deployment: ChallengeDeployment = client
+        .post("https://deployer:3001/api/challenge/deploy")
+        .json(&ChallengeDeploymentReq {
+            challenge_id: record.challenge_id,
+            team_id: Some(record.team_id),
+        })
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    Ok(Json(deployment))
+}
+
+pub async fn get_deployment(
+    Auth(_): Auth,
+    Path(pub_id): Path<String>,
+) -> Result<Json<ChallengeDeployment>> {
+        let client = reqwest::Client::new();
+
+    // TODO unhardcode this later
+    let deployment: ChallengeDeployment = client
+        .post(format!("https://deployer:3001/api/deployment/{pub_id}"))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    Ok(Json(deployment))
+
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(list))
         .route("/submit", post(submit))
+        .route("/deploy/get/{deployment_id}", get(get_deployment))
+        .route("/deploy/new/{chall_id}", post(deploy))
 }

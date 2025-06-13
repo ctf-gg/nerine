@@ -1,5 +1,5 @@
 use crate::event::point_formula;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
 pub type DB = Pool<Postgres>;
@@ -39,4 +39,13 @@ pub async fn update_chall_cache(db: &DB, chall_id: i32) -> crate::Result<()> {
 
     tx.commit().await?;
     Ok(())
+}
+
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, sqlx::Type)]
+#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "deployment_strategy")]
+pub enum DeploymentStrategy {
+    Static,
+    Instanced,
 }

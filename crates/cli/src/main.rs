@@ -10,7 +10,7 @@ use std::{
 use bollard::auth::DockerCredentials;
 use clap::{Parser, Subcommand, command};
 use deployer_common::challenge::{
-    Challenge, Container, ContainerStrategy, DeployableChallenge, DeployableContext, ExposeType,
+    Challenge, Container, DeploymentStrategy, DeployableChallenge, DeployableContext, ExposeType,
     Flag, is_valid_id,
 };
 use dialoguer::{Select, theme::SimpleTheme};
@@ -204,7 +204,7 @@ async fn main() -> Result<()> {
                 .default(0)
                 .items(&["Static (one for everyone)", "Instanced (one per team)"])
                 .interact()?;
-            let container_strategy = [ContainerStrategy::Static, ContainerStrategy::Instanced]
+            let container_strategy = [DeploymentStrategy::Static, DeploymentStrategy::Instanced]
                 [container_strategy_selection];
 
             // let mut expose = HashMap::new();
@@ -294,57 +294,60 @@ async fn main() -> Result<()> {
                 };
             }
         }
-        Commands::Platform { command } => match command {
-            PlatformCommands::Update { paths } => {
-                #[derive(Deserialize, Serialize)]
-                pub struct Category {
-                    pub id: i32,
-                    pub name: String,
-                }
+        Commands::Platform { command } => {
+            match command {
+                PlatformCommands::Update { paths } => {
+                    #[derive(Deserialize, Serialize)]
+                    pub struct Category {
+                        pub id: i32,
+                        pub name: String,
+                    }
 
-                #[derive(Serialize)]
-                pub struct UpsertChallenge {
-                    pub id: Option<String>,
-                    pub name: String,
-                    pub author: String,
-                    pub description: String,
-                    pub points_min: i32,
-                    pub points_max: i32,
-                    pub flag: String,
-                    pub attachments: serde_json::Value,
-                    pub visible: bool,
+                    #[derive(Serialize)]
+                    pub struct UpsertChallenge {
+                        pub id: Option<String>,
+                        pub name: String,
+                        pub author: String,
+                        pub description: String,
+                        pub points_min: i32,
+                        pub points_max: i32,
+                        pub flag: String,
+                        pub attachments: serde_json::Value,
+                        pub strategy: DeploymentStrategy,
+                        pub visible: bool,
 
-                    pub category_id: i32,
-                    pub group_id: Option<i32>,
-                }
+                        pub category_id: i32,
+                        pub group_id: Option<i32>,
+                    }
 
-                let platform_base = env::var("PLATFORM_BASE")?;
-                let jar = Jar::default();
-                jar.add_cookie_str(
-                    &format!("admin_token={}", env::var("PLATFORM_ADMIN_TOKEN")?),
-                    &Url::parse(&platform_base)?,
-                );
-                let client = reqwest::Client::builder()
-                    .cookie_provider(Arc::new(jar))
-                    .build()?;
-                let mut categories: HashMap<String, i32> = client
-                    .get(format!("{platform_base}/api/admin/challs/category"))
-                    .send()
-                    .await?
-                    .error_for_status()?
-                    .json::<Vec<Category>>()
-                    .await?
-                    .into_iter()
-                    .map(|c| (c.name, c.id))
-                    .collect();
+                    let platform_base = env::var("PLATFORM_BASE")?;
+                    let jar = Jar::default();
+                    jar.add_cookie_str(
+                        &format!("admin_token={}", env::var("PLATFORM_ADMIN_TOKEN")?),
+                        &Url::parse(&platform_base)?,
+                    );
+                    let client = reqwest::Client::builder()
+                        .cookie_provider(Arc::new(jar))
+                        .build()?;
+                    let mut categories: HashMap<String, i32> = client
+                        .get(format!("{platform_base}/api/admin/challs/category"))
+                        .send()
+                        .await?
+                        .error_for_status()?
+                        .json::<Vec<Category>>()
+                        .await?
+                        .into_iter()
+                        .map(|c| (c.name, c.id))
+                        .collect();
 
-                let gcs_client = GcsClient::new(ClientConfig::default().with_auth().await.unwrap());
-                for ref dc in get_all_challs(paths) {
-                    let DeployableChallenge { chall, root } = dc;
-                    let attachments = dc
-                        .push_attachments(&gcs_client, "sctf-attachments".to_string())
-                        .await?;
-                    client
+                    let gcs_client =
+                        GcsClient::new(ClientConfig::default().with_auth().await.unwrap());
+                    for ref dc in get_all_challs(paths) {
+                        let DeployableChallenge { chall, root } = dc;
+                        let attachments = dc
+                            .push_attachments(&gcs_client, "sctf-attachments".to_string())
+                            .await?;
+                        client
                         .patch(format!("{platform_base}/api/admin/challs"))
                         .json(&UpsertChallenge {
                             id: Some(chall.id.clone()),
@@ -358,6 +361,10 @@ async fn main() -> Result<()> {
                                 Flag::File { file } => fs::read_to_string(root.join(file))?,
                             },
                             attachments: attachments.serialize(serde_json::value::Serializer)?,
+                            strategy: match &chall.container {
+                                Some(c) => c.strategy,
+                                None => DeploymentStrategy::Static,
+                            },
                             visible: true,
                             category_id: match categories.get(&chall.category) {
                                 Some(c) => *c,
@@ -388,10 +395,11 @@ async fn main() -> Result<()> {
                         .await?
                         .error_for_status()?;
 
-                    println!("updated {}", chall.id);
+                        println!("updated {}", chall.id);
+                    }
                 }
             }
-        },
+        }
         Commands::CoalesceManifests { dir } => {
             _ = fs::create_dir(&dir);
 
