@@ -325,6 +325,7 @@ async fn main() -> Result<()> {
                     .get(format!("{platform_base}/api/admin/challs/category"))
                     .send()
                     .await?
+                    .error_for_status()?
                     .json::<Vec<Category>>()
                     .await?
                     .into_iter()
