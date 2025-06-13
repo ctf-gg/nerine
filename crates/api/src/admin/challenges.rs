@@ -162,7 +162,7 @@ async fn upsert_challenge(
                 visible = $9,
                 category_id = $10,
                 group_id = $11,
-                strategy = $12,
+                strategy = $12
                 RETURNING *
             )
             SELECT 
