@@ -57,6 +57,10 @@ enum Commands {
         #[command(subcommand)]
         command: PlatformCommands,
     },
+    CoalesceManifests {
+        #[arg()]
+        dir: PathBuf,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -336,8 +340,9 @@ async fn main() -> Result<()> {
                 let gcs_client = GcsClient::new(ClientConfig::default().with_auth().await.unwrap());
                 for ref dc in get_all_challs(paths) {
                     let DeployableChallenge { chall, root } = dc;
-                    let attachments =
-                        dc.push_attachments(&gcs_client, "sctf-attachments".to_string()).await?;
+                    let attachments = dc
+                        .push_attachments(&gcs_client, "sctf-attachments".to_string())
+                        .await?;
                     client
                         .patch(format!("{platform_base}/api/admin/challs"))
                         .json(&UpsertChallenge {
@@ -386,6 +391,27 @@ async fn main() -> Result<()> {
                 }
             }
         },
+        Commands::CoalesceManifests { dir } => {
+            _ = fs::create_dir(&dir);
+
+            for mf in WalkDir::new(".")
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_name() == "challenge.toml")
+            {
+                fs::copy(
+                    mf.path(),
+                    &dir.join(
+                        mf.path()
+                            .to_str()
+                            .unwrap()
+                            .replace("/", "-")
+                            .trim_matches('.')
+                            .trim_matches('-'),
+                    ),
+                )?;
+            }
+        }
     }
     Ok(())
 }
