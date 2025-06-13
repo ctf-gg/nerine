@@ -200,6 +200,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
                     .await?;
                 caddy_client
                     .put(host_keychain.caddy.prep_url("/id/default-server/routes/0"))
+                    .header("content-type", "application/json")
                     .body(serde_json::to_string(&serde_json::json!({
                         "@id": caddy_id,
                         "match": [{
@@ -261,7 +262,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 pub async fn deploy_challenge_task(state: State, chall: ChallengeDeployment) {
     let mut tx = state.db.begin().await.unwrap();
     if let Err(e) = deploy_challenge(state, &mut tx, chall.clone()).await {
-        error!("Failed to deploy challenge {:?}: {}", chall, e);
+        error!("Failed to deploy challenge {:?}: {:?}", chall, e);
         sqlx::query!(
             "DELETE FROM challenge_deployments WHERE id = $1",
             chall.id,
@@ -357,7 +358,7 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
 pub async fn destroy_challenge_task(state: State, chall: ChallengeDeployment) {
     let mut tx = state.db.begin().await.unwrap();
     if let Err(e) = destroy_challenge(state, &mut tx, chall.clone()).await {
-        error!("Failed to destroy challenge {:?}: {}", chall, e);
+        error!("Failed to destroy challenge {:?}: {:?}", chall, e);
         // don't commit the tx
     } else {
         tx.commit().await.unwrap();

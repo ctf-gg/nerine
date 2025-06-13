@@ -33,10 +33,12 @@ impl CaddyKeychain {
     pub fn as_client(&self) -> crate::Result<reqwest::Client> {
         Ok(reqwest::ClientBuilder::new()
             .tls_built_in_root_certs(false)
+            .tls_built_in_webpki_certs(false)
             // FIXME(ani): currently not verifying against ca certs because caddy sucks
             .add_root_certificate(reqwest::Certificate::from_pem(self.mtls.cacert.as_bytes())?)
             .danger_accept_invalid_hostnames(true)
             .identity(reqwest::Identity::from_pem(format!("{}\n{}", self.mtls.key, self.mtls.cert).as_bytes())?)
+            .use_rustls_tls()
             .build()?)
     }
 
