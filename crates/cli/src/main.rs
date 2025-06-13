@@ -218,6 +218,7 @@ async fn main() -> Result<()> {
                     m.insert(expose_port, expose_type);
                     m
                 }),
+                privileged: None,
                 strategy: container_strategy,
             });
 
