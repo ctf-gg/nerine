@@ -36,18 +36,20 @@
       {/each}
     {/if}
   </div>
-  <form class="submit" onsubmit={submit}>
-    <input
-      type="text"
-      name="flag"
-      placeholder="flag"
-      autocomplete="off"
-      onchange={() => (correct = null)}
-      bind:this={flagInput}
-      class={[{ correct: correct === true, incorrect: correct === false }]}
-    />
-    <button type="submit">submit</button>
-  </form>
+  {#if !c.selfSolved}
+    <form class="submit" onsubmit={submit}>
+      <input
+        type="text"
+        name="flag"
+        placeholder="flag"
+        autocomplete="off"
+        onchange={() => (correct = null)}
+        bind:this={flagInput}
+        class={[{ correct: correct === true, incorrect: correct === false }]}
+      />
+      <button type="submit">submit</button>
+    </form>
+  {/if}
 </div>
 
 <style>

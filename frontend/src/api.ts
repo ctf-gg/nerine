@@ -207,13 +207,18 @@ export interface Badge {
   chall: string;
 }
 
+export interface ScorePoint {
+  date: string;
+  score: number;
+}
+
 export interface LeaderboardEntry {
   id: string;
   name: string;
   score: number;
+  scoreHistory: ScorePoint[];
   extra: { badges: Badge[] };
 }
-
 export const leaderboard = async (
   token?: string
 ): Promise<LeaderboardEntry[] | ApiError> => {

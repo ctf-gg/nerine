@@ -3,6 +3,7 @@ import { isError, leaderboard, getEvent } from "../api";
 import Layout from "../layouts/Layout.astro";
 import Countdown from "../components/Countdown.svelte";
 import LeaderboardDisplay from "../components/Leaderboard.svelte";
+import LeaderboardChart from "../components/LeaderboardChart.svelte";
 import { jwtDecode } from "jwt-decode";
 
 let teams;
@@ -20,11 +21,17 @@ if (new Date().getTime() >= event.start_time.getTime()) {
 <Layout>
   {
     teams ? (
-      <LeaderboardDisplay
-        teams={teams.slice(0, 500)}
-        yourTeam={jwtDecode<{ team_id: string }>(token!).team_id}
-        client:load
-      />
+      <>
+        <LeaderboardChart
+          teams={teams.slice(0, 10).filter((team) => team.scoreHistory)}
+          client:load
+        />
+        <LeaderboardDisplay
+          teams={teams.filter((team) => team.score > 0)}
+          yourTeam={jwtDecode<{ team_id: string }>(token!).team_id}
+          client:load
+        />
+      </>
     ) : (
       <Countdown {event} client:load />
     )

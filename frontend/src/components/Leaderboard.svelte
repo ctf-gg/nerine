@@ -61,8 +61,9 @@
       }
 
       position: relative;
-      right: -9rem;
+      right: -12rem;
       top: -5rem;
+      z-index: 1000;
       rotate: 16deg;
     }
   }
