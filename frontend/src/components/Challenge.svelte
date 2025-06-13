@@ -24,7 +24,7 @@
         case "http":
           res.push({
             type: "http",
-            url: `${mapping.subdomain}.${mapping.base}`,
+            url: `https://${mapping.subdomain}.${mapping.base}`,
           });
       }
     }
