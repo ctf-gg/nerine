@@ -175,7 +175,7 @@ async fn upsert_challenge(
                 m.points_max,
                 m.flag,
                 m.attachments,
-                m.strategy,
+                m.strategy::text,
                 m.visible,
                 c.id AS category_id,
                 c.name AS category_name,
