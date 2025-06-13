@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT times.created_at FROM (\n            SELECT DISTINCT s.created_at FROM submissions s WHERE s.is_correct = TRUE\n            UNION\n            SELECT $1 AS created_at\n        ) AS times\n        ORDER BY times.created_at ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "created_at",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamp"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "2cbfb94b5c8c01617fe2eae0dd6a014069fb451f721c10491264031e238a1fbc"
+}

@@ -1,16 +1,16 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT t.name, t.public_id, score as \"score!\", t.extra_data\n            FROM teams t \n            LEFT JOIN compute_leaderboard() lb ON lb.team_id = t.id\n            GROUP BY t.id, score, rank\n            ORDER BY rank ASC\n        ",
+  "query": "\n        SELECT t.public_id, t.name, lb.score as \"score!\", t.extra_data, lb.rank as \"rank!\"\n            FROM teams t \n            JOIN compute_leaderboard() lb ON lb.team_id = t.id\n            ORDER BY lb.rank ASC\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "name",
+        "name": "public_id",
         "type_info": "Text"
       },
       {
         "ordinal": 1,
-        "name": "public_id",
+        "name": "name",
         "type_info": "Text"
       },
       {
@@ -22,6 +22,11 @@
         "ordinal": 3,
         "name": "extra_data",
         "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "rank!",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -31,8 +36,9 @@
       false,
       false,
       null,
-      true
+      true,
+      null
     ]
   },
-  "hash": "dd9b1066c4689799c3adab12be125d853044dcdbc78409b551f03ef22269a68c"
+  "hash": "f064d7e595b179822e336d6038755a7d3e62d881dbcc5de4b165503642ec25c0"
 }
