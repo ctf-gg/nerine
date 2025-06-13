@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - crates/cli/**
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   cli-build:
