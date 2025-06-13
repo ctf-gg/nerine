@@ -121,7 +121,7 @@ jobs:
         id: cache
         with:
           path: |
-            cargo
+            cargo-deployer
           key: cache-${{ hashFiles('./Dockerfile.deployer') }}
 
       - name: Inject cache into Docker
@@ -130,7 +130,7 @@ jobs:
           builder: ${{ steps.setup-buildx.outputs.name }}
           cache-map: |
             {
-              "cargo": {
+              "cargo-deployer": {
                 "target": "/app/target",
                 "id": "cargo"
               }
