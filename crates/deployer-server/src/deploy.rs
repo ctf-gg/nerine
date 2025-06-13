@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 use eyre::eyre;
 
-use crate::State;
+use crate::{api::ChallengeDeploymentRow, State};
 
 /* db models (sorta) */
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -18,7 +18,7 @@ pub struct ChallengeDeployment {
     pub deployed: bool,
     pub data: Option<DeploymentData>,
     pub created_at: NaiveDateTime,
-    pub expired_at: NaiveDateTime,
+    pub expired_at: Option<NaiveDateTime>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -164,39 +164,10 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
     // 7. start container
     ctx.docker.start_container(&container_name, None::<StartContainerOptions>).await?;
-    //match ctx.docker.start_container(&container_name, None::<StartContainerOptions>).await {
-    //    Err(e) => {
-    //        debug!("container start failed, continuing anyways");
-    //        // roll back
-    //        //ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
-    //        //        .v(true)
-    //        //        .force(true)
-    //        //        .build())).await?;
-    //        //Err(e)?;
-    //        //unreachable!();
-    //    }
-    //    _ => {}
-    //}
-
-    // should be configurable
-    //tokio::time::sleep(Duration::from_millis(4_000)).await;
 
     // 8. inspect container to get its ip
     let container_ip = {
         let container_inspected = ctx.docker.inspect_container(&container_name, None::<InspectContainerOptions>).await?;
-        //let container_inspected = match ctx.docker.inspect_container(&container_name, None::<InspectContainerOptions>).await {
-        //    Err(e) => {
-        //        debug!("container inspect failed after 4s, rolling back");
-        //        // roll back
-        //        ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
-        //                .v(true)
-        //                .force(true)
-        //                .build())).await?;
-        //        Err(e)?;
-        //        unreachable!();
-        //    },
-        //    Ok(i) => i,
-        //};
         debug!("got inspected: {:?}", container_inspected);
         container_inspected
             .network_settings
@@ -246,9 +217,11 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
         }
     }
 
-    // 10. determine new expiration time
-    let expiration_duration = chall.expired_at - chall.created_at;
-    let new_expiration_time = chrono::Utc::now().naive_utc() + expiration_duration;
+    // 10. determine new expiration time if necessary
+    let new_expiration_time = match chall_container.strategy {
+        ContainerStrategy::Static => None,
+        ContainerStrategy::Instanced => Some(chrono::Utc::now().naive_utc() + Duration::from_secs(60 * 10)),
+    };
     
     // 11. update the db
     sqlx::query!(
@@ -264,6 +237,22 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
         .await?;
 
     // 12. spawn a task to destroy the challenge after the expiration duration (todo)
+    if let Some(expiration_time) = new_expiration_time {
+        let dur = (expiration_time - chrono::Utc::now().naive_utc()).to_std().unwrap();
+        let state2 = state.clone();
+        let chall2 = sqlx::query_as!(
+            ChallengeDeploymentRow,
+            "SELECT * FROM challenge_deployments WHERE id = $1",
+            chall.id,
+        )
+            .fetch_one(&mut **tx)
+            .await?
+            .try_into()?;
+        tokio::spawn(async move {
+            tokio::time::sleep(dur).await;
+            destroy_challenge_task(state2, chall2).await;
+        });
+    }
 
     Ok(())
 }
@@ -281,4 +270,119 @@ pub async fn deploy_challenge_task(state: State, chall: ChallengeDeployment) {
             .await.unwrap();
     }
     tx.commit().await.unwrap();
+}
+
+pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, chall: ChallengeDeployment) -> eyre::Result<()> {
+    // check that the deployment still exists
+    if sqlx::query!(
+        "SELECT id FROM challenge_deployments WHERE id = $1",
+        chall.id,
+    )
+        .fetch_optional(&mut **tx)
+        .await?.is_none() {
+        sqlx::query!(
+            "DELETE FROM challenge_deployments WHERE id = $1",
+            chall.id,
+        )
+            .execute(&mut **tx)
+            .await?;
+        return Ok(());
+    }
+
+    // ???
+    if !chall.deployed {
+        sqlx::query!(
+            "DELETE FROM challenge_deployments WHERE id = $1",
+            chall.id,
+        )
+            .execute(&mut **tx)
+            .await?;
+        return Ok(());
+    }
+
+    // ???
+    let Some(deploy_data) = &chall.data else {
+        sqlx::query!(
+            "DELETE FROM challenge_deployments WHERE id = $1",
+            chall.id,
+        )
+            .execute(&mut **tx)
+            .await?;
+        return Ok(());
+    };
+
+    // grafted from deploy (TODO: dedupe this somehow)
+
+    // 1. find the public id of the challenge ("slug")
+    let public_chall_partial = sqlx::query!(
+        "SELECT public_id FROM challenges WHERE id = $1",
+        chall.challenge_id
+    )
+        .fetch_one(&mut **tx)
+        .await?;
+
+    // 2. find the challenge data for that slug
+    let chall_data = state.challenge_data.get(&public_chall_partial.public_id)
+        .ok_or_else(|| eyre!("failed to get challenge data for {}", public_chall_partial.public_id))?;
+
+    // 3. ensure there is a container on it
+    let Some(chall_container) = &chall_data.container else {
+        return Err(eyre!("challenge {} does not have container", chall_data.id));
+    };
+
+    // 4. connect to the appropriate docker socket
+    // TODO: read a host keychain field from the chall data later
+    let host_keychain = &state.config.host_keychains["default"];
+    let ctx: DeployableContext = host_keychain.docker.clone().try_into()?;
+
+    // think these steps can be repeated for each container (perhaps create a network?)
+
+    // 4. calculate the container name
+    let container_name = calculate_container_name(&chall_data.id, &chall_container, chall.team_id);
+
+    debug!("calculated container name: {}", container_name);
+
+    //
+
+    // ok now delete the caddy stuff
+    // FIXME(ani): guarding since caddy client thing doesn't work rn
+    if deploy_data.ports.iter().any(|(_, v)| matches!(v, HostMapping::Http(..))) {
+        let caddy_client = host_keychain.caddy.as_client()?;
+
+        for (_p, map) in &deploy_data.ports {
+            if let HostMapping::Http(subdomain) = &map {
+                let caddy_id = format!("proxy-{}", subdomain);
+                caddy_client
+                    .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
+                    .send()
+                    .await?;
+            }
+        }
+    }
+
+    // kill the container
+    ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
+        .v(true)
+        .force(true)
+        .build())).await?;
+
+    // done... how nice
+    sqlx::query!(
+        "DELETE FROM challenge_deployments WHERE id = $1",
+        chall.id,
+    )
+        .execute(&mut **tx)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn destroy_challenge_task(state: State, chall: ChallengeDeployment) {
+    let mut tx = state.db.begin().await.unwrap();
+    if let Err(e) = destroy_challenge(state, &mut tx, chall.clone()).await {
+        error!("Failed to destroy challenge {:?}: {}", chall, e);
+        // don't commit the tx
+    } else {
+        tx.commit().await.unwrap();
+    }
 }

@@ -14,7 +14,7 @@ pub struct ChallengeDeploymentRow {
     pub deployed: bool,
     pub data: Option<JsonValue>,
     pub created_at: NaiveDateTime,
-    pub expired_at: NaiveDateTime,
+    pub expired_at: Option<NaiveDateTime>,
 }
 
 impl TryInto<ChallengeDeployment> for ChallengeDeploymentRow {
@@ -35,14 +35,14 @@ impl TryInto<ChallengeDeployment> for ChallengeDeploymentRow {
 }
 
 #[derive(Deserialize)]
-struct DeployChallenge {
+struct ChallengeDeploymentReq {
     challenge_id: i32,
     team_id: Option<i32>,
 }
 
 async fn deploy_challenge(
     StateE(state): StateE<State>,
-    Json(payload): Json<DeployChallenge>,
+    Json(payload): Json<ChallengeDeploymentReq>,
 ) -> Result<()> {
     let deployment = sqlx::query_as!(
         ChallengeDeploymentRow,
@@ -63,7 +63,30 @@ async fn deploy_challenge(
     Ok(())
 }
 
+async fn destroy_challenge(
+    StateE(state): StateE<State>,
+    Json(payload): Json<ChallengeDeploymentReq>,
+) -> Result<()> {
+    let deployment = match sqlx::query_as!(
+        ChallengeDeploymentRow,
+        "SELECT * FROM challenge_deployments WHERE team_id IS NOT DISTINCT FROM $1 AND challenge_id = $2",
+        payload.team_id,
+        payload.challenge_id,
+    )
+        .fetch_optional(&state.db)
+        .await? {
+        None => return Ok(()),
+        Some(d) => d,
+    };
+
+    let deployment = deployment.try_into()?;
+    tokio::spawn(deploy::destroy_challenge_task(state, deployment));
+
+    Ok(())
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/deploy_challenge", post(deploy_challenge))
+        .route("/destroy_challenge", post(destroy_challenge))
 }
