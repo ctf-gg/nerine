@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE challenge_deployments SET deployed = TRUE, data = $2, expired_at = $3 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Jsonb",
+        "Timestamp"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c93353c914f0a7bfbfefb1d19c18a7d8b6f91e9478c2dccf35920354d4c1f35a"
+}

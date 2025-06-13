@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM challenge_deployments WHERE team_id IS NOT DISTINCT FROM $1 and challenge_id = $2 AND destroyed_at IS NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f1cfb53cd1b75766762ec481e51c5cebcb8ff1a9905a102995bea52d360a4638"
+}

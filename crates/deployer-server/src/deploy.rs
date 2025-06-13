@@ -19,6 +19,7 @@ pub struct ChallengeDeployment {
     pub data: Option<DeploymentData>,
     pub created_at: NaiveDateTime,
     pub expired_at: Option<NaiveDateTime>,
+    pub destroyed_at: Option<NaiveDateTime>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -273,41 +274,25 @@ pub async fn deploy_challenge_task(state: State, chall: ChallengeDeployment) {
 }
 
 pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, chall: ChallengeDeployment) -> eyre::Result<()> {
-    // check that the deployment still exists
-    if sqlx::query!(
-        "SELECT id FROM challenge_deployments WHERE id = $1",
-        chall.id,
-    )
-        .fetch_optional(&mut **tx)
-        .await?.is_none() {
-        sqlx::query!(
-            "DELETE FROM challenge_deployments WHERE id = $1",
-            chall.id,
-        )
-            .execute(&mut **tx)
-            .await?;
+    if chall.destroyed_at.is_some() {
         return Ok(());
     }
 
+    // this will get dropped if the destroy fails
+    sqlx::query!(
+        "UPDATE challenge_deployments SET destroyed_at = NOW() WHERE id = $1",
+        chall.id,
+    )
+        .execute(&mut **tx)
+        .await?;
+
     // ???
     if !chall.deployed {
-        sqlx::query!(
-            "DELETE FROM challenge_deployments WHERE id = $1",
-            chall.id,
-        )
-            .execute(&mut **tx)
-            .await?;
         return Ok(());
     }
 
     // ???
     let Some(deploy_data) = &chall.data else {
-        sqlx::query!(
-            "DELETE FROM challenge_deployments WHERE id = $1",
-            chall.id,
-        )
-            .execute(&mut **tx)
-            .await?;
         return Ok(());
     };
 
@@ -342,8 +327,6 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
 
     debug!("calculated container name: {}", container_name);
 
-    //
-
     // ok now delete the caddy stuff
     // FIXME(ani): guarding since caddy client thing doesn't work rn
     if deploy_data.ports.iter().any(|(_, v)| matches!(v, HostMapping::Http(..))) {
@@ -367,12 +350,6 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
         .build())).await?;
 
     // done... how nice
-    sqlx::query!(
-        "DELETE FROM challenge_deployments WHERE id = $1",
-        chall.id,
-    )
-        .execute(&mut **tx)
-        .await?;
 
     Ok(())
 }

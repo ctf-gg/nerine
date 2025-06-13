@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO challenge_deployments (team_id, challenge_id) VALUES ($1, $2) RETURNING *",
+  "query": "SELECT * FROM challenge_deployments WHERE team_id IS NOT DISTINCT FROM $1 AND challenge_id = $2 AND destroyed_at IS NULL",
   "describe": {
     "columns": [
       {
@@ -61,5 +61,5 @@
       true
     ]
   },
-  "hash": "641c163f77dce4f8c070cf014addf774c0eb8eb4bafe584029af6579042f8644"
+  "hash": "8b03290b874f40051057b0372a124ece74526a2d133c27b9d35c1b1210da9b9c"
 }

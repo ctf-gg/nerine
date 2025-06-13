@@ -15,6 +15,7 @@ pub struct ChallengeDeploymentRow {
     pub data: Option<JsonValue>,
     pub created_at: NaiveDateTime,
     pub expired_at: Option<NaiveDateTime>,
+    pub destroyed_at: Option<NaiveDateTime>,
 }
 
 impl TryInto<ChallengeDeployment> for ChallengeDeploymentRow {
@@ -30,6 +31,7 @@ impl TryInto<ChallengeDeployment> for ChallengeDeploymentRow {
             data: data2,
             created_at: self.created_at,
             expired_at: self.expired_at,
+            destroyed_at: self.destroyed_at,
         })
     }
 }
@@ -44,15 +46,30 @@ async fn deploy_challenge(
     StateE(state): StateE<State>,
     Json(payload): Json<ChallengeDeploymentReq>,
 ) -> Result<()> {
+    let mut tx = state.db.begin().await?;
+
+    if sqlx::query!(
+        "SELECT id FROM challenge_deployments WHERE team_id IS NOT DISTINCT FROM $1 and challenge_id = $2 AND destroyed_at IS NULL",
+        payload.team_id,
+        payload.challenge_id,
+    )
+        .fetch_optional(&mut *tx)
+        .await?
+        .is_some() {
+        return Err(crate::error::Error::AlreadyDeployed);
+    }
+
     let deployment = sqlx::query_as!(
         ChallengeDeploymentRow,
         "INSERT INTO challenge_deployments (team_id, challenge_id) VALUES ($1, $2) RETURNING *",
         payload.team_id,
         payload.challenge_id,
     )
-        .fetch_one(&state.db)
+        .fetch_one(&mut *tx)
         .await?
         .try_into()?;
+
+    tx.commit().await?;
 
     debug!("got back deployment {:?}", deployment);
 
@@ -69,7 +86,7 @@ async fn destroy_challenge(
 ) -> Result<()> {
     let deployment = match sqlx::query_as!(
         ChallengeDeploymentRow,
-        "SELECT * FROM challenge_deployments WHERE team_id IS NOT DISTINCT FROM $1 AND challenge_id = $2",
+        "SELECT * FROM challenge_deployments WHERE team_id IS NOT DISTINCT FROM $1 AND challenge_id = $2 AND destroyed_at IS NULL",
         payload.team_id,
         payload.challenge_id,
     )

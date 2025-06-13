@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO challenge_deployments (team_id, challenge_id) VALUES ($1, $2) RETURNING *",
+  "query": "SELECT * FROM challenge_deployments WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -46,7 +46,6 @@
     ],
     "parameters": {
       "Left": [
-        "Int4",
         "Int4"
       ]
     },
@@ -61,5 +60,5 @@
       true
     ]
   },
-  "hash": "641c163f77dce4f8c070cf014addf774c0eb8eb4bafe584029af6579042f8644"
+  "hash": "369ff76da2a7eeae8df71ca30c06fdc0ec3e695af3a7aa711144b3a64b3bcf70"
 }
