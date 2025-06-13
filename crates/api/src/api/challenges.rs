@@ -22,7 +22,7 @@ pub struct PublicChallenge {
     attachments: serde_json::Value,
     category: String,
     #[serde(rename(serialize = "deploymentId"))]
-    deployment_id: Option<String>,
+    deployment_id: String,
     strategy: String,
     #[serde(rename(serialize = "selfSolved"))] // todo use built in camel case in future
     self_solved: bool,
@@ -40,6 +40,7 @@ pub async fn list(
 
     let solves = super::profile::get_solves(&state.db, &claims.team_id).await?;
 
+    // TODO cd.public_id is an unexpected null apparently, this is a sqlx bug
     let mut challs = sqlx::query_as!(
         PublicChallenge,
         r#"SELECT 
@@ -51,7 +52,7 @@ pub async fn list(
             c_solves AS solves,
             attachments,
             strategy::text AS "strategy!",
-            cd.public_id AS deployment_id,
+            COALESCE(cd.public_id, '') AS "deployment_id!",
             categories.name AS category,
             FALSE as "self_solved!"
         FROM challenges c JOIN categories ON categories.id = category_id
@@ -150,6 +151,7 @@ pub struct ChallengeDeployment {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct DeploymentData {
+    #[serde(skip_serializing)]
     pub container_id: String,
     pub ports: HashMap<u16, HostMapping>,
 }
@@ -162,7 +164,6 @@ pub enum HostMapping {
     Http { subdomain: String, base: String },
 }
 
-struct PublicDeploymentInfo {}
 
 pub async fn deploy(
     StateE(state): StateE<State>,

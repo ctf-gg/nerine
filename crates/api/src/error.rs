@@ -75,6 +75,7 @@ impl IntoResponse for Error {
             Error::EventEnded => (StatusCode::UNAUTHORIZED, "event_ended"),
             Error::WrongFlag => (StatusCode::BAD_REQUEST, "wrong_flag"),
             Error::TeamNameTaken => (StatusCode::BAD_REQUEST, "team_name_taken"),
+            Error::GenericError => (StatusCode::BAD_REQUEST, "generic_error"),
         };
 
         (status, Json(ErrorResponse { error, message })).into_response()

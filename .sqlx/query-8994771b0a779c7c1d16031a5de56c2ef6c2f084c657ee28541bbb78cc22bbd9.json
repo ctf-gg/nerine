@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT \n            public_id,\n            challenges.name,\n            author,\n            description,\n            c_points AS points,\n            c_solves AS solves,\n            attachments,\n            strategy::text AS \"strategy!\",\n            static_deployment_id,\n            categories.name AS category,\n            FALSE as \"self_solved!\"\n        FROM challenges JOIN categories ON categories.id = category_id\n        ORDER BY solves DESC",
+  "query": "SELECT \n            c.public_id,\n            c.name,\n            author,\n            description,\n            c_points AS points,\n            c_solves AS solves,\n            attachments,\n            strategy::text AS \"strategy!\",\n            COALESCE(cd.public_id, '') AS \"deployment_id!\",\n            categories.name AS category,\n            FALSE as \"self_solved!\"\n        FROM challenges c JOIN categories ON categories.id = category_id\n        LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))\n        ORDER BY solves DESC",
   "describe": {
     "columns": [
       {
@@ -45,7 +45,7 @@
       },
       {
         "ordinal": 8,
-        "name": "static_deployment_id",
+        "name": "deployment_id!",
         "type_info": "Text"
       },
       {
@@ -60,7 +60,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Text"
+      ]
     },
     "nullable": [
       false,
@@ -71,10 +73,10 @@
       false,
       false,
       null,
-      true,
+      null,
       false,
       null
     ]
   },
-  "hash": "f828fa944443c179bc9e3f9f27ebcafad217fdf1e9433be3adbf287abfaa1c3b"
+  "hash": "8994771b0a779c7c1d16031a5de56c2ef6c2f084c657ee28541bbb78cc22bbd9"
 }

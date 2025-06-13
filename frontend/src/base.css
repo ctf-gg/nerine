@@ -111,6 +111,9 @@ button {
   font-size: 1.5rem;
   color: white;
   cursor: pointer;
+  &:disabled {
+    cursor: not-allowed;
+  }
 }
 
 .heading {

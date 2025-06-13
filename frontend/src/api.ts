@@ -10,12 +10,12 @@ export type ApiError = GenericApiError | EventNotStartedApiError;
 
 export interface GenericApiError {
   error:
-  | "database_error"
-  | "jwt_error"
-  | "invalid_token"
-  | "not_found"
-  | "event_ended"
-  | "wrong_flag";
+    | "database_error"
+    | "jwt_error"
+    | "invalid_token"
+    | "not_found"
+    | "event_ended"
+    | "wrong_flag";
   message: string;
 }
 
@@ -93,7 +93,9 @@ export const login = async (token: string): Promise<TeamId | ApiError> => {
   return (await res.json()) as TeamId | ApiError;
 };
 
-export const verifyEmail = async (token: string): Promise<TeamId | ApiError> => {
+export const verifyEmail = async (
+  token: string
+): Promise<TeamId | ApiError> => {
   const res = await req("POST", "/auth/verify_email", {
     body: { token },
   });
@@ -112,7 +114,9 @@ export interface VerificationDetailsEmailUpdate {
   new_email: string;
 }
 
-export type VerificationDetails = VerificationDetailsTeamRegistration | VerificationDetailsEmailUpdate;
+export type VerificationDetails =
+  | VerificationDetailsTeamRegistration
+  | VerificationDetailsEmailUpdate;
 
 export const getVerificationDetails = async (
   token: string
@@ -142,21 +146,21 @@ interface Solve {
 
 type Profile =
   | {
-    type: "private";
-    name: string;
-    email: string;
-    score: number;
-    rank: number;
-    solves: Solve[];
-  }
+      type: "private";
+      name: string;
+      email: string;
+      score: number;
+      rank: number;
+      solves: Solve[];
+    }
   | {
-    type: "public";
+      type: "public";
 
-    name: string;
-    score: number;
-    rank: number;
-    solves: Solve[];
-  };
+      name: string;
+      score: number;
+      rank: number;
+      solves: Solve[];
+    };
 
 const tokenToOptions = (
   token?: string
@@ -190,7 +194,7 @@ export interface Challenge {
   points: number;
   solves: number;
   attachments: { [name: string]: string };
-  strategy: "static" | "instanced",
+  strategy: "static" | "instanced";
   deploymentId: string | null;
   category: string;
   selfSolved: boolean;
@@ -269,17 +273,45 @@ export const verifyEmailUpdate = async (token: string): Promise<Team> => {
     body: { token },
   });
   return (await res.json()) as Team;
-}
-
+};
 
 export async function resendToken(email: string) {
-  await fetch(`/api/auth/resend_token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
+  await req("POST", "/auth/resend_token", { body: { email } });
 }
 
+export interface ChallengeDeployment {
+  id: string;
+  deployed: boolean;
+  data: DeploymentData | null;
+  created_at: string;
+  expired_at: string | null;
+  destroyed_at: string | null;
+}
 
+interface DeploymentData {
+  ports: { [port: number]: HostMapping };
+}
+
+type HostMapping =
+  | { type: "tcp"; port: number }
+  | { type: "http"; subdomain: string; base: string };
+
+export async function deployChallenge(
+  challengeId: string,
+): Promise<ChallengeDeployment | ApiError> {
+  // TODO make it so we don't have to include body in post
+  const res = await req("POST", "/challs/deploy/new/" + challengeId, {
+    body: {},
+  });
+
+  return (await res.json()) as ChallengeDeployment | ApiError;
+}
+
+export async function getChallengeDeployment(
+  deploymentId: string
+): Promise<ChallengeDeployment | ApiError> {
+  // TODO make it so we don't have to include body in post
+  const res = await req("GET", "/challs/deploy/get/" + deploymentId);
+
+  return (await res.json()) as ChallengeDeployment | ApiError;
+}

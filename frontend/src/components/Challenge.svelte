@@ -1,9 +1,36 @@
 <script lang="ts">
   import { marked } from "marked";
-  import { type Challenge, isError, submitFlag } from "../api";
+  import {
+    type Challenge,
+    type ChallengeDeployment,
+    challenges,
+    deployChallenge,
+    getChallengeDeployment,
+    isError,
+    submitFlag,
+  } from "../api";
   const { chall: c }: { chall: Challenge } = $props();
 
   let flagInput: HTMLInputElement;
+  let deployment: ChallengeDeployment | null = $state(null);
+  const urls: { type: "tcp" | "http"; url: string }[] = $derived.by(() => {
+    if (!deployment || !deployment?.data) return [];
+    let res: { type: "tcp" | "http"; url: string }[] = [];
+    for (const [port, mapping] of Object.entries(deployment.data.ports)) {
+      switch (mapping.type) {
+        case "tcp":
+          res.push({ type: "tcp", url: "nc smiley.cat " + port });
+          break;
+        case "http":
+          res.push({
+            type: "http",
+            url: `${mapping.subdomain}.${mapping.base}`,
+          });
+      }
+    }
+
+    return res;
+  });
   let correct = $state<boolean | null>(null);
   async function submit(e: SubmitEvent) {
     e.preventDefault();
@@ -13,6 +40,27 @@
       alert("uwuups! " + j.message);
     }
     correct = !isError(j);
+  }
+
+  async function deployInstance() {
+    const res = await deployChallenge(c.id);
+    c.deploymentId = "loading";
+    if (isError(res)) {
+      alert("something went wrong with deploying: " + JSON.stringify(res));
+      return;
+    }
+
+    deployment = res;
+  }
+
+  if (c.strategy === "instanced" && c.deploymentId) {
+    getChallengeDeployment(c.deploymentId).then((r) => {
+      if (isError(r)) {
+        console.log(r);
+      } else {
+        deployment = r;
+      }
+    });
   }
 </script>
 
@@ -29,12 +77,46 @@
     {/if}
   </div>
   <p class="description">{@html marked(c.description)}</p>
-  <div class="attachments">
-    {#if c.attachments}
-      {#each Object.entries(c.attachments) as [name, url]}
-        <a href={url} download><button>{name}</button></a>
-      {/each}
-    {/if}
+  <div class="resources">
+    <div class="attachments">
+      {#if c.attachments}
+        {#each Object.entries(c.attachments) as [name, url]}
+          <a href={url} download><button>{name}</button></a>
+        {/each}
+      {/if}
+    </div>
+    <div class="deployment">
+      {#if deployment}
+        {#each urls as url}
+          {#if url.type === "tcp"}
+            <button onclick={() => navigator.clipboard.writeText(url.url)}>
+              {url}
+            </button>
+          {:else}
+            <a href={url.url}>
+              <button>{url.url}</button>
+            </a>
+          {/if}
+          {#if deployment.expired_at}
+            <button disabled
+              >Expires at {new Date(
+                deployment.expired_at
+              ).toLocaleTimeString()}</button
+            >
+          {/if}
+        {/each}
+      {:else if c.strategy === "static" && c.deploymentId}
+        <button>Show URL</button>
+      {:else if c.strategy === "static" && !c.deploymentId}
+        <button disabled>
+          Something went wrong... Please contact admins.
+        </button>
+      {:else if c.strategy === "instanced" && c.deploymentId}
+        <button>Loading...</button>
+      {:else if c.strategy === "instanced" && !c.deploymentId}
+        <button onclick={deployInstance}>Create Instance</button>
+      {/if}
+    </div>
   </div>
   {#if !c.selfSolved}
     <form class="submit" onsubmit={submit}>
@@ -85,13 +167,24 @@
       margin-bottom: 1rem;
     }
 
+    .resources {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      margin-bottom: 0.5rem;
+      button {
+        font-size: 1rem;
+      }
+    }
+
+    .deployment {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: end;
+    }
+
     .attachments {
       display: flex;
       gap: 0.5rem;
-      button {
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-      }
     }
   }
 
