@@ -110,6 +110,7 @@ async fn verify_email(
 
     let mut cookie = Cookie::new("token", jwt);
     cookie.set_path("/");
+    cookie.set_max_age(time::Duration::days(30));
     Ok((jar.add(cookie), Json(TeamId { id: team.public_id })))
 }
 
@@ -192,6 +193,7 @@ async fn login(
 
     let mut cookie = Cookie::new("token", jwt);
     cookie.set_path("/");
+    cookie.set_max_age(time::Duration::days(30));
     Ok((jar.add(cookie), Json(TeamId { id: claims.team_id })))
 }
 
