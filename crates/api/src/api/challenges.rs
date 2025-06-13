@@ -193,7 +193,7 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
 
     // TODO unhardcode this later
     let deployment: ChallengeDeployment = client
-        .post("https://deployer:3001/api/challenge/deploy")
+        .post("http://deployer:3001/api/challenge/deploy")
         .json(&ChallengeDeploymentReq {
             challenge_id: record.challenge_id,
             team_id: Some(record.team_id),
@@ -215,7 +215,7 @@ pub async fn get_deployment(
 
     // TODO unhardcode this later
     let deployment: ChallengeDeployment = client
-        .post(format!("https://deployer:3001/api/deployment/{pub_id}"))
+        .post(format!("http://deployer:3001/api/deployment/{pub_id}"))
         .send()
         .await?
         .error_for_status()?

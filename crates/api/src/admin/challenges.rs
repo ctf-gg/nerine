@@ -302,7 +302,7 @@ async fn deploy_static(StateE(state): StateE<State>, _: Admin) -> Result<Json<se
     for id in ids {
         // TODO unhardcode this later
         let deployment: serde_json::Value = client
-            .post("https://deployer:3001/api/challenge/deploy")
+            .post("http://deployer:3001/api/challenge/deploy")
             .json(&ChallengeDeploymentReq {
                 challenge_id: id.id,
                 team_id: None,
