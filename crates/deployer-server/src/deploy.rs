@@ -48,11 +48,16 @@ pub struct DeploymentData {
 
 // keep this in sync with ExposeType
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase", tag = "type")]
 pub enum HostMapping {
-    Tcp(u16),
+    Tcp {
+        port: u16,
+    },
     // subdomain name
-    Http(String),
+    Http {
+        subdomain: String,
+        base: String,
+    },
 }
 
 fn calculate_container_name(
@@ -140,10 +145,15 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
         for (&p, &t) in expose {
             match t {
                 ExposeType::Tcp => {
-                    mappings.insert(p, HostMapping::Tcp(get_unused_port()));
+                    mappings.insert(p, HostMapping::Tcp {
+                        port: get_unused_port(),
+                    });
                 }
                 ExposeType::Http => {
-                    mappings.insert(p, HostMapping::Http(calculate_subdomain(&chall_data.id, public_team_id.as_deref(), p)));
+                    mappings.insert(p, HostMapping::Http {
+                        subdomain: calculate_subdomain(&chall_data.id, public_team_id.as_deref(), p),
+                        base: host_keychain.caddy.base.clone(),
+                    });
                 }
             }
         }
@@ -168,14 +178,14 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
             image: Some(chall_data.image_id(&ctx)),
             exposed_ports: Some(mappings
                 .iter()
-                .filter(|(_, v)| matches!(v, HostMapping::Tcp(_)))
+                .filter(|(_, v)| matches!(v, HostMapping::Tcp { .. }))
                 .map(|(k, _)| (format!("{}/tcp", k), Default::default()))
                 .collect::<HashMap<_, _>>()),
             host_config: Some(HostConfig {
                 port_bindings: Some(mappings
                     .iter()
                     .filter_map(|(k, v)| match v {
-                        HostMapping::Tcp(p) => Some((*k, *p)),
+                        HostMapping::Tcp { port: p } => Some((*k, *p)),
                         _ => None,
                     })
                     .map(|(p1, p2)| (format!("{}/tcp", p1), Some(vec![PortBinding {
@@ -218,11 +228,11 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
     // 9. ??? update caddy or something somehow
     // FIXME(ani): guarding since caddy client thing doesn't work rn
-    if mappings.iter().any(|(_, v)| matches!(v, HostMapping::Http(..))) {
+    if mappings.iter().any(|(_, v)| matches!(v, HostMapping::Http { .. })) {
         let caddy_client = host_keychain.caddy.as_client()?;
 
         for (p, map) in &mappings {
-            if let HostMapping::Http(subdomain) = &map {
+            if let HostMapping::Http { subdomain, .. } = &map {
                 let caddy_id = format!("proxy-{}", subdomain);
                 caddy_client
                     .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
@@ -360,11 +370,11 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
 
     // ok now delete the caddy stuff
     // FIXME(ani): guarding since caddy client thing doesn't work rn
-    if deploy_data.ports.iter().any(|(_, v)| matches!(v, HostMapping::Http(..))) {
+    if deploy_data.ports.iter().any(|(_, v)| matches!(v, HostMapping::Http { .. })) {
         let caddy_client = host_keychain.caddy.as_client()?;
 
         for (_p, map) in &deploy_data.ports {
-            if let HostMapping::Http(subdomain) = &map {
+            if let HostMapping::Http { subdomain, .. } = &map {
                 let caddy_id = format!("proxy-{}", subdomain);
                 caddy_client
                     .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
