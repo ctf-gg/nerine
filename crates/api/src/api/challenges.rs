@@ -170,10 +170,10 @@ pub async fn deploy(
     Auth(claims): Auth,
     Path(pub_id): Path<String>,
 ) -> Result<Json<ChallengeDeployment>> {
-    let now = Utc::now().naive_utc();
-    if now < state.event.start_time {
-        return Err(Error::EventNotStarted(state.event.start_time.clone()));
-    }
+    // let now = Utc::now().naive_utc();
+    // if now < state.event.start_time {
+    //     return Err(Error::EventNotStarted(state.event.start_time.clone()));
+    // }
 
     let record = sqlx::query!(
         r#"SELECT teams.id AS team_id, challenges.id AS challenge_id, challenges.strategy::text AS "strategy!"
