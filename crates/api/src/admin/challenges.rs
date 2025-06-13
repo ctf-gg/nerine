@@ -1,8 +1,10 @@
+use crate::{db::update_chall_cache, extractors::Admin, Result, State};
 use axum::{
-    extract::{State as StateE}, routing::{delete, get, patch, post}, Json, Router
+    extract::State as StateE,
+    routing::{delete, get, patch, post},
+    Json, Router,
 };
 use nanoid::nanoid;
-use crate::{db::update_chall_cache, extractors::Admin, Result, State};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
@@ -41,11 +43,11 @@ impl FromRow<'_, PgRow> for Challenge {
                 name: row.try_get("category_name")?,
             },
             group: match row.try_get("group_id") {
-                Ok(gid) => Some(ChallengeGroup {
+                Ok(Some(gid)) => Some(ChallengeGroup {
                     id: gid,
                     name: row.try_get("group_name")?,
                 }),
-                Err(sqlx::Error::ColumnNotFound(_)) => None,
+                Ok(None) | Err(sqlx::Error::ColumnNotFound(_)) => None,
                 Err(e) => Err(e)?,
             },
         })
@@ -63,10 +65,7 @@ pub struct ChallengeGroup {
     pub name: String,
 }
 
-async fn get_challenges(
-    StateE(state): StateE<State>,
-    _: Admin,
-) -> Result<Json<Vec<Challenge>>> {
+async fn get_challenges(StateE(state): StateE<State>, _: Admin) -> Result<Json<Vec<Challenge>>> {
     let challs: Vec<Challenge> = sqlx::query_as(
         "WITH chall AS (SELECT * FROM challenges) SELECT 
                 m.id,
@@ -107,6 +106,7 @@ pub struct UpsertChallenge {
     pub visible: bool,
 
     pub category_id: i32,
+    pub group_id: Option<i32>,
 }
 
 async fn upsert_challenge(
@@ -127,19 +127,21 @@ async fn upsert_challenge(
                 flag,
                 attachments,
                 visible,
-                category_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+                category_id,
+                group_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
             ON CONFLICT(public_id) DO UPDATE 
             SET 
                 name = $2,
-                author = $3
+                author = $3,
                 description = $4,
                 points_min = $5,
                 points_max = $6,
                 flag = $7,
                 attachments = $8,
                 visible = $9,
-                category_id = $10
+                category_id = $10,
+                group_id = $11
                 RETURNING *
             )
             SELECT 
@@ -172,6 +174,7 @@ async fn upsert_challenge(
     .bind(payload.attachments)
     .bind(payload.visible)
     .bind(payload.category_id)
+    .bind(payload.group_id)
     .fetch_one(&state.db)
     .await?;
 
@@ -207,13 +210,23 @@ async fn create_category(
     _: Admin,
     Json(payload): Json<CreateCategory>,
 ) -> Result<Json<Category>> {
-    Ok(Json(sqlx::query_as!(
-        Category,
-        "INSERT INTO categories (name) VALUES ($1) RETURNING *",
-        payload.name
-    )
-    .fetch_one(&state.db)
-    .await?))
+    Ok(Json(
+        sqlx::query_as!(
+            Category,
+            "INSERT INTO categories (name) VALUES ($1) RETURNING *",
+            payload.name
+        )
+        .fetch_one(&state.db)
+        .await?,
+    ))
+}
+
+async fn list_categories(StateE(state): StateE<State>, _: Admin) -> Result<Json<Vec<Category>>> {
+    Ok(Json(
+        sqlx::query_as!(Category, "SELECT * FROM categories")
+            .fetch_all(&state.db)
+            .await?,
+    ))
 }
 
 pub fn router() -> Router<crate::State> {
@@ -221,5 +234,6 @@ pub fn router() -> Router<crate::State> {
         .route("/", get(get_challenges))
         .route("/", delete(delete_challenge))
         .route("/", patch(upsert_challenge))
+        .route("/category", get(list_categories))
         .route("/category", post(create_category))
 }

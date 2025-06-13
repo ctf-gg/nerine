@@ -1,10 +1,10 @@
 use std::{
     collections::HashMap,
     env,
-    fs::File,
+    fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
-    process::exit,
+    sync::Arc,
 };
 
 use bollard::auth::DockerCredentials;
@@ -15,7 +15,10 @@ use deployer_common::challenge::{
 };
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::{Result, eyre};
+use reqwest::{Url, cookie::Jar};
 use rustyline::DefaultEditor;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use walkdir::WalkDir;
 
 #[derive(Debug, Parser)]
@@ -57,7 +60,10 @@ enum Commands {
 
 #[derive(Debug, Subcommand)]
 enum PlatformCommands {
-    Update,
+    Update {
+        #[arg()]
+        paths: Vec<PathBuf>,
+    },
 }
 // todo case sensitive or not?
 fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
@@ -70,7 +76,42 @@ fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
     None
 }
 
-// fn get_all_challs() -> Vec<DeployableChallenge> {}
+fn get_all_challs(paths: Vec<PathBuf>) -> impl Iterator<Item = DeployableChallenge> {
+    let chall_paths: Vec<PathBuf> = if paths.len() == 0 {
+        WalkDir::new(".")
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name() == "challenge.toml")
+            .map(|e| e.path().parent().unwrap().to_owned())
+            .collect()
+    } else {
+        paths.clone()
+    };
+
+    let challs: Vec<Result<DeployableChallenge>> = chall_paths
+        .into_iter()
+        .map(|p| {
+            DeployableChallenge::from_root(p.clone()).map_err(|err| {
+                eyre!(
+                    "at {}:\n{}",
+                    p.join("challenge.toml").to_str().unwrap().to_string(),
+                    err.to_string()
+                )
+            })
+        })
+        .collect();
+
+    let parse_errors: Vec<&eyre::ErrReport> =
+        challs.iter().filter_map(|c| c.as_ref().err()).collect();
+    if parse_errors.len() > 0 {
+        eprintln!("Toml errors:");
+        for err in parse_errors {
+            eprintln!("{}", err)
+        }
+    }
+
+    return challs.into_iter().filter_map(|c| c.ok());
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -209,46 +250,7 @@ async fn main() -> Result<()> {
             all,
             strict,
         } => {
-            let chall_paths: Vec<PathBuf> = if paths.len() == 0 {
-                WalkDir::new(".")
-                    .into_iter()
-                    .filter_map(|e| e.ok())
-                    .filter(|e| e.file_name() == "challenge.toml")
-                    .map(|e| e.path().parent().unwrap().to_owned())
-                    .collect()
-            } else {
-                paths.clone()
-            };
-
-            let challs: Vec<Result<DeployableChallenge>> = chall_paths
-                .into_iter()
-                .map(|p| {
-                    DeployableChallenge::from_root(p.clone()).map_err(|err| {
-                        eyre!(
-                            "at {}:\n{}",
-                            p.join("challenge.toml").to_str().unwrap().to_string(),
-                            err.to_string()
-                        )
-                    })
-                })
-                .collect();
-
-            let parse_errors: Vec<&eyre::ErrReport> =
-                challs.iter().filter_map(|c| c.as_ref().err()).collect();
-            if parse_errors.len() > 0 {
-                eprintln!("Toml errors:");
-                for err in parse_errors {
-                    eprintln!("{}", err)
-                }
-                if strict {
-                    eprintln!("Errors found with strict mode enabled. Exiting.");
-                    exit(1);
-                }
-            }
-
-            let valid_challs: Vec<DeployableChallenge> = challs
-                .into_iter()
-                .filter_map(|c| c.ok())
+            let valid_challs: Vec<DeployableChallenge> = get_all_challs(paths)
                 .filter(|c| c.chall.container.is_some())
                 .filter(|c| all || c.chall.build_group == build_group)
                 .collect();
@@ -286,7 +288,95 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Platform { command } => match command {
-            PlatformCommands::Update => {}
+            PlatformCommands::Update { paths } => {
+                #[derive(Deserialize, Serialize)]
+                pub struct Category {
+                    pub id: i32,
+                    pub name: String,
+                }
+
+                #[derive(Serialize)]
+                pub struct UpsertChallenge {
+                    pub id: Option<String>,
+                    pub name: String,
+                    pub author: String,
+                    pub description: String,
+                    pub points_min: i32,
+                    pub points_max: i32,
+                    pub flag: String,
+                    pub attachments: serde_json::Value,
+                    pub visible: bool,
+
+                    pub category_id: i32,
+                    pub group_id: Option<i32>,
+                }
+
+                let platform_base = env::var("PLATFORM_BASE")?;
+                let jar = Jar::default();
+                jar.add_cookie_str(
+                    &format!("admin_token={}", env::var("PLATFORM_ADMIN_TOKEN")?),
+                    &Url::parse(&platform_base)?,
+                );
+                let client = reqwest::Client::builder()
+                    .cookie_provider(Arc::new(jar))
+                    .build()?;
+                let mut categories: HashMap<String, i32> = client
+                    .get(format!("{platform_base}/api/admin/challs/category"))
+                    .send()
+                    .await?
+                    .json::<Vec<Category>>()
+                    .await?
+                    .into_iter()
+                    .map(|c| (c.name, c.id))
+                    .collect();
+                for DeployableChallenge { chall, root } in get_all_challs(paths) {
+                    client
+                        .patch(format!("{platform_base}/api/admin/challs"))
+                        .json(&UpsertChallenge {
+                            id: Some(chall.id.clone()),
+                            name: chall.name,
+                            author: chall.author,
+                            description: chall.description,
+                            points_max: 500,
+                            points_min: 100,
+                            flag: match chall.flag {
+                                Flag::Raw(flag) => panic!("no one should be using this {}", flag),
+                                Flag::File { file } => fs::read_to_string(root.join(file))?,
+                            },
+                            attachments: Value::Null,
+                            visible: false,
+                            category_id: match categories.get(&chall.category) {
+                                Some(c) => *c,
+                                None => {
+                                    #[derive(Serialize)]
+                                    struct CreateCategory {
+                                        name: String,
+                                    }
+
+                                    let new_category: Category = client
+                                        .post(format!("{platform_base}/api/admin/challs/category"))
+                                        .json(&CreateCategory {
+                                            name: chall.category,
+                                        })
+                                        .send()
+                                        .await?
+                                        .json()
+                                        .await?;
+
+                                    categories.insert(new_category.name, new_category.id);
+
+                                    new_category.id
+                                }
+                            },
+                            group_id: None,
+                        })
+                        .send()
+                        .await?
+                        .error_for_status()?;
+
+                    println!("updated {}", chall.id);
+                }
+            }
         },
     }
     Ok(())
