@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO challenge_deployments (team_id, challenge_id) VALUES ($1, $2) RETURNING *",
+  "query": "SELECT * FROM challenge_deployments WHERE public_id = $1",
   "describe": {
     "columns": [
       {
@@ -42,12 +42,16 @@
         "ordinal": 7,
         "name": "destroyed_at",
         "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 8,
+        "name": "public_id",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Int4",
-        "Int4"
+        "Text"
       ]
     },
     "nullable": [
@@ -58,8 +62,9 @@
       true,
       false,
       true,
-      true
+      true,
+      false
     ]
   },
-  "hash": "641c163f77dce4f8c070cf014addf774c0eb8eb4bafe584029af6579042f8644"
+  "hash": "cec4565d72ca6bf59f81624160f4db4aa95123121d0cdaadca88a09621f76f53"
 }

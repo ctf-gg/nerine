@@ -224,6 +224,7 @@ async fn main() -> Result<()> {
                 }),
                 privileged: None,
                 strategy: container_strategy,
+                host: None,
             });
 
             let chall = Challenge {

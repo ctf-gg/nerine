@@ -42,6 +42,11 @@
         "ordinal": 7,
         "name": "destroyed_at",
         "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 8,
+        "name": "public_id",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -57,7 +62,8 @@
       true,
       false,
       true,
-      true
+      true,
+      false
     ]
   },
   "hash": "369ff76da2a7eeae8df71ca30c06fdc0ec3e695af3a7aa711144b3a64b3bcf70"
