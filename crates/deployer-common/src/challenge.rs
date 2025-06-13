@@ -365,7 +365,8 @@ impl DeployableChallenge {
                     None,
                     None,
                     SignedURLOptions {
-                        expires: Duration::from_secs(604800)
+                        expires: Duration::from_secs(604800),
+                        ..Default::default()
                     },
                 )
                 .await?;
