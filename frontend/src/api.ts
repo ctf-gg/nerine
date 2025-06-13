@@ -189,7 +189,7 @@ export interface Challenge {
   description: string;
   points: number;
   solves: number;
-  attachments: any;
+  attachments: { [name: string]: string };
   category: string;
   selfSolved: boolean;
 }

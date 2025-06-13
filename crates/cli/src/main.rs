@@ -15,7 +15,8 @@ use deployer_common::challenge::{
 };
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::{Result, eyre};
-use reqwest::{Url, cookie::Jar};
+use google_cloud_storage::client::{Client as GcsClient, ClientConfig};
+use reqwest::{Client, Url, cookie::Jar};
 use rustyline::DefaultEditor;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -329,21 +330,26 @@ async fn main() -> Result<()> {
                     .into_iter()
                     .map(|c| (c.name, c.id))
                     .collect();
-                for DeployableChallenge { chall, root } in get_all_challs(paths) {
+
+                let gcs_client = GcsClient::new(ClientConfig::default().with_auth().await.unwrap());
+                for ref dc in get_all_challs(paths) {
+                    let DeployableChallenge { chall, root } = dc;
+                    let attachments =
+                        dc.push_attachments(&gcs_client, "sctf-attachments".to_string()).await?;
                     client
                         .patch(format!("{platform_base}/api/admin/challs"))
                         .json(&UpsertChallenge {
                             id: Some(chall.id.clone()),
-                            name: chall.name,
-                            author: chall.author,
-                            description: chall.description,
+                            name: chall.name.clone(),
+                            author: chall.author.clone(),
+                            description: chall.description.clone(),
                             points_max: 500,
                             points_min: 100,
-                            flag: match chall.flag {
+                            flag: match chall.flag.clone() {
                                 Flag::Raw(flag) => panic!("no one should be using this {}", flag),
                                 Flag::File { file } => fs::read_to_string(root.join(file))?,
                             },
-                            attachments: Value::Null,
+                            attachments: attachments.serialize(serde_json::value::Serializer)?,
                             visible: false,
                             category_id: match categories.get(&chall.category) {
                                 Some(c) => *c,
@@ -356,7 +362,7 @@ async fn main() -> Result<()> {
                                     let new_category: Category = client
                                         .post(format!("{platform_base}/api/admin/challs/category"))
                                         .json(&CreateCategory {
-                                            name: chall.category,
+                                            name: chall.category.clone(),
                                         })
                                         .send()
                                         .await?

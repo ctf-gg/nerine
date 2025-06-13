@@ -1,10 +1,18 @@
 use bollard::query_parameters::CreateImageOptionsBuilder;
 use eyre::{Context, Result, eyre};
+use flate2::{Compression, write::GzEncoder};
+use glob::glob;
+use google_cloud_storage::{
+    client::Client,
+    http::objects::upload::{Media, UploadObjectRequest, UploadType},
+    sign::SignedURLOptions,
+};
 use log::info;
 use serde_with::{DisplayFromStr, serde_as};
 use std::{
     collections::HashMap,
     fs::{self, File as StdFile},
+    io::Read,
     path::PathBuf,
 };
 
@@ -213,8 +221,93 @@ impl DeployableChallenge {
         Ok(())
     }
 
-    pub async fn push_attachments(&self) -> Result<()> {
-        /* build and push attachments to s3/gcs */
-        todo!()
+    pub async fn push_attachments(
+        &self,
+        client: &Client,
+        bucket: String,
+    ) -> Result<HashMap<String, String>> {
+        if self.chall.provide.is_none() {
+            return Ok(HashMap::new());
+        }
+
+        let mut hm = HashMap::new();
+        for attachment in self.chall.provide.as_ref().unwrap() {
+            let (name, data) = match attachment {
+                Attachment::File(path) => {
+                    let name = path.file_name().unwrap().to_str().unwrap().to_owned();
+                    let data = fs::read_to_string(self.root.join(path))?;
+                    (name, Vec::from(data.as_bytes()))
+                }
+                Attachment::Named { file, r#as } => {
+                    let data = fs::read_to_string(self.root.join(file))?;
+                    (r#as.clone(), Vec::from(data.as_bytes()))
+                }
+                Attachment::Archive {
+                    globs,
+                    r#as,
+                    exclude,
+                } => {
+                    let tmp = TempDir::new(&self.chall.id)?;
+                    let tar_path = tmp.path().join("chall.tar.gz");
+
+                    // ugh
+                    let tar_file = StdFile::create(&tar_path)?;
+                    let enc = GzEncoder::new(tar_file, Compression::default());
+                    let mut tar_ = tar::Builder::new(enc);
+                    let chall_path = PathBuf::from(r#as);
+                    for pattern in globs {
+                        for path in glob(self.root.join(pattern).to_str().unwrap())? {
+                            let path = path?;
+                            if let Some(exclude) = exclude {
+                                let normed_path = path.canonicalize()?;
+                                let stripped = normed_path.strip_prefix(&self.root.canonicalize()?)?;
+                                for excluded_file in exclude {
+                                    if stripped == excluded_file {
+                                        continue;
+                                    }
+                                }
+                            }
+                            tar_.append_path_with_name(
+                                &path,
+                                chall_path.join(&path).to_str().unwrap(),
+                            )?;
+                        }
+                    }
+                    tar_.finish()?;
+
+                    let mut buffer = Vec::new();
+                    StdFile::open(&tar_path)?.read_to_end(&mut buffer)?;
+
+                    (format!("{as}.tar.gz"), buffer)
+                }
+            };
+
+            let upload_type =
+                UploadType::Simple(Media::new(format!("{}/{}", self.chall.id, &name)));
+
+            let uploaded = client
+                .upload_object(
+                    &UploadObjectRequest {
+                        bucket: bucket.clone(),
+                        ..Default::default()
+                    },
+                    data,
+                    &upload_type,
+                )
+                .await?;
+
+            let url_for_download = client
+                .signed_url(
+                    &bucket,
+                    &uploaded.name,
+                    None,
+                    None,
+                    SignedURLOptions::default(),
+                )
+                .await?;
+
+            hm.insert(name, url_for_download);
+        }
+        return Ok(hm);
     }
 }

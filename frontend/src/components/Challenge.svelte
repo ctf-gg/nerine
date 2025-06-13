@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Challenge, challenges, isError, submitFlag } from "../api";
+  import { type Challenge, isError, submitFlag } from "../api";
   const { chall: c }: { chall: Challenge } = $props();
 
   let flagInput: HTMLInputElement;
@@ -28,6 +28,13 @@
     {/if}
   </div>
   <p class="description">{c.description}</p>
+  <div class="attachments">
+    {#if c.attachments}
+      {#each Object.entries(c.attachments) as [name, url]}
+        <a href={url}><button>{name}</button></a>
+      {/each}
+    {/if}
+  </div>
   <form class="submit" onsubmit={submit}>
     <input
       type="text"
@@ -63,8 +70,9 @@
       justify-content: space-between;
       align-items: center;
     }
-    
-    .author, .solve-text {
+
+    .author,
+    .solve-text {
       margin-top: -0.5rem;
     }
 
