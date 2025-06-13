@@ -347,7 +347,7 @@ async fn main() -> Result<()> {
                             points_max: 500,
                             points_min: 100,
                             flag: match chall.flag.clone() {
-                                Flag::Raw(flag) => panic!("no one should be using this {}", flag),
+                                Flag::Raw(flag) => flag,
                                 Flag::File { file } => fs::read_to_string(root.join(file))?,
                             },
                             attachments: attachments.serialize(serde_json::value::Serializer)?,
