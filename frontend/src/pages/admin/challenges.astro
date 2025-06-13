@@ -1,0 +1,24 @@
+---
+import { adminChallenges } from "../../admin";
+import { isError } from "../../api";
+import Challenge from "../../components/admin/Challenge.svelte";
+import Layout from "../../layouts/Layout.astro";
+
+const challs = await adminChallenges(Astro.cookies.get("admin_token")?.value);
+if (isError(challs)) {
+  if (challs.error === "invalid_token") return Astro.redirect("/login", 307);
+  else return new Response("something went wrong");
+}
+---
+
+<Layout>
+  {challs.map((c) => <Challenge chall={c} client:load />)}
+</Layout>
+
+<style>
+  .challenges {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+</style>
