@@ -1,11 +1,16 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
-use crate::{db::{update_chall_cache, DeploymentStrategy}, extractors::Admin, Result, State};
+use crate::{
+    db::{update_chall_cache, DeploymentStrategy},
+    extractors::Admin,
+    Result, State,
+};
 use axum::{
     extract::State as StateE,
     routing::{delete, get, patch, post},
     Json, Router,
 };
+use chrono::NaiveDateTime;
 use eyre::eyre;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
@@ -255,6 +260,64 @@ async fn list_categories(StateE(state): StateE<State>, _: Admin) -> Result<Json<
     ))
 }
 
+#[derive(Serialize)]
+struct ChallengeDeploymentReq {
+    challenge_id: i32,
+    team_id: Option<i32>,
+}
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct ChallengeDeployment {
+    pub id: String,
+    pub deployed: bool,
+    pub data: Option<DeploymentData>,
+    pub created_at: NaiveDateTime,
+    pub expired_at: Option<NaiveDateTime>,
+    pub destroyed_at: Option<NaiveDateTime>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct DeploymentData {
+    #[serde(skip_serializing)]
+    pub container_id: String,
+    pub ports: HashMap<u16, HostMapping>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase", tag = "type")]
+pub enum HostMapping {
+    Tcp { port: u16 },
+    // subdomain name
+    Http { subdomain: String, base: String },
+}
+
+async fn deploy_static(StateE(state): StateE<State>, _: Admin) -> Result<Json<serde_json::Value>> {
+    let ids = sqlx::query!(r#"SELECT id FROM challenges WHERE strategy = 'static'"#)
+        .fetch_all(&state.db)
+        .await?;
+
+    let client = reqwest::Client::new();
+
+    let mut res = Vec::new();
+
+    for id in ids {
+        // TODO unhardcode this later
+        let deployment: serde_json::Value = client
+            .post("https://deployer:3001/api/challenge/deploy")
+            .json(&ChallengeDeploymentReq {
+                challenge_id: id.id,
+                team_id: None,
+            })
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        println!("deployed: {}", deployment);
+        res.push(deployment);
+    }
+    Ok(Json(serde_json::Value::Array(res)))
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(get_challenges))
@@ -262,4 +325,5 @@ pub fn router() -> Router<crate::State> {
         .route("/", patch(upsert_challenge))
         .route("/category", get(list_categories))
         .route("/category", post(create_category))
+        .route("/deploy_static", post(deploy_static))
 }
