@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }: pkgs.mkShell {
+{ pkgs ? import <nixpkgs> {} }: pkgs.mkShell rec {
   nativeBuildInputs = with pkgs; [
     cargo
     rustc
@@ -22,4 +22,13 @@
   # example_secret in base64
   JWT_SECRET = "ZXhhbXBsZV9zZWNyZXQK";
   ADMIN_TOKEN = "example_admin_token";
+
+  PLATFORM_BASE = "http://sctf.localhost";
+  PLATFORM_ADMIN_TOKEN = ADMIN_TOKEN;
+
+  CHALLENGES_DIR = "./test-deploy/challenges";
+
+  shellHook = ''
+    export HOST_KEYCHAINS="$(jq -c . < ./keychain-dev-real-certs.json | base64 -w0)"
+  '';
 }

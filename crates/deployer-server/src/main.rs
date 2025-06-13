@@ -19,6 +19,8 @@ async fn main() -> eyre::Result<()> {
     let cfg = config::Config::init_from_env()
         .context("initialize config from environment")?;
 
+    let challs = config::load_challenges_from_dir(&cfg.challenges_dir)?;
+
     let pool = PgPoolOptions::new()
         .max_connections(1)
         .connect(&cfg.database_url)
@@ -31,7 +33,7 @@ async fn main() -> eyre::Result<()> {
         .with_state(State::new(config::StateInner {
             config: cfg,
             db: pool,
-            challenge_data: Default::default(),
+            challenge_data: challs,
         }));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;

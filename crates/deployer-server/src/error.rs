@@ -9,7 +9,10 @@ pub enum Error {
     Database(#[from] sqlx::Error),
     #[error("{0}")]
     JSON(#[from] serde_json::Error),
-    // todo docker
+    #[error("{0}")]
+    Docker(#[from] bollard::errors::Error),
+    #[error("{0}")]
+    Reqwest(#[from] reqwest::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -26,6 +29,8 @@ impl IntoResponse for Error {
         let (status, error) = match self {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
             Error::JSON(_) => (StatusCode::INTERNAL_SERVER_ERROR, "json_error"),
+            Error::Docker(_) => (StatusCode::INTERNAL_SERVER_ERROR, "docker_error"),
+            Error::Reqwest(_) => (StatusCode::INTERNAL_SERVER_ERROR, "reqwest_error"),
         };
 
         (status, Json(ErrorResponse { error, message })).into_response()

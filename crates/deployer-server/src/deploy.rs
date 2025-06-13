@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
-use bollard::{query_parameters::{CreateContainerOptionsBuilder, InspectContainerOptions, StartContainerOptions}, secret::{ContainerCreateBody, HostConfig, PortBinding}};
+use bollard::{query_parameters::{CreateContainerOptionsBuilder, InspectContainerOptions, RemoveContainerOptionsBuilder, StartContainerOptions}, secret::{ContainerCreateBody, HostConfig, PortBinding}};
 use deployer_common::challenge::{Container, ContainerStrategy, DeployableContext, ExposeType};
-use log::error;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 use eyre::eyre;
@@ -77,7 +77,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
     // 1. find the public id of the challenge ("slug")
     let public_chall_partial = sqlx::query!(
         "SELECT public_id FROM challenges WHERE id = $1",
-        chall.id
+        chall.challenge_id
     )
         .fetch_one(&mut **tx)
         .await?;
@@ -92,12 +92,16 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
     };
 
     // 4. connect to the appropriate docker socket
-    let mut ctx: DeployableContext = todo!();
+    // TODO: read a host keychain field from the chall data later
+    let host_keychain = &state.config.host_keychains["default"];
+    let ctx: DeployableContext = host_keychain.docker.clone().try_into()?;
 
     // think these steps can be repeated for each container (perhaps create a network?)
 
     // 4. calculate the container name
     let container_name = calculate_container_name(&chall_data.id, &chall_container, chall.team_id);
+
+    debug!("calculated container name: {}", container_name);
 
     // 5. determine host mappings
     let mut mappings = HashMap::new();
@@ -114,6 +118,13 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
         }
     }
 
+    debug!("calculated mappings: {:#?}", mappings);
+
+    // 5.2. pull the container image
+    chall_data.pull(&ctx).await?;
+
+    debug!("pulled image, creating...");
+
     // 6. create container with tcp mappings
     // TODO: maybe also want to expose http ports if we use networks later
     ctx.docker.create_container(
@@ -123,7 +134,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
         ContainerCreateBody {
             /* todo: env */
             /* todo: resource limits */
-            image: Some(format!("{}{}", ctx.image_prefix, chall_data.id)),
+            image: Some(chall_data.image_id(&ctx)),
             exposed_ports: Some(mappings
                 .iter()
                 .filter(|(_, v)| matches!(v, HostMapping::Tcp(_)))
@@ -142,18 +153,51 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
                     }])))
                     .collect::<HashMap<_, _>>()
                 ),
+                privileged: chall_container.privileged.clone(),
                 ..Default::default()
             }),
             ..Default::default()
         },
     ).await?;
 
+    debug!("starting container");
+
     // 7. start container
     ctx.docker.start_container(&container_name, None::<StartContainerOptions>).await?;
+    //match ctx.docker.start_container(&container_name, None::<StartContainerOptions>).await {
+    //    Err(e) => {
+    //        debug!("container start failed, continuing anyways");
+    //        // roll back
+    //        //ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
+    //        //        .v(true)
+    //        //        .force(true)
+    //        //        .build())).await?;
+    //        //Err(e)?;
+    //        //unreachable!();
+    //    }
+    //    _ => {}
+    //}
+
+    // should be configurable
+    //tokio::time::sleep(Duration::from_millis(4_000)).await;
 
     // 8. inspect container to get its ip
     let container_ip = {
         let container_inspected = ctx.docker.inspect_container(&container_name, None::<InspectContainerOptions>).await?;
+        //let container_inspected = match ctx.docker.inspect_container(&container_name, None::<InspectContainerOptions>).await {
+        //    Err(e) => {
+        //        debug!("container inspect failed after 4s, rolling back");
+        //        // roll back
+        //        ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
+        //                .v(true)
+        //                .force(true)
+        //                .build())).await?;
+        //        Err(e)?;
+        //        unreachable!();
+        //    },
+        //    Ok(i) => i,
+        //};
+        debug!("got inspected: {:?}", container_inspected);
         container_inspected
             .network_settings
             .ok_or_else(|| eyre!("Container has no network settings"))?
@@ -164,22 +208,62 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
             .ok_or_else(|| eyre!("Container has no networks"))?
             .1
             .ip_address
+            .clone()
             .ok_or_else(|| eyre!("Container has no IP address"))?
     };
 
+    debug!("creating caddy client");
+
     // 9. ??? update caddy or something somehow
+    // FIXME(ani): guarding since caddy client thing doesn't work rn
+    if mappings.iter().any(|(_, v)| matches!(v, HostMapping::Http(..))) {
+        let caddy_client = host_keychain.caddy.as_client()?;
+
+        for (p, map) in &mappings {
+            if let HostMapping::Http(subdomain) = &map {
+                let caddy_id = format!("proxy-{}", subdomain);
+                caddy_client
+                    .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
+                    .send()
+                    .await?;
+                caddy_client
+                    .put(host_keychain.caddy.prep_url("/id/default-server/routes/0"))
+                    .body(serde_json::to_string(&serde_json::json!({
+                        "@id": caddy_id,
+                        "match": [{
+                            "host": [format!("{}.{}", subdomain, host_keychain.caddy.base)],
+                        }],
+                        "handle": [{
+                            "handler": "reverse_proxy",
+                            "upstreams": [{
+                                "dial": format!("{}:{}", container_ip, p),
+                            }]
+                        }],
+                    }))?)
+                    .send()
+                    .await?;
+            }
+        }
+    }
+
+    // 10. determine new expiration time
+    let expiration_duration = chall.expired_at - chall.created_at;
+    let new_expiration_time = chrono::Utc::now().naive_utc() + expiration_duration;
     
-    // 10. update the db
+    // 11. update the db
     sqlx::query!(
-        "UPDATE challenge_deployments SET data = $2 WHERE id = $1",
+        "UPDATE challenge_deployments SET deployed = TRUE, data = $2, expired_at = $3 WHERE id = $1",
         chall.id,
         Some(serde_json::to_value(DeploymentData {
             container_id: container_name,
             ports: mappings,
         })?),
+        new_expiration_time,
     )
         .execute(&mut **tx)
         .await?;
+
+    // 12. spawn a task to destroy the challenge after the expiration duration (todo)
 
     Ok(())
 }

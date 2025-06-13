@@ -1,5 +1,6 @@
 use axum::{extract::State as StateE, routing::post, Json, Router};
 use chrono::NaiveDateTime;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use sqlx::types::JsonValue;
 
@@ -46,12 +47,14 @@ async fn deploy_challenge(
     let deployment = sqlx::query_as!(
         ChallengeDeploymentRow,
         "INSERT INTO challenge_deployments (team_id, challenge_id) VALUES ($1, $2) RETURNING *",
-        payload.challenge_id,
         payload.team_id,
+        payload.challenge_id,
     )
         .fetch_one(&state.db)
         .await?
         .try_into()?;
+
+    debug!("got back deployment {:?}", deployment);
 
     // start deploying the chall
     tokio::spawn(deploy::deploy_challenge_task(state, deployment));

@@ -38,6 +38,44 @@ pub struct Challenge {
     pub container: Option<Container>,
 }
 
+impl Challenge {
+    pub fn image_id(&self, ctx: &DeployableContext) -> String {
+        format!("{}/{}{}", ctx.repo, ctx.image_prefix, self.id)
+    }
+
+    pub async fn push(&self, ctx: &DeployableContext) -> Result<()> {
+        // TODO: support credentials
+        let mut push = ctx.docker.push_image(
+            &self.image_id(ctx),
+            None::<bollard::query_parameters::PushImageOptions>,
+            ctx.docker_credentials.clone(),
+        );
+
+        while let Some(push_step) = push.next().await {
+            let push_step = push_step.context("Docker image push error")?;
+            info!("{:?}", push_step);
+        }
+
+        Ok(())
+    }
+
+    pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
+        let options = CreateImageOptionsBuilder::new()
+            .from_image(&self.image_id(ctx))
+            .build();
+        let mut pull = ctx
+            .docker
+            .create_image(Some(options), None, ctx.docker_credentials.clone());
+
+        while let Some(pull_step) = pull.next().await {
+            let pull_step = pull_step.context("Docker image pull error")?;
+            info!("{:?}", pull_step);
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Flag {
@@ -77,6 +115,7 @@ pub struct Container {
     pub expose: Option<HashMap<u16, ExposeType>>,
     #[serde(default = "default_strategy")]
     pub strategy: ContainerStrategy,
+    pub privileged: Option<bool>,
 }
 
 fn default_strategy() -> ContainerStrategy {
@@ -109,6 +148,71 @@ pub struct DeployableChallenge {
     pub root: PathBuf,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+/// Serializable version of [super::DeployableContext].
+pub struct DeployableContextData {
+    pub docker: DockerData,
+    pub docker_credentials: Option<bollard::auth::DockerCredentials>,
+    pub image_prefix: String,
+    pub repo: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase", tag = "type")]
+pub enum DockerData {
+    /// use local defaults
+    Local,
+    /// use ssl
+    Ssl {
+        address: String,
+        // in pem
+        key: String,
+        cert: String,
+        ca: String,
+    }
+}
+
+impl TryInto<bollard::Docker> for DockerData {
+    type Error = bollard::errors::Error;
+
+    fn try_into(self) -> std::result::Result<bollard::Docker, Self::Error> {
+        match self {
+            Self::Local => bollard::Docker::connect_with_local_defaults(),
+            Self::Ssl { address, key, cert, ca } => {
+                // FIXME(ani): avoid unwraps
+                let dir = tempdir::TempDir::new("docker-certs-dir").unwrap();
+                let key_path = dir.path().join("key.pem");
+                let cert_path = dir.path().join("cert.pem");
+                let ca_path = dir.path().join("ca.pem");
+                fs::write(&key_path, key).unwrap();
+                fs::write(&cert_path, cert).unwrap();
+                fs::write(&ca_path, ca).unwrap();
+                bollard::Docker::connect_with_ssl(
+                    &address,
+                    &key_path,
+                    &cert_path,
+                    &ca_path,
+                    120,
+                    bollard::API_DEFAULT_VERSION,
+                )
+            }
+        }
+    }
+}
+
+impl TryInto<DeployableContext> for DeployableContextData {
+    type Error = bollard::errors::Error;
+
+    fn try_into(self) -> std::result::Result<DeployableContext, Self::Error> {
+        Ok(DeployableContext {
+            docker: self.docker.try_into()?,
+            docker_credentials: self.docker_credentials,
+            image_prefix: self.image_prefix,
+            repo: self.repo,
+        })
+    }
+}
+
 #[derive(Debug, Clone)]
 /// Expected to be passed by callers.
 pub struct DeployableContext {
@@ -134,10 +238,6 @@ impl DeployableChallenge {
         }
 
         Ok(Self { chall, root })
-    }
-
-    fn image_id(&self, ctx: &DeployableContext) -> String {
-        format!("{}/{}{}", ctx.repo, ctx.image_prefix, self.chall.id)
     }
 
     pub async fn build(
@@ -168,7 +268,7 @@ impl DeployableChallenge {
 
         let options = bollard::query_parameters::BuildImageOptionsBuilder::new()
             // FIXME(ani): idk if it's ideal to tag the image with the repo name in build
-            .t(&self.image_id(ctx))
+            .t(&self.chall.image_id(ctx))
             .forcerm(true)
             .rm(true)
             .build();
@@ -189,36 +289,12 @@ impl DeployableChallenge {
         Ok(Some(build_infos))
     }
 
-    pub async fn push(&self, ctx: &DeployableContext) -> Result<()> {
-        // TODO: support credentials
-        let mut push = ctx.docker.push_image(
-            &self.image_id(ctx),
-            None::<bollard::query_parameters::PushImageOptions>,
-            ctx.docker_credentials.clone(),
-        );
-
-        while let Some(push_step) = push.next().await {
-            let push_step = push_step.context("Docker image push error")?;
-            info!("{:?}", push_step);
-        }
-
-        Ok(())
-    }
-
+    // compat
     pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
-        let options = CreateImageOptionsBuilder::new()
-            .from_image(&self.image_id(ctx))
-            .build();
-        let mut pull = ctx
-            .docker
-            .create_image(Some(options), None, ctx.docker_credentials.clone());
-
-        while let Some(pull_step) = pull.next().await {
-            let pull_step = pull_step.context("Docker image pull error")?;
-            info!("{:?}", pull_step);
-        }
-
-        Ok(())
+        self.chall.pull(ctx).await
+    }
+    pub async fn push(&self, ctx: &DeployableContext) -> Result<()> {
+        self.chall.push(ctx).await
     }
 
     pub async fn push_attachments(
