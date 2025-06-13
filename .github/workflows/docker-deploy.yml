@@ -132,7 +132,7 @@ jobs:
             {
               "cargo-deployer": {
                 "target": "/app/target",
-                "id": "cargo"
+                "id": "cargo-deployer"
               }
             }
           skip-extraction: ${{ steps.cache.outputs.cache-hit }}
