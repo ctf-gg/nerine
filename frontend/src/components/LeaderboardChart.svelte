@@ -50,30 +50,40 @@
 
     function findLatestTimestamp(teams: LeaderboardEntry[]): number {
         let latest = 0;
-        teams.forEach(team => {
+        teams.forEach((team) => {
             if (team.scoreHistory && team.scoreHistory.length > 0) {
-                const teamLatest = Math.max(...team.scoreHistory.map(point => 
-                    new Date(point.date).getTime()
-                ));
+                const teamLatest = Math.max(
+                    ...team.scoreHistory.map((point) => {
+                        const utcDate = new Date(point.date + "Z");
+                        return utcDate.getTime();
+                    }),
+                );
                 latest = Math.max(latest, teamLatest);
             }
         });
         return latest;
     }
 
-    function transformScoreHistory(scoreHistory: ScorePoint[], latestTimestamp: number) {
+    function transformScoreHistory(
+        scoreHistory: ScorePoint[],
+        latestTimestamp: number,
+    ) {
         if (!scoreHistory || scoreHistory.length === 0) {
             return [];
         }
 
-        let transformedData = scoreHistory.map((point) => ({
-            x: new Date(point.date).getTime(),
-            y: point.score,
-        }));
+        let transformedData = scoreHistory.map((point) => {
+            const utcDate = new Date(point.date + "Z");
+            return {
+                x: utcDate.getTime(),
+                y: point.score,
+            };
+        });
 
         if (scoreHistory.length === 1) {
             const point = scoreHistory[0];
-            const originalTime = new Date(point.date).getTime();
+            const utcDate = new Date(point.date + "Z");
+            const originalTime = utcDate.getTime();
             transformedData = [
                 { x: originalTime, y: point.score },
                 { x: originalTime + 1, y: point.score },
@@ -84,7 +94,7 @@
         if (lastPoint.x < latestTimestamp) {
             transformedData.push({
                 x: latestTimestamp,
-                y: lastPoint.y
+                y: lastPoint.y,
             });
         }
 
@@ -214,12 +224,19 @@
         chart = new Chart(ctx, config);
     }
 
-    function createDataset(team: LeaderboardEntry, index: number, latestTimestamp: number) {
+    function createDataset(
+        team: LeaderboardEntry,
+        index: number,
+        latestTimestamp: number,
+    ) {
         const color = colorPalette[index % colorPalette.length];
 
         return {
             label: team.name,
-            data: transformScoreHistory(team.scoreHistory || [], latestTimestamp),
+            data: transformScoreHistory(
+                team.scoreHistory || [],
+                latestTimestamp,
+            ),
             backgroundColor: color.light,
             borderColor: color.main,
             borderWidth: 2,

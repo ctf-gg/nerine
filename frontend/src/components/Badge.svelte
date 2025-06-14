@@ -33,7 +33,10 @@
         <img src="/badges/{info.icon}" alt={info.name} class="icon-big" />
         <h1>{info.name}</h1>
         <h2>{info.description}</h2>
-        <p>Obtained {new Date(badge.obtained).toLocaleString()} by first blooding {badge.type}/{badge.chall}</p>
+        <p>
+          Obtained {new Date(badge.obtained).toLocaleString()} by first blooding
+          {badge.type}/{badge.chall}
+        </p>
       </div>
     </div>
   </dialog>
@@ -90,6 +93,48 @@
       p {
         font-style: italic;
         font-size: 1.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .icon-big {
+          height: 15rem;
+          width: 15rem;
+        }
+
+        h1 {
+          font-size: 3rem;
+        }
+
+        h2 {
+          font-size: 1.5rem;
+          margin-top: -1rem;
+          margin-bottom: 1rem;
+        }
+
+        p {
+          font-size: 1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .icon-big {
+          height: 10rem;
+          width: 10rem;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        h2 {
+          font-size: 1.2rem;
+          margin-top: -0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        p {
+          font-size: 0.9rem;
+        }
       }
     }
   }

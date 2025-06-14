@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  const { showHeading = true, event } = $props();
+  const { showHeading = true, isTitle = false, event } = $props();
 
   type Counter = {
     days: number;
@@ -10,14 +10,34 @@
   };
 
   let timeLeft = $state<Counter | null>(null);
+  let isCountingToEnd = $state(false);
+  let eventHasEnded = $state(false);
 
   let intervalId: NodeJS.Timeout | undefined;
 
   function updateCountdown() {
     const now = new Date().getTime();
-    const distance = event.start_time.getTime() - now;
+    const startTime = event.start_time.getTime();
+    const endTime = event.end_time.getTime();
 
-    if (distance > 0) {
+    if (now < startTime) {
+      // Event hasn't started yet, countdown to start
+      isCountingToEnd = false;
+      eventHasEnded = false;
+      const distance = startTime - now;
+      timeLeft = {
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        ),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      };
+    } else if (now < endTime) {
+      // Event has started but hasn't ended, countdown to end
+      isCountingToEnd = true;
+      eventHasEnded = false;
+      const distance = endTime - now;
       timeLeft = {
         days: Math.floor(distance / (1000 * 60 * 60 * 24)),
         hours: Math.floor(
@@ -27,6 +47,11 @@
         seconds: Math.floor((distance % (1000 * 60)) / 1000),
       };
     } else {
+      // Event has ended
+      isCountingToEnd = false;
+      eventHasEnded = true;
+      timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
       if (document.location.pathname !== "/") {
         if (intervalId) {
           clearInterval(intervalId);
@@ -36,7 +61,6 @@
           document.location.reload();
         }, 1000);
       }
-      timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
     }
   }
 
@@ -54,7 +78,27 @@
 
 <div class="countdown-container">
   {#if showHeading}
-    <h2 class="countdown-heading">smileyCTF starts in:</h2>
+    {#if isTitle}
+      <h2 class="countdown-title">
+        {#if eventHasEnded}
+          has ended
+        {:else if isCountingToEnd}
+          ends in
+        {:else}
+          starts in
+        {/if}
+      </h2>
+    {:else}
+      <h2 class="countdown-heading">
+        {#if eventHasEnded}
+          smileyCTF has ended
+        {:else if isCountingToEnd}
+          smileyCTF ends in:
+        {:else}
+          smileyCTF starts in:
+        {/if}
+      </h2>
+    {/if}
   {/if}
   <div class="countdown-display">
     <div class="time-unit">
@@ -92,10 +136,14 @@
     display: grid;
     align-items: center;
     justify-content: center;
-    padding: 1rem 0;
   }
 
   .countdown-heading {
+    text-align: center;
+    font-size: 3rem;
+  }
+
+  .countdown-title {
     text-align: center;
     font-size: 3rem;
   }
@@ -130,6 +178,9 @@
   @media (max-width: 440px) {
     .countdown-heading {
       font-size: 2rem;
+    }
+    .countdown-title {
+      font-size: 2.5rem;
     }
     .countdown-display {
       gap: 0.5rem;
