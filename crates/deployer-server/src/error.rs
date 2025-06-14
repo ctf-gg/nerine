@@ -15,6 +15,8 @@ pub enum Error {
     Reqwest(#[from] reqwest::Error),
     #[error("a deployment already exists")]
     AlreadyDeployed,
+    #[error("{0}")]
+    Generic(#[from] eyre::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -34,6 +36,7 @@ impl IntoResponse for Error {
             Error::Docker(_) => (StatusCode::INTERNAL_SERVER_ERROR, "docker_error"),
             Error::Reqwest(_) => (StatusCode::INTERNAL_SERVER_ERROR, "reqwest_error"),
             Error::AlreadyDeployed => (StatusCode::BAD_REQUEST, "already_deployed"),
+            Error::Generic(_) => (StatusCode::INTERNAL_SERVER_ERROR, "generic_error"),
         };
 
         (status, Json(ErrorResponse { error, message })).into_response()

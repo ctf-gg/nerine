@@ -6,6 +6,7 @@ use log::debug;
 use serde::Deserialize;
 use sqlx::PgPool;
 use eyre::eyre;
+use tokio::sync::RwLock;
 
 // god-awful keychain-type thing
 #[derive(Debug, Clone, Deserialize)]
@@ -132,7 +133,7 @@ pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Chal
 pub struct StateInner {
     pub config: Config,
     // keyed by id
-    pub challenge_data: HashMap<String, Challenge>,
+    pub challenge_data: RwLock<HashMap<String, Challenge>>,
     pub db: PgPool,
 }
 

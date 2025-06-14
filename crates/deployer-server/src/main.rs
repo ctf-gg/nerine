@@ -33,7 +33,7 @@ async fn main() -> eyre::Result<()> {
         .with_state(State::new(config::StateInner {
             config: cfg,
             db: pool,
-            challenge_data: challs,
+            challenge_data: challs.into(),
         }));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;

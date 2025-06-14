@@ -233,7 +233,10 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
 
     // 2. find the challenge data for that slug
-    let chall_data = state.challenge_data.get(&public_chall_partial.public_id)
+    let chall_data = {
+        let rg = state.challenge_data.read().await;
+        rg.get(&public_chall_partial.public_id).map(Clone::clone)
+    }
         .ok_or_else(|| eyre!("failed to get challenge data for {}", public_chall_partial.public_id))?;
 
     // 3. ensure there is a container on it
@@ -465,7 +468,10 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
         .await?;
 
     // 2. find the challenge data for that slug
-    let chall_data = state.challenge_data.get(&public_chall_partial.public_id)
+    let chall_data = {
+        let rg = state.challenge_data.read().await;
+        rg.get(&public_chall_partial.public_id).map(Clone::clone)
+    }
         .ok_or_else(|| eyre!("failed to get challenge data for {}", public_chall_partial.public_id))?;
 
     // 3. ensure there is a container on it

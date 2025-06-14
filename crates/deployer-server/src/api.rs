@@ -126,8 +126,20 @@ async fn get_challenge(
     Ok(Json(deployment.sanitize()))
 }
 
+async fn reload_challenges(
+    StateE(state): StateE<State>,
+) -> Result<()> {
+    let mut challs_new = crate::config::load_challenges_from_dir(&state.config.challenges_dir)?;
+
+    let mut wg = state.challenge_data.write().await;
+    std::mem::swap(&mut challs_new, &mut *wg);
+
+    Ok(())
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
+        .route("/challenges/reload", post(reload_challenges))
         .route("/challenge/deploy", post(deploy_challenge))
         .route("/challenge/destroy", post(destroy_challenge))
         .route("/deployment/{id}", get(get_challenge))
