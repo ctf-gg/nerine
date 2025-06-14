@@ -5,6 +5,7 @@
     type ChallengeDeployment,
     challenges,
     deployChallenge,
+    destroyChallenge,
     getChallengeDeployment,
     isError,
     submitFlag,
@@ -42,14 +43,42 @@
     correct = !isError(j);
   }
 
+  let waiting = $state(false);
+  let interval: any = $state(null);
+
   async function deployInstance() {
+    waiting = true;
     const res = await deployChallenge(c.id);
     if (isError(res)) {
       alert("something went wrong with deploying: " + JSON.stringify(res));
       return;
     }
+    interval = setInterval(async () => {
+      const dep = await getChallengeDeployment(res.id);
+      if (isError(res)) {
+        alert("something went: " + JSON.stringify(res));
+        return;
+      }
 
-    deployment = res;
+      if (res.data) {
+        deployment = res;
+        waiting = false;
+        if (interval) clearInterval(interval);
+      }
+    }, 2000);
+  }
+
+  async function destroyInstance() {
+    waiting = true;
+    const res = await destroyChallenge(c.id);
+    if (res != "ok") {
+      alert("something went wrong with deploying: " + JSON.stringify(res));
+      return;
+    }
+
+    waiting = false;
+    deployment = null;
+    c.deploymentId = "";
   }
 
   async function getUrl() {
@@ -59,7 +88,9 @@
       return;
     }
 
-    deployment = res;
+    if (res.data) {
+      deployment = res;
+    }
   }
 
   $effect(() => {
@@ -116,11 +147,10 @@
             ).toLocaleTimeString()}</button
           >
         {/if}
+        <button onclick={destroyInstance}>Destroy</button>
       {:else if c.strategy === "static" && c.deploymentId}
         <button onclick={getUrl}>Show URL</button>
-      {:else if c.strategy === "static" && !c.deploymentId}
-        <div></div>
-      {:else if c.strategy === "instanced" && c.deploymentId}
+      {:else if waiting || (c.strategy === "instanced" && c.deploymentId)}
         <button>Loading...</button>
       {:else if c.strategy === "instanced" && !c.deploymentId}
         <button onclick={deployInstance}>Create Instance</button>

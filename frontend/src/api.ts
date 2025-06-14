@@ -307,10 +307,20 @@ export async function deployChallenge(
   return (await res.json()) as ChallengeDeployment | ApiError;
 }
 
+export async function destroyChallenge(
+  challengeId: string
+): Promise<"ok" | ApiError> {
+  // TODO make it so we don't have to include body in post
+  const res = await req("POST", "/challs/deploy/destroy/" + challengeId, {
+    body: {},
+  });
+
+  return (await res.json()) as "ok" | ApiError;
+}
+
 export async function getChallengeDeployment(
   deploymentId: string
 ): Promise<ChallengeDeployment | ApiError> {
-  // TODO make it so we don't have to include body in post
   const res = await req("GET", "/challs/deploy/get/" + deploymentId);
 
   return (await res.json()) as ChallengeDeployment | ApiError;
