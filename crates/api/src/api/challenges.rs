@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
     extract::{Path, State as StateE},
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use bitstream_io::{BitRead, BitReader, LittleEndian};
@@ -210,6 +210,39 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
     Ok(Json(deployment))
 }
 
+pub async fn destroy_deployment(
+    StateE(state): StateE<State>,
+    Auth(claims): Auth,
+    Path(pub_id): Path<String>,
+) -> Result<Json<String>> {
+    let record = sqlx::query!(
+        r#"SELECT teams.id AS team_id, challenges.id AS challenge_id, challenges.strategy::text AS "strategy!"
+FROM teams, challenges 
+WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
+        claims.team_id,
+        pub_id,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    let client = reqwest::Client::new();
+
+    if record.strategy == "static" {
+        return Err(Error::GenericError);
+    }
+
+    // TODO unhardcode this later
+    client
+        .post("http://deployer:3001/api/challenge/destroy")
+        .json(&ChallengeDeploymentReq {
+            challenge_id: record.challenge_id,
+            team_id: Some(record.team_id),
+        })
+        .send()
+        .await?
+        .error_for_status()?;
+    Ok(Json("ok".to_string()))
+}
+
 pub async fn get_deployment(
     Auth(_): Auth,
     Path(pub_id): Path<String>,
@@ -249,6 +282,7 @@ pub fn router() -> Router<crate::State> {
     let ratelimited = Router::new()
         .route("/submit", post(submit))
         .route("/deploy/new/{chall_id}", post(deploy))
+        .route("/deploy/destroy/{chall_id}", delete(destroy_deployment))
         .layer(GovernorLayer {
             config: governor_conf,
         });
