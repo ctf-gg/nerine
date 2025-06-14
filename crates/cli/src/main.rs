@@ -232,6 +232,7 @@ async fn main() -> Result<()> {
                 name,
                 flag,
                 author: "You!".to_string(),
+                visible: None,
                 group: None,
                 build_group: None,
                 category: path
