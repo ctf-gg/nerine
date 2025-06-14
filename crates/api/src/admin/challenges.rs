@@ -300,7 +300,6 @@ async fn deploy_static(StateE(state): StateE<State>, _: Admin) -> Result<Json<se
     let mut res = Vec::new();
 
     for id in ids {
-        // TODO unhardcode this later
         let deployment: serde_json::Value = client
             .post(&format!("{}/api/challenge/deploy", state.config.deployer_base))
             .json(&ChallengeDeploymentReq {
@@ -334,7 +333,7 @@ async fn reap(StateE(state): StateE<State>, _: Admin) -> Result<Json<String>> {
     let client = reqwest::Client::new();
     for container in containers {
             client
-        .post("http://deployer:3001/api/challenge/destroy")
+        .post(format!("{}/api/challenge/destroy", state.config.deployer_base))
         .json(&ChallengeDeploymentReq {
             challenge_id: container.challenge_id,
             team_id: container.team_id,
