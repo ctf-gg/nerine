@@ -17,6 +17,9 @@
     # for dev
     expect
     caddy
+    xcaddy
+    go
+    gopls
   ];
 
   DATABASE_URL = "postgres://postgres:postgres@localhost/sctf";
