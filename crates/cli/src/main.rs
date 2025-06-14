@@ -71,6 +71,9 @@ enum PlatformCommands {
         /// Specifies which build group to use
         #[arg(short = 'g', long)]
         build_group: Option<String>,
+        /// Skip pushing attachments to gcs and make all attachments empty in db
+        #[arg(short = 'n', long)]
+        null_attachments: bool,
     },
 }
 // todo case sensitive or not?
@@ -299,7 +302,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Platform { command } => match command {
-            PlatformCommands::Update { paths, build_group } => {
+            PlatformCommands::Update { paths, build_group, null_attachments } => {
                 #[derive(Deserialize, Serialize)]
                 pub struct Category {
                     pub id: i32,
@@ -343,14 +346,20 @@ async fn main() -> Result<()> {
                     .map(|c| (c.name, c.id))
                     .collect();
 
-                let gcs_client = GcsClient::new(ClientConfig::default().with_auth().await.unwrap());
+                let gcs_client = if null_attachments {
+                    None
+                } else {
+                    Some(GcsClient::new(ClientConfig::default().with_auth().await.unwrap()))
+                };
                 for ref dc in
                     get_all_challs(paths).filter(|c| c.chall.build_group == build_group)
                 {
                     let DeployableChallenge { chall, root } = dc;
-                    let attachments = dc
-                        .push_attachments(&gcs_client, "sctf-attachments".to_string())
-                        .await?;
+                    let attachments = if null_attachments {
+                        HashMap::new()
+                    } else {
+                        dc.push_attachments(gcs_client.as_ref().unwrap(), "sctf-attachments".to_string()).await?
+                    };
                     client
                         .patch(format!("{platform_base}/api/admin/challs"))
                         .json(&UpsertChallenge {
