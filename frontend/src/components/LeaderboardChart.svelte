@@ -48,19 +48,47 @@
     let canvas = $state<HTMLCanvasElement | undefined>(undefined);
     let chart = $state<Chart | null>(null);
 
-    function transformScoreHistory(scoreHistory: ScorePoint[]) {
+    function findLatestTimestamp(teams: LeaderboardEntry[]): number {
+        let latest = 0;
+        teams.forEach(team => {
+            if (team.scoreHistory && team.scoreHistory.length > 0) {
+                const teamLatest = Math.max(...team.scoreHistory.map(point => 
+                    new Date(point.date).getTime()
+                ));
+                latest = Math.max(latest, teamLatest);
+            }
+        });
+        return latest;
+    }
+
+    function transformScoreHistory(scoreHistory: ScorePoint[], latestTimestamp: number) {
+        if (!scoreHistory || scoreHistory.length === 0) {
+            return [];
+        }
+
+        let transformedData = scoreHistory.map((point) => ({
+            x: new Date(point.date).getTime(),
+            y: point.score,
+        }));
+
         if (scoreHistory.length === 1) {
             const point = scoreHistory[0];
             const originalTime = new Date(point.date).getTime();
-            return [
+            transformedData = [
                 { x: originalTime, y: point.score },
                 { x: originalTime + 1, y: point.score },
             ];
         }
-        return scoreHistory.map((point) => ({
-            x: new Date(point.date).getTime(),
-            y: point.score,
-        }));
+
+        const lastPoint = transformedData[transformedData.length - 1];
+        if (lastPoint.x < latestTimestamp) {
+            transformedData.push({
+                x: latestTimestamp,
+                y: lastPoint.y
+            });
+        }
+
+        return transformedData;
     }
 
     $effect(() => {
@@ -89,8 +117,9 @@
         if (!ctx) return;
 
         const topTeams = teams.slice(0, maxTeams);
+        const latestTimestamp = findLatestTimestamp(topTeams);
         const datasets = topTeams.map((team, index) =>
-            createDataset(team, index),
+            createDataset(team, index, latestTimestamp),
         );
 
         const config: ChartConfiguration = {
@@ -185,12 +214,12 @@
         chart = new Chart(ctx, config);
     }
 
-    function createDataset(team: LeaderboardEntry, index: number) {
+    function createDataset(team: LeaderboardEntry, index: number, latestTimestamp: number) {
         const color = colorPalette[index % colorPalette.length];
 
         return {
             label: team.name,
-            data: transformScoreHistory(team.scoreHistory || []),
+            data: transformScoreHistory(team.scoreHistory || [], latestTimestamp),
             backgroundColor: color.light,
             borderColor: color.main,
             borderWidth: 2,
@@ -207,8 +236,9 @@
     function updateChart() {
         if (!chart) return;
         const topTeams = teams.slice(0, maxTeams);
+        const latestTimestamp = findLatestTimestamp(topTeams);
         chart.data.datasets = topTeams.map((team, index) =>
-            createDataset(team, index),
+            createDataset(team, index, latestTimestamp),
         );
         chart.update("active");
     }
