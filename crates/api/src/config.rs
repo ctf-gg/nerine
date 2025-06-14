@@ -43,6 +43,9 @@ pub struct Config {
 
     #[envconfig(from = "FROM_EMAIL", default = "noreply@sctf.localhost")]
     pub from_email: String,
+
+    #[envconfig(from = "DEPLOYER_BASE", default = "http://deployer:3001")]
+    pub deployer_base: String,
 }
 
 pub struct StateInner {

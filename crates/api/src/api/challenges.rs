@@ -194,9 +194,8 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
         return Err(Error::GenericError);
     }
 
-    // TODO unhardcode this later
     let deployment: ChallengeDeployment = client
-        .post("http://deployer:3001/api/challenge/deploy")
+        .post(&format!("{}/api/challenge/deploy", state.config.deployer_base))
         .json(&ChallengeDeploymentReq {
             challenge_id: record.challenge_id,
             team_id: Some(record.team_id),
@@ -230,9 +229,8 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
         return Err(Error::GenericError);
     }
 
-    // TODO unhardcode this later
     client
-        .post("http://deployer:3001/api/challenge/destroy")
+        .post(&format!("{}/api/challenge/destroy", state.config.deployer_base))
         .json(&ChallengeDeploymentReq {
             challenge_id: record.challenge_id,
             team_id: Some(record.team_id),

@@ -29,4 +29,5 @@
 
   CHALLENGES_DIR = "./test-deploy/challenges";
   HOST_KEYCHAINS = "./keychain-dev-real-certs.json";
+  DEPLOYER_BASE = "http://localhost:3001";
 }
