@@ -84,7 +84,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-deployer-docker:
+  # build-deployer-docker:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -223,7 +223,7 @@ jobs:
       packages: read
     needs:
       - build-backend-docker
-      - build-deployer-docker
+      # - build-deployer-docker
       - build-frontend-docker
 
     steps:
