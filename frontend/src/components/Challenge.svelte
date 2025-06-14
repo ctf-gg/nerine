@@ -145,7 +145,7 @@
         {#if deployment.expired_at}
           <button disabled
             >Expires at {new Date(
-              deployment.expired_at,
+              deployment.expired_at + 'Z',
             ).toLocaleTimeString()}</button
           >
         {/if}
