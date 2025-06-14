@@ -216,7 +216,7 @@ async fn main() -> Result<()> {
             // let mut expose = HashMap::new();
             // expose.insert(expose_port, expose_type);
 
-            let container = Some(Container {
+            let container = Container {
                 build: dockerfile_path
                     .strip_prefix(&path)
                     .unwrap_or(&dockerfile_path)
@@ -229,9 +229,7 @@ async fn main() -> Result<()> {
                     m
                 }),
                 privileged: None,
-                strategy: container_strategy,
-                host: None,
-            });
+            };
 
             let chall = Challenge {
                 id,
@@ -248,8 +246,15 @@ async fn main() -> Result<()> {
                     .unwrap_or("unknown")
                     .to_string(),
                 description: "challenge description".to_string(),
-                container,
+                container: Some({
+                    // FIXME
+                    let mut m = HashMap::new();
+                    m.insert("default".to_owned(), container);
+                    m
+                }),
+                strategy: container_strategy,
                 provide: None,
+                host: None,
             };
 
             path.push("challenge.toml");
@@ -376,10 +381,7 @@ async fn main() -> Result<()> {
                                 }
                             },
                             attachments: attachments.serialize(serde_json::value::Serializer)?,
-                            strategy: match &chall.container {
-                                Some(c) => c.strategy,
-                                None => DeploymentStrategy::Static,
-                            },
+                            strategy: chall.strategy,
                             visible: chall.visible != Some(false),
                             category_id: match categories.get(&chall.category) {
                                 Some(c) => *c,

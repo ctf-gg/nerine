@@ -35,18 +35,21 @@ pub struct Challenge {
     pub build_group: Option<String>,
     pub category: String,
     pub provide: Option<Vec<Attachment>>,
-    pub container: Option<Container>,
+    pub container: Option<HashMap<String, Container>>,
+    #[serde(default = "default_strategy")]
+    pub strategy: DeploymentStrategy,
+    pub host: Option<String>,
 }
 
 impl Challenge {
-    pub fn image_id(&self, ctx: &DeployableContext) -> String {
-        format!("{}/{}{}", ctx.repo, ctx.image_prefix, self.id)
+    pub fn image_id(&self, ctx: &DeployableContext, ct: &str) -> String {
+        format!("{}/{}{}-{}", ctx.repo, ctx.image_prefix, self.id, ct)
     }
 
-    pub async fn push(&self, ctx: &DeployableContext) -> Result<()> {
+    pub async fn push_ct(&self, ctx: &DeployableContext, ct: &str) -> Result<()> {
         // TODO: support credentials
         let mut push = ctx.docker.push_image(
-            &self.image_id(ctx),
+            &self.image_id(ctx, ct),
             None::<bollard::query_parameters::PushImageOptions>,
             ctx.docker_credentials.clone(),
         );
@@ -59,9 +62,19 @@ impl Challenge {
         Ok(())
     }
 
-    pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
+    pub async fn push(&self, ctx: &DeployableContext) -> Result<()> {
+        let Some(container) = &self.container else { return Ok(()); };
+
+        for ct in container.keys() {
+            self.push_ct(ctx, &ct).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn pull_ct(&self, ctx: &DeployableContext, ct: &str) -> Result<()> {
         let options = CreateImageOptionsBuilder::new()
-            .from_image(&self.image_id(ctx))
+            .from_image(&self.image_id(ctx, ct))
             .build();
         let mut pull = ctx
             .docker
@@ -74,6 +87,17 @@ impl Challenge {
 
         Ok(())
     }
+
+    pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
+        let Some(container) = &self.container else { return Ok(()); };
+
+        for ct in container.keys() {
+            self.pull_ct(ctx, &ct).await?;
+        }
+
+        Ok(())
+    }
+
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -113,10 +137,7 @@ pub struct Container {
     pub env: Option<HashMap<String, String>>,
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
-    #[serde(default = "default_strategy")]
-    pub strategy: DeploymentStrategy,
     pub privileged: Option<bool>,
-    pub host: Option<String>,
 }
 
 fn default_strategy() -> DeploymentStrategy {
@@ -248,11 +269,16 @@ impl DeployableChallenge {
         Ok(Self { chall, root })
     }
 
-    pub async fn build(
+    pub async fn build_ct(
         &self,
         ctx: &DeployableContext,
+        ct: &str,
     ) -> Result<Option<Vec<bollard::models::BuildInfo>>> {
-        let Some(chall_container) = &self.chall.container else {
+        let Some(chall_containers) = &self.chall.container else {
+            return Ok(None);
+        };
+
+        let Some(chall_container) = chall_containers.get(ct) else {
             return Ok(None);
         };
 
@@ -276,7 +302,7 @@ impl DeployableChallenge {
 
         let options = bollard::query_parameters::BuildImageOptionsBuilder::new()
             // FIXME(ani): idk if it's ideal to tag the image with the repo name in build
-            .t(&self.chall.image_id(ctx))
+            .t(&self.chall.image_id(ctx, ct))
             .forcerm(true)
             .rm(true)
             .build();
@@ -296,6 +322,20 @@ impl DeployableChallenge {
 
         Ok(Some(build_infos))
     }
+
+    pub async fn build(&self, ctx: &DeployableContext) -> Result<Vec<Vec<bollard::models::BuildInfo>>> {
+        let Some(container) = &self.chall.container else { return Ok(vec![]); };
+
+        let mut out = vec![];
+        for ct in container.keys() {
+            if let Some(b) = self.build_ct(ctx, &ct).await? {
+                out.push(b);
+            }
+        }
+
+        Ok(out)
+    }
+
 
     // compat
     pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
