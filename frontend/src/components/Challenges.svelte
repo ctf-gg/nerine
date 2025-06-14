@@ -79,7 +79,7 @@
   </div>
 </div>
 <div class="challenges">
-  {#each fileteredChalls as chall}
+  {#each fileteredChalls as chall (chall.id)}
     <ChallengeDisplay {chall} />
   {/each}
 </div>
