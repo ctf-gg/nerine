@@ -10,6 +10,7 @@ mod error;
 
 use config::State;
 use error::Result;
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -28,16 +29,30 @@ async fn main() -> eyre::Result<()> {
 
     sqlx::migrate!("../../migrations").run(&pool).await?;
 
+    let tt = TaskTracker::new();
+    let ct = CancellationToken::new();
+    let ct_copy = ct.clone();
+
+    ctrlc::set_handler(move || {
+        ct_copy.cancel();
+    })?;
+
     let app = Router::<State>::new()
         .nest("/api", api::router())
         .with_state(State::new(config::StateInner {
             config: cfg,
             db: pool,
             challenge_data: challs.into(),
+            tasks: tt.clone(),
         }));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(ct.cancelled_owned())
+        .await?;
+
+    tt.close();
+    tt.wait().await;
 
     Ok(())
 }

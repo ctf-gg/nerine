@@ -80,7 +80,7 @@ async fn deploy_challenge(
     debug!("got back deployment {:?}", deployment);
 
     // start deploying the chall
-    tokio::spawn(deploy::deploy_challenge_task(state, deployment.clone()));
+    state.tasks.spawn(deploy::deploy_challenge_task(state.clone(), deployment.clone()));
 
     Ok(Json(deployment.sanitize()))
 }
@@ -105,7 +105,7 @@ async fn destroy_challenge(
     };
 
     let deployment = deployment.try_into()?;
-    tokio::spawn(deploy::destroy_challenge_task(state, deployment));
+    state.tasks.spawn(deploy::destroy_challenge_task(state.clone(), deployment));
 
     Ok(())
 }

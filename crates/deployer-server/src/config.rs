@@ -7,6 +7,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use eyre::eyre;
 use tokio::sync::RwLock;
+use tokio_util::task::TaskTracker;
 
 // god-awful keychain-type thing
 #[derive(Debug, Clone, Deserialize)]
@@ -135,6 +136,7 @@ pub struct StateInner {
     // keyed by id
     pub challenge_data: RwLock<HashMap<String, Challenge>>,
     pub db: PgPool,
+    pub tasks: TaskTracker,
 }
 
 pub type State = Arc<StateInner>;
