@@ -526,7 +526,7 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
 
     // 3. ensure there is a container on it
     let Some(chall_containers) = &chall_data.container else {
-        return Err(eyre!("challenge {} does not have container", chall_data.id));
+        return Ok(());
     };
 
     // 4. connect to the appropriate docker socket

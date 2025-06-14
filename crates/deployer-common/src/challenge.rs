@@ -43,7 +43,11 @@ pub struct Challenge {
 
 impl Challenge {
     pub fn image_id(&self, ctx: &DeployableContext, ct: &str) -> String {
-        format!("{}/{}{}-{}", ctx.repo, ctx.image_prefix, self.id, ct)
+        if ct == "default" {
+            format!("{}/{}{}", ctx.repo, ctx.image_prefix, self.id)
+        } else {
+            format!("{}/{}{}-{}", ctx.repo, ctx.image_prefix, self.id, ct)
+        }
     }
 
     pub async fn push_ct(&self, ctx: &DeployableContext, ct: &str) -> Result<()> {
