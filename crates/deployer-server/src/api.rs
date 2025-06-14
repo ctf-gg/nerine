@@ -129,10 +129,13 @@ async fn get_challenge(
 async fn reload_challenges(
     StateE(state): StateE<State>,
 ) -> Result<()> {
+    debug!("Reloading challenges");
     let mut challs_new = crate::config::load_challenges_from_dir(&state.config.challenges_dir)?;
 
     let mut wg = state.challenge_data.write().await;
     std::mem::swap(&mut challs_new, &mut *wg);
+
+    debug!("Reloaded challenges");
 
     Ok(())
 }

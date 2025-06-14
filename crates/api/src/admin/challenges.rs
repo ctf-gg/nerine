@@ -318,6 +318,17 @@ async fn deploy_static(StateE(state): StateE<State>, _: Admin) -> Result<Json<se
     Ok(Json(serde_json::Value::Array(res)))
 }
 
+async fn reload_deployer(StateE(state): StateE<State>, _: Admin) -> Result<()> {
+    let client = reqwest::Client::new();
+
+    client
+        .post(&format!("{}/api/challenges/reload", state.config.deployer_base))
+        .send()
+        .await?;
+
+    Ok(())
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(get_challenges))
@@ -326,4 +337,5 @@ pub fn router() -> Router<crate::State> {
         .route("/category", get(list_categories))
         .route("/category", post(create_category))
         .route("/deploy_static", post(deploy_static))
+        .route("/reload_deployer", post(reload_deployer))
 }
