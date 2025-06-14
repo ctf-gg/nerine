@@ -53,6 +53,17 @@
     deployment = res;
   }
 
+  async function getUrl() {
+    const res = await getChallengeDeployment(c.deploymentId!);
+    c.deploymentId = "loading";
+
+    if (isError(res)) {
+      alert("something went: " + JSON.stringify(res));
+      return;
+    }
+    deployment = res;
+  }
+
   if (c.strategy === "instanced" && c.deploymentId) {
     getChallengeDeployment(c.deploymentId).then((r) => {
       if (isError(r)) {
@@ -106,9 +117,9 @@
           {/if}
         {/each}
       {:else if c.strategy === "static" && c.deploymentId}
-        <button>Show URL</button>
+        <button onclick={getUrl}>Show URL</button>
       {:else if c.strategy === "static" && !c.deploymentId}
-      <div></div>
+        <div></div>
       {:else if c.strategy === "instanced" && c.deploymentId}
         <button>Loading...</button>
       {:else if c.strategy === "instanced" && !c.deploymentId}
