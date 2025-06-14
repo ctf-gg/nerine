@@ -71,10 +71,10 @@ async fn main() -> eyre::Result<()> {
             event,
             db: pool,
         }))
-        .layer(cors)
-        .layer(GovernorLayer {
-            config: governor_conf,
-        });
+        .layer(cors);
+        // .layer(GovernorLayer {
+        //     config: governor_conf,
+        // });
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
