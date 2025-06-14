@@ -311,7 +311,7 @@ export async function destroyChallenge(
   challengeId: string
 ): Promise<"ok" | ApiError> {
   // TODO make it so we don't have to include body in post
-  const res = await req("POST", "/challs/deploy/destroy/" + challengeId, {
+  const res = await req("DELETE", "/challs/deploy/destroy/" + challengeId, {
     body: {},
   });
 
