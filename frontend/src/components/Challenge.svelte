@@ -43,25 +43,21 @@
   }
 
   async function deployInstance() {
-    c.deploymentId = "loading";
     const res = await deployChallenge(c.id);
     if (isError(res)) {
       alert("something went wrong with deploying: " + JSON.stringify(res));
       return;
     }
-    c.deploymentId = res.id;
 
     deployment = res;
   }
 
   async function getUrl() {
-    c.deploymentId = "loading";
     const res = await getChallengeDeployment(c.deploymentId!);
     if (isError(res)) {
       alert("something went: " + JSON.stringify(res));
       return;
     }
-    c.deploymentId = res.id;
 
     deployment = res;
   }
@@ -182,7 +178,7 @@
 
     .resources {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: 1fr 1fr;
       margin-bottom: 0.5rem;
       button {
         font-size: 1rem;
