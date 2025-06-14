@@ -19,7 +19,7 @@
     for (const [port, mapping] of Object.entries(deployment.data.ports)) {
       switch (mapping.type) {
         case "tcp":
-          res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port  });
+          res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port });
           break;
         case "http":
           res.push({
@@ -43,36 +43,40 @@
   }
 
   async function deployInstance() {
-    const res = await deployChallenge(c.id);
     c.deploymentId = "loading";
+    const res = await deployChallenge(c.id);
     if (isError(res)) {
       alert("something went wrong with deploying: " + JSON.stringify(res));
       return;
     }
+    c.deploymentId = res.id;
 
     deployment = res;
   }
 
   async function getUrl() {
-    const res = await getChallengeDeployment(c.deploymentId!);
     c.deploymentId = "loading";
-
+    const res = await getChallengeDeployment(c.deploymentId!);
     if (isError(res)) {
       alert("something went: " + JSON.stringify(res));
       return;
     }
+    c.deploymentId = res.id;
+
     deployment = res;
   }
 
-  if (c.strategy === "instanced" && c.deploymentId) {
-    getChallengeDeployment(c.deploymentId).then((r) => {
-      if (isError(r)) {
-        console.log(r);
-      } else {
-        deployment = r;
-      }
-    });
-  }
+  $effect(() => {
+    if (c.strategy === "instanced" && c.deploymentId) {
+      getChallengeDeployment(c.deploymentId).then((r) => {
+        if (isError(r)) {
+          console.log(r);
+        } else {
+          deployment = r;
+        }
+      });
+    }
+  });
 </script>
 
 <div class="challenge">
