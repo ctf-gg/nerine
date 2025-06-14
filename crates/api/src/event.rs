@@ -28,7 +28,7 @@ impl Event {
 // ported from https://github.com/blueset/CTFd/blob/luna/CTFd/plugins/dynamic_challenges/decay.py#L72
 pub fn point_formula(points_min: i32, points_max: i32, solves: i32) -> i32 {
     // note(jayden): ctfd has this configurable per chall, but here im hardcoding to 60 (same as used in sekaictf)
-    let decay = 60.0;
+    let decay = 100.0;
     let gradient = 10.0;
 
     let _min = 1.0 + ((gradient - 1.0) / decay);
@@ -40,15 +40,12 @@ pub fn point_formula(points_min: i32, points_max: i32, solves: i32) -> i32 {
     value
 }
 /* web routes
-   NOTE(ani): keep it small or move into a separate file */
+NOTE(ani): keep it small or move into a separate file */
 
-async fn event_route(
-    StateE(state): StateE<State>,
-) -> Result<Json<Event>> {
+async fn event_route(StateE(state): StateE<State>) -> Result<Json<Event>> {
     Ok(Json(state.event.clone()))
 }
 
 pub fn router() -> Router<crate::State> {
-    Router::new()
-        .route("/", get(event_route))
+    Router::new().route("/", get(event_route))
 }
