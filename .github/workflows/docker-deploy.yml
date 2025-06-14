@@ -84,7 +84,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # build-deployer-docker:
+  build-deployer-docker:
     runs-on: ubuntu-latest
     permissions:
       contents: read
