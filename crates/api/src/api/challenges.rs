@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
     extract::{Path, State as StateE},
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use bitstream_io::{BitRead, BitReader, LittleEndian};
@@ -210,23 +210,90 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
     Ok(Json(deployment))
 }
 
-pub async fn get_deployment(
-    Auth(_): Auth,
+pub async fn destroy_deployment(
+    StateE(state): StateE<State>,
+    Auth(claims): Auth,
     Path(pub_id): Path<String>,
-) -> Result<Json<ChallengeDeployment>> {
+) -> Result<Json<String>> {
+    let record = sqlx::query!(
+        r#"SELECT teams.id AS team_id, challenges.id AS challenge_id, challenges.strategy::text AS "strategy!"
+FROM teams, challenges 
+WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
+        claims.team_id,
+        pub_id,
+    )
+    .fetch_one(&state.db)
+    .await?;
     let client = reqwest::Client::new();
 
+    if record.strategy == "static" {
+        return Err(Error::GenericError);
+    }
+
     // TODO unhardcode this later
-    let deployment: ChallengeDeployment = client
-        .get(format!("http://deployer:3001/api/deployment/{pub_id}"))
+    client
+        .post("http://deployer:3001/api/challenge/destroy")
+        .json(&ChallengeDeploymentReq {
+            challenge_id: record.challenge_id,
+            team_id: Some(record.team_id),
+        })
         .send()
         .await?
-        .error_for_status()?
-        .json()
+        .error_for_status()?;
+    Ok(Json("ok".to_string()))
+}
+
+async fn get_deployment(
+    StateE(state): StateE<State>,
+    Path(pub_id): Path<String>,
+) -> Result<Json<ChallengeDeployment>> {
+    pub struct ChallengeDeploymentRow {
+        pub id: String,
+        pub deployed: bool,
+        pub data: Option<serde_json::Value>,
+        pub created_at: NaiveDateTime,
+        pub expired_at: Option<NaiveDateTime>,
+        pub destroyed_at: Option<NaiveDateTime>,
+    }
+
+    let row: ChallengeDeploymentRow = sqlx::query_as!(
+        ChallengeDeploymentRow,
+        "SELECT public_id AS id, deployed, data, created_at, expired_at, destroyed_at FROM challenge_deployments WHERE public_id = $1",
+        pub_id,
+    )
+        .fetch_one(&state.db)
         .await?;
 
-    Ok(Json(deployment))
+    Ok(Json(ChallengeDeployment {
+        id: row.id,
+        deployed: row.deployed,
+        data: row
+            .data
+            .map::<core::result::Result<DeploymentData, serde_json::Error>, _>(serde_json::from_value)
+            .transpose().unwrap(), // todo unwrap ggs 
+        created_at: row.created_at,
+        expired_at: row.expired_at,
+        destroyed_at: row.destroyed_at,
+    }))
 }
+
+// pub async fn get_deployment(
+//     Auth(_): Auth,
+//     Path(pub_id): Path<String>,
+// ) -> Result<Json<ChallengeDeployment>> {
+//     let client = reqwest::Client::new();
+
+//     // TODO unhardcode this later
+//     let deployment: ChallengeDeployment = client
+//         .get(format!("http://deployer:3001/api/deployment/{pub_id}"))
+//         .send()
+//         .await?
+//         .error_for_status()?
+//         .json()
+//         .await?;
+
+//     Ok(Json(deployment))
+// }
 
 pub fn router() -> Router<crate::State> {
     let governor_conf = Arc::new(
@@ -249,6 +316,7 @@ pub fn router() -> Router<crate::State> {
     let ratelimited = Router::new()
         .route("/submit", post(submit))
         .route("/deploy/new/{chall_id}", post(deploy))
+        .route("/deploy/destroy/{chall_id}", delete(destroy_deployment))
         .layer(GovernorLayer {
             config: governor_conf,
         });
