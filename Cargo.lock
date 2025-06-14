@@ -2955,6 +2955,7 @@ dependencies = [
  "tower_governor",
  "tracing",
  "url",
+ "urlencoding",
  "validator",
 ]
 

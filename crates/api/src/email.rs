@@ -56,29 +56,31 @@ impl EmailService {
     }
 
     fn create_mailer(smtp_url: &str) -> Result<AsyncSmtpTransport<Tokio1Executor>> {
-        let url = url::Url::parse(smtp_url).map_err(|_| Self::validation_error())?;
+    let url = url::Url::parse(smtp_url).map_err(|_| Self::validation_error())?;
 
-        let host = url.host_str().unwrap_or("localhost");
-        let port = url.port().unwrap_or(587);
+    let host = url.host_str().unwrap_or("localhost");
+    let port = url.port().unwrap_or(587);
 
-        let tls_params = lettre::transport::smtp::client::TlsParameters::new(host.to_string())
-            .map_err(|_| Self::validation_error())?;
+    let mut mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(host)
+        .map_err(|_| Self::validation_error())?
+        .port(port);
 
-        let mut mailer = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(host)
-            .port(port)
-            .tls(Tls::Required(tls_params));
-
-        if !url.username().is_empty() {
-            if let Some(password) = url.password() {
-                mailer = mailer.credentials(Credentials::new(
-                    url.username().to_string(),
-                    password.to_string(),
-                ));
-            }
+    if !url.username().is_empty() {
+        if let Some(password) = url.password() {
+            // Decode the percent-encoded username and password
+            let username = urlencoding::decode(url.username())
+                .map_err(|_| Self::validation_error())?
+                .to_string();
+            let password = urlencoding::decode(password)
+                .map_err(|_| Self::validation_error())?
+                .to_string();
+            
+            mailer = mailer.credentials(Credentials::new(username, password));
         }
-
-        Ok(mailer.build())
     }
+
+    Ok(mailer.build())
+}
 
     pub async fn send_verification_email(
         &self,
