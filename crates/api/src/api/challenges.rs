@@ -187,7 +187,7 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
 
     let client = reqwest::Client::new();
 
-    if record.strategy == "static" {
+    if true || record.strategy == "static" {
         return Err(Error::GenericError);
     }
 
