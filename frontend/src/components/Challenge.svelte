@@ -108,14 +108,14 @@
               <button>{url.url}</button>
             </a>
           {/if}
-          {#if deployment.expired_at}
-            <button disabled
-              >Expires at {new Date(
-                deployment.expired_at
-              ).toLocaleTimeString()}</button
-            >
-          {/if}
         {/each}
+        {#if deployment.expired_at}
+          <button disabled
+            >Expires at {new Date(
+              deployment.expired_at
+            ).toLocaleTimeString()}</button
+          >
+        {/if}
       {:else if c.strategy === "static" && c.deploymentId}
         <button onclick={getUrl}>Show URL</button>
       {:else if c.strategy === "static" && !c.deploymentId}

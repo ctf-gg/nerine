@@ -248,11 +248,13 @@ pub fn router() -> Router<crate::State> {
     });
     let ratelimited = Router::new()
         .route("/submit", post(submit))
-        .route("/deploy/get/{deployment_id}", get(get_deployment))
         .route("/deploy/new/{chall_id}", post(deploy))
         .layer(GovernorLayer {
             config: governor_conf,
         });
 
-    Router::new().merge(ratelimited).route("/", get(list))
+    Router::new()
+        .merge(ratelimited)
+        .route("/", get(list))
+        .route("/deploy/get/{deployment_id}", get(get_deployment))
 }
