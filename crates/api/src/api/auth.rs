@@ -45,9 +45,8 @@ pub struct ResendTokenRequest {
 
 async fn register(
     StateE(state): StateE<State>,
-    jar: CookieJar,
     Json(payload): Json<TeamInfo>,
-) -> Result<(StatusCode, CookieJar, Json<serde_json::Value>)> {
+) -> Result<(StatusCode, Json<serde_json::Value>)> {
     payload.validate()?;
 
     let existing_team = sqlx::query("SELECT id FROM teams WHERE name = $1")
@@ -59,44 +58,20 @@ async fn register(
         return Err(crate::error::Error::TeamNameTaken);
     }
 
-    //state
-    //    .email
-    //    .send_verification_email(
-    //        &payload.email,
-    //        &payload.name,
-    //        PendingTeamVerification {
-    //            name: payload.name.clone(),
-    //            email: payload.email.clone(),
-    //        },
-    //    )
-    //    .await?;
-
-    //let team_details = state
-    //    .email
-    //    .consume_pending_verification(&verification_token)
-    //    .await?;
-
-    let team = sqlx::query_as!(
-        Team,
-        "INSERT INTO teams (public_id, name, email) VALUES ($1, $2, $3) RETURNING *",
-        nanoid!(),
-        payload.name,
-        payload.email
-    )
-    .fetch_one(&state.db)
-    .await?;
-
-    // TODO(aiden): if the duration is long, we'll need a way to revoke all jwts
-    let jwt = generate_jwt(&state.config.jwt_keys, &team.public_id, Duration::days(30))?;
-
-    let mut cookie = Cookie::new("token", jwt);
-    cookie.set_path("/");
-    cookie.set_max_age(time::Duration::days(30));
-    //Ok((jar.add(cookie), Json(TeamId { id: team.public_id })))
+    state
+        .email
+        .send_verification_email(
+            &payload.email,
+            &payload.name,
+            PendingTeamVerification {
+                name: payload.name.clone(),
+                email: payload.email.clone(),
+            },
+        )
+        .await?;
 
     Ok((
         StatusCode::CREATED,
-        jar.add(cookie),
         Json(serde_json::json!({
             "email": payload.email
         })),
