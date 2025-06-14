@@ -28,6 +28,7 @@ pub struct Challenge {
     pub author: String,
     pub description: String,
     pub flag: Flag,
+    pub visible: Option<bool>,
     // TODO in the future we should make this one, each challenge can belong to multiple groups
     // and if a group is marked as a build group it will be excluded by default.
     pub group: Option<String>,

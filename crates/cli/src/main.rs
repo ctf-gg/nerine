@@ -365,7 +365,7 @@ async fn main() -> Result<()> {
                                 Some(c) => c.strategy,
                                 None => DeploymentStrategy::Static,
                             },
-                            visible: true,
+                            visible: chall.visible == Some(true),
                             category_id: match categories.get(&chall.category) {
                                 Some(c) => *c,
                                 None => {
