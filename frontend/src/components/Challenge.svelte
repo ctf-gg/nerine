@@ -143,11 +143,13 @@
         {#if deployment.expired_at}
           <button disabled
             >Expires at {new Date(
-              deployment.expired_at,
+              deployment.expired_at
             ).toLocaleTimeString()}</button
           >
         {/if}
-        <button onclick={destroyInstance}>Destroy</button>
+        {#if c.strategy === "instanced"}
+          <button onclick={destroyInstance}>Destroy</button>
+        {/if}
       {:else if c.strategy === "static" && c.deploymentId}
         <button onclick={getUrl}>Show URL</button>
       {:else if waiting || (c.strategy === "instanced" && c.deploymentId)}
