@@ -63,7 +63,7 @@
       }
 
       if (dep.data) {
-        deployment = res;
+        deployment = dep;
         waiting = false;
         if (interval) clearInterval(interval);
       }
@@ -145,7 +145,7 @@
         {#if deployment.expired_at}
           <button disabled
             >Expires at {new Date(
-              deployment.expired_at
+              deployment.expired_at,
             ).toLocaleTimeString()}</button
           >
         {/if}
