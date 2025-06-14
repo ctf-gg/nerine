@@ -243,23 +243,57 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
     Ok(Json("ok".to_string()))
 }
 
-pub async fn get_deployment(
-    Auth(_): Auth,
+async fn get_deployment(
+    StateE(state): StateE<State>,
     Path(pub_id): Path<String>,
 ) -> Result<Json<ChallengeDeployment>> {
-    let client = reqwest::Client::new();
+    pub struct ChallengeDeploymentRow {
+        pub id: String,
+        pub deployed: bool,
+        pub data: Option<serde_json::Value>,
+        pub created_at: NaiveDateTime,
+        pub expired_at: Option<NaiveDateTime>,
+        pub destroyed_at: Option<NaiveDateTime>,
+    }
 
-    // TODO unhardcode this later
-    let deployment: ChallengeDeployment = client
-        .get(format!("http://deployer:3001/api/deployment/{pub_id}"))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
+    let row: ChallengeDeploymentRow = sqlx::query_as!(
+        ChallengeDeploymentRow,
+        "SELECT public_id AS id, deployed, data, created_at, expired_at, destroyed_at FROM challenge_deployments WHERE public_id = $1",
+        pub_id,
+    )
+        .fetch_one(&state.db)
         .await?;
 
-    Ok(Json(deployment))
+    Ok(Json(ChallengeDeployment {
+        id: row.id,
+        deployed: row.deployed,
+        data: row
+            .data
+            .map::<core::result::Result<DeploymentData, serde_json::Error>, _>(serde_json::from_value)
+            .transpose().unwrap(), // todo unwrap ggs 
+        created_at: row.created_at,
+        expired_at: row.expired_at,
+        destroyed_at: row.destroyed_at,
+    }))
 }
+
+// pub async fn get_deployment(
+//     Auth(_): Auth,
+//     Path(pub_id): Path<String>,
+// ) -> Result<Json<ChallengeDeployment>> {
+//     let client = reqwest::Client::new();
+
+//     // TODO unhardcode this later
+//     let deployment: ChallengeDeployment = client
+//         .get(format!("http://deployer:3001/api/deployment/{pub_id}"))
+//         .send()
+//         .await?
+//         .error_for_status()?
+//         .json()
+//         .await?;
+
+//     Ok(Json(deployment))
+// }
 
 pub fn router() -> Router<crate::State> {
     let governor_conf = Arc::new(
