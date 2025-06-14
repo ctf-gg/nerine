@@ -215,7 +215,7 @@ pub async fn get_deployment(
 
     // TODO unhardcode this later
     let deployment: ChallengeDeployment = client
-        .post(format!("http://deployer:3001/api/deployment/{pub_id}"))
+        .get(format!("http://deployer:3001/api/deployment/{pub_id}"))
         .send()
         .await?
         .error_for_status()?
