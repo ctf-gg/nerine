@@ -6,11 +6,11 @@
 
   const categories = $state(new Set(challs.map((x) => x.category)));
   const categoryVisibility = $state(
-    Object.fromEntries([...categories].map((c) => [c, false]))
+    Object.fromEntries([...categories].map((c) => [c, false])),
   );
   const categoryDetails = $derived.by(() => {
     const details = Object.fromEntries(
-      [...categories].map((c) => [c, { solved: 0, total: 0 }])
+      [...categories].map((c) => [c, { solved: 0, total: 0 }]),
     );
     for (const chall of challs) {
       details[chall.category].total += 1;
@@ -20,13 +20,13 @@
     return details;
   });
   const hasCategoryFilter = $derived(
-    Object.values(categoryVisibility).some(Boolean)
+    Object.values(categoryVisibility).some(Boolean),
   );
 
   let showSolved = $state(false);
   let showOnlyUnsolved = $state(false);
   const unblooded = $derived(
-    challs.reduce((acc, c) => acc + (c.solves === 0 ? 1 : 0), 0)
+    challs.reduce((acc, c) => acc + (c.solves === 0 ? 1 : 0), 0),
   );
 
   const fileteredChalls = $derived.by(() => {
@@ -59,7 +59,7 @@
       </div>
     {/each}
   </div>
-  <div class="seperator"></div>
+  <hr />
   <div class="other-filters">
     <div>
       <input type="checkbox" id="show-solved" bind:checked={showSolved} /><label
@@ -101,6 +101,7 @@
 
     label {
       font-size: 1.5rem;
+      white-space: nowrap;
     }
 
     .filter {
@@ -108,18 +109,26 @@
       align-items: center;
     }
 
-    .seperator {
-      border-image: url("/border-big-off-white.png") 12 / 8px round;
-      border-image-outset: 2px;
-      width: 100%;
-      height: 4px;
+    hr {
       margin: 0.5rem 0;
+      height: 0;
+      width: 100%;
+      border: 1px solid #dedec5;
+      margin: 8px 0;
     }
 
     .category-filters,
     .other-filters {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .category-filters,
+      .other-filters {
+        grid-template-columns: 1fr;
+      }
     }
   }
 

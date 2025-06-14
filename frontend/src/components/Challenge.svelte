@@ -112,7 +112,7 @@
         {#if deployment.expired_at}
           <button disabled
             >Expires at {new Date(
-              deployment.expired_at
+              deployment.expired_at,
             ).toLocaleTimeString()}</button
           >
         {/if}
@@ -156,6 +156,20 @@
       align-items: center;
       h1 {
         font-size: 2rem;
+      }
+      h2 {
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        h2 {
+          margin-bottom: 0.75rem;
+        }
       }
     }
 

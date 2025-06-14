@@ -20,7 +20,12 @@
           <a href={"/profile/" + t.id}>{i + 1}</a>
         </td>
         <td>
-          <a href={"/profile/" + t.id}>{t.name}</a>
+          <a href={"/profile/" + t.id}>
+            {t.name}
+            {#if yourTeam === t.id}
+              <span class="you-indicator">(You!)</span>
+            {/if}
+          </a>
         </td>
         <td>
           <a href={"/profile/" + t.id}>{t.score}</a>
@@ -122,6 +127,59 @@
     td {
       padding: 1.25rem 0;
       background: rgb(205, 127, 50, 0.1);
+    }
+  }
+
+  .you-indicator {
+    display: none;
+    color: #f1c40f;
+    font-weight: bold;
+  }
+
+  @media (max-width: 1270px) {
+    .you-are-here {
+      display: none;
+    }
+
+    .you-indicator {
+      display: inline;
+    }
+
+    .entry:has(.you-are-here) td {
+      padding: 1rem 0;
+      font-size: 1.1em;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .leaderboard {
+      font-size: 1rem;
+    }
+
+    .entry td a {
+      padding: 0.5rem 0.25rem;
+    }
+
+    .headers th {
+      padding: 0 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .leaderboard :nth-child(2) td {
+      padding: 1rem 0;
+    }
+
+    .leaderboard :nth-child(3) td {
+      padding: 0.75rem 0;
+    }
+
+    .leaderboard :nth-child(4) td {
+      padding: 0.625rem 0;
+    }
+
+    .entry:has(.you-are-here) td {
+      padding: 0.75rem 0;
+      font-size: 1em;
     }
   }
 </style>
