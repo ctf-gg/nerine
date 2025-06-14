@@ -34,3 +34,4 @@ cached = { version = "0.52.0" }
 bitstream-io = "4.2.0"
 time = "0.3.41"
 reqwest = { version = "0.12.20", features = ["json", "rustls-tls"] }
+tower_governor = "0.7.0"
