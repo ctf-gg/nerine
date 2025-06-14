@@ -329,6 +329,25 @@ async fn reload_deployer(StateE(state): StateE<State>, _: Admin) -> Result<()> {
     Ok(())
 }
 
+async fn reap(StateE(state): StateE<State>, _: Admin) -> Result<Json<String>> {
+    let containers = sqlx::query!("SELECT challenge_id, team_id FROM challenge_deployments WHERE NOW() > expired_at AND destroyed_at IS NULL").fetch_all(&state.db).await?;
+    let client = reqwest::Client::new();
+    for container in containers {
+            client
+        .post("http://deployer:3001/api/challenge/destroy")
+        .json(&ChallengeDeploymentReq {
+            challenge_id: container.challenge_id,
+            team_id: container.team_id,
+        })
+        .send()
+        .await?
+        .error_for_status()?;
+
+    }
+
+    Ok(Json("ok".to_string()))
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(get_challenges))
@@ -338,4 +357,5 @@ pub fn router() -> Router<crate::State> {
         .route("/category", post(create_category))
         .route("/deploy_static", post(deploy_static))
         .route("/reload_deployer", post(reload_deployer))
+        .route("/reap", delete(reap))
 }
