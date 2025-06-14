@@ -23,7 +23,7 @@ async fn main() -> eyre::Result<()> {
     let challs = config::load_challenges_from_dir(&cfg.challenges_dir)?;
 
     let pool = PgPoolOptions::new()
-        .max_connections(1)
+        .max_connections(5)
         .connect(&cfg.database_url)
         .await?;
 
