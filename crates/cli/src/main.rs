@@ -358,7 +358,7 @@ async fn main() -> Result<()> {
                             points_min: 100,
                             flag: match chall.flag.clone() {
                                 Flag::Raw(flag) => flag,
-                                Flag::File { file } => fs::read_to_string(root.join(file))?,
+                                Flag::File { file } => fs::read_to_string(root.join(file))?.trim().to_string(),
                             },
                             attachments: attachments.serialize(serde_json::value::Serializer)?,
                             strategy: match &chall.container {

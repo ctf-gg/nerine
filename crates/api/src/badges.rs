@@ -5,7 +5,7 @@ use serde_json::json;
 use crate::db::DB;
 
 pub async fn award_badge(db: &DB, chall_id: i32, team_id: String) -> crate::Result<()> {
-    sqlx::query!(r#"UPDATE teams SET extra_data = '{ "badges": [] }' WHERE extra_data = NULL"#)
+    sqlx::query!(r#"UPDATE teams SET extra_data = '{ "badges": [] }' WHERE extra_data IS NULL"#)
         .execute(db)
         .await?;
 
