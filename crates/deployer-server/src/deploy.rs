@@ -285,6 +285,10 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
     // 6. create container with tcp mappings
     // TODO: maybe also want to expose http ports if we use networks later
+    ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
+        .v(true)
+        .force(true)
+        .build())).await.ok();
     ctx.docker.create_container(
         Some(CreateContainerOptionsBuilder::new()
             .name(&container_name)
