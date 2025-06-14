@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE teams SET extra_data = '{ \"badges\": [] }' WHERE extra_data IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "2d6325bbb141d5862f9f22eaf1d88a72c6e32718265156ba821670d0f5b11a93"
+}
