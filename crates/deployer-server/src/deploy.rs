@@ -544,13 +544,15 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
 
         // ok now delete the caddy stuff
         // FIXME(ani): guarding since caddy client thing doesn't work rn
-        for (_p, map) in &deploy_data[ct].ports {
-            if let HostMapping::Http { subdomain, .. } = &map {
-                let caddy_id = format!("proxy-{}", subdomain);
-                caddy_client
-                    .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
-                    .send()
-                    .await?;
+        if let Some(dd) = deploy_data.get(ct) {
+            for (_p, map) in &dd.ports {
+                if let HostMapping::Http { subdomain, .. } = &map {
+                    let caddy_id = format!("proxy-{}", subdomain);
+                    caddy_client
+                        .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
+                        .send()
+                        .await?;
+                }
             }
         }
 
