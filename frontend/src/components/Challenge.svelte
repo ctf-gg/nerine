@@ -108,9 +108,7 @@
       {:else if c.strategy === "static" && c.deploymentId}
         <button>Show URL</button>
       {:else if c.strategy === "static" && !c.deploymentId}
-        <button disabled>
-          Something went wrong... Please contact admins.
-        </button>
+      <div></div>
       {:else if c.strategy === "instanced" && c.deploymentId}
         <button>Loading...</button>
       {:else if c.strategy === "instanced" && !c.deploymentId}
