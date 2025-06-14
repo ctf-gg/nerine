@@ -55,12 +55,12 @@
     }
     interval = setInterval(async () => {
       const dep = await getChallengeDeployment(res.id);
-      if (isError(res)) {
+      if (isError(dep)) {
         alert("something went: " + JSON.stringify(res));
         return;
       }
 
-      if (res.data) {
+      if (dep.data) {
         deployment = res;
         waiting = false;
         if (interval) clearInterval(interval);
