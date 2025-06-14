@@ -17,16 +17,18 @@
   const urls: { type: "tcp" | "http"; url: string }[] = $derived.by(() => {
     if (!deployment || !deployment?.data) return [];
     let res: { type: "tcp" | "http"; url: string }[] = [];
-    for (const [port, mapping] of Object.entries(deployment.data.ports)) {
-      switch (mapping.type) {
-        case "tcp":
-          res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port });
-          break;
-        case "http":
-          res.push({
-            type: "http",
-            url: `https://${mapping.subdomain}.${mapping.base}`,
-          });
+    for (const [name, { ports }] of Object.entries(deployment.data)) {
+      for (const mapping of Object.values(ports)) {
+        switch (mapping.type) {
+          case "tcp":
+            res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port });
+            break;
+          case "http":
+            res.push({
+              type: "http",
+              url: `https://${mapping.subdomain}.${mapping.base}`,
+            });
+        }
       }
     }
 
