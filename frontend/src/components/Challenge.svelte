@@ -101,7 +101,7 @@
         {#each urls as url}
           {#if url.type === "tcp"}
             <button onclick={() => navigator.clipboard.writeText(url.url)}>
-              {url}
+              {url.url}
             </button>
           {:else}
             <a href={url.url}>
