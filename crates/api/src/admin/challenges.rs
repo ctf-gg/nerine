@@ -275,7 +275,6 @@ pub struct ChallengeDeployment {
     pub destroyed_at: Option<NaiveDateTime>,
 }
 
-
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct DeploymentDataS {
     #[serde(skip_serializing)]
@@ -350,6 +349,29 @@ async fn reap(StateE(state): StateE<State>, _: Admin) -> Result<Json<String>> {
     Ok(Json("ok".to_string()))
 }
 
+#[derive(Deserialize)]
+struct UpdateCachePayload {
+    id: Option<i32>,
+}
+
+async fn update_cache_handler(
+    StateE(state): StateE<State>,
+    _: Admin,
+    Json(payload): Json<UpdateCachePayload>,
+) -> Result<Json<String>> {
+    if let Some(chall_id) = payload.id {
+        update_chall_cache(&state.db, chall_id).await?;
+    } else {
+        let all_chall_ids: Vec<(i32,)> = sqlx::query_as("SELECT id FROM challenges")
+            .fetch_all(&state.db)
+            .await?;
+        for (chall_id,) in all_chall_ids {
+            update_chall_cache(&state.db, chall_id).await?;
+        }
+    }
+    Ok(Json("Cache updated".to_string()))
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(get_challenges))
@@ -360,4 +382,5 @@ pub fn router() -> Router<crate::State> {
         .route("/deploy_static", post(deploy_static))
         .route("/reload_deployer", post(reload_deployer))
         .route("/reap", delete(reap))
+        .route("/update_cache", post(update_cache_handler))
 }
