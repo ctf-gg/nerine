@@ -21,7 +21,7 @@ if (new Date().getTime() >= event.start_time.getTime()) {
 <Layout>
   {
     challs ? (
-      <ChallengesDisplay challs={challs} client:load />
+      <ChallengesDisplay challs={challs} client:only />
     ) : (
       <Countdown {event} client:load />
     )
