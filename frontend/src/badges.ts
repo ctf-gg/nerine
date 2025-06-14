@@ -32,6 +32,11 @@ export const badges: { [k: string]: BadgeInfo } = {
     name: "Pickle",
     description: "Dill with it.",
   },
+  forensics: {
+    icon: "forensics.png",
+    name: "An Old Friend",
+    description: "we didn't know how good we had it."
+  },
   guessctf: {
     icon: "guessctf.png",
     name: "High Entropy Dice",

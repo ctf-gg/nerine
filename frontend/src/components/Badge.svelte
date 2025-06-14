@@ -70,8 +70,8 @@
       color: white;
 
       .icon-big {
-        height: 30rem;
-        width: 30rem;
+        height: 25rem;
+        width: 25rem;
         image-rendering: pixelated;
         margin: auto;
       }
