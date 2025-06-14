@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{http::HeaderValue, Router};
-use chrono::Duration;
+use std::time::Duration;
 use envconfig::Envconfig;
 use eyre::Context;
 use sqlx::postgres::PgPoolOptions;

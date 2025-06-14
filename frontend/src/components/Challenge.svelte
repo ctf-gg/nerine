@@ -19,7 +19,7 @@
     for (const [port, mapping] of Object.entries(deployment.data.ports)) {
       switch (mapping.type) {
         case "tcp":
-          res.push({ type: "tcp", url: "nc smiley.cat " + port });
+          res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port  });
           break;
         case "http":
           res.push({
