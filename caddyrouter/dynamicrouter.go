@@ -213,7 +213,7 @@ func (rt *DynamicRouterHandler) Provision(ctx caddy.Context) error {
 }
 
 func (rt *DynamicRouterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-    hostHeader := r.Header.Get("Host")
+    hostHeader := r.Host
 
     upstream, ok := rt.rt.lookup(hostHeader)
     if !ok {
