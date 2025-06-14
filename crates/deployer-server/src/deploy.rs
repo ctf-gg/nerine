@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use bollard::{query_parameters::{CreateContainerOptionsBuilder, InspectContainerOptions, RemoveContainerOptionsBuilder, StartContainerOptions}, secret::{ContainerCreateBody, HostConfig, PortBinding}};
 use deployer_common::challenge::{Container, DeploymentStrategy, DeployableContext, ExposeType};
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 use eyre::eyre;
 
-use crate::{api::ChallengeDeploymentRow, State};
+use crate::{api::ChallengeDeploymentRow, config::CaddyKeychain, State};
 
 /* db models (sorta) */
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -98,6 +98,120 @@ fn calculate_subdomain(
     format!("{}-{}", chall_id, end)
 }
 
+#[derive(Debug, Clone)]
+struct DockerGuard {
+    ctx: Arc<DeployableContext>,
+    containers: Vec<String>,
+    networks: Vec<String>,
+    committed: bool,
+    dropping: bool,
+}
+
+impl DockerGuard {
+    pub fn new(ctx: Arc<DeployableContext>) -> Self {
+        Self {
+            ctx,
+            containers: vec![],
+            networks: vec![],
+            committed: false,
+            dropping: false,
+        }
+    }
+
+    pub fn container(&mut self, s: &str) {
+        self.containers.push(s.to_owned());
+    }
+
+    pub fn network(&mut self, n: &str) {
+        self.networks.push(n.to_owned());
+    }
+
+    pub fn commit(&mut self) {
+        self.committed = true;
+    }
+
+    pub async fn adrop(self) {
+        if self.committed {
+            return;
+        }
+
+        for c in self.containers.iter().rev() {
+            self.ctx.docker.remove_container(c, Some(RemoveContainerOptionsBuilder::new()
+                .v(true)
+                .force(true)
+                .build())).await.ok();
+        }
+
+        for n in self.networks.iter().rev() {
+            self.ctx.docker.remove_network(n).await.ok();
+        }
+    }
+}
+
+impl Drop for DockerGuard {
+    fn drop(&mut self) {
+        if self.dropping {
+            return;
+        }
+        self.dropping = true;
+        let self2 = self.clone();
+        tokio::spawn(async move { self2.adrop().await; });
+    }
+}
+
+#[derive(Debug, Clone)]
+struct CaddyGuard {
+    client: Arc<reqwest::Client>,
+    kc: CaddyKeychain,
+    ids: Vec<String>,
+    committed: bool,
+    dropping: bool,
+}
+
+impl CaddyGuard {
+    pub fn new(client: Arc<reqwest::Client>, kc: CaddyKeychain) -> Self {
+        Self {
+            client,
+            kc,
+            ids: vec![],
+            committed: true,
+            dropping: false,
+        }
+    }
+
+    pub fn id(&mut self, i: &str) {
+        self.ids.push(i.to_owned());
+    }
+
+    pub fn commit(&mut self) {
+        self.committed = true;
+    }
+
+    pub async fn adrop(self) {
+        if self.committed {
+            return;
+        }
+
+        for i in self.ids.iter().rev() {
+            self.client
+                .delete(self.kc.prep_url(&format!("/id/{}", i)))
+                .send()
+                .await.ok();
+        }
+    }
+}
+
+impl Drop for CaddyGuard {
+    fn drop(&mut self) {
+        if self.dropping {
+            return;
+        }
+        self.dropping = true;
+        let self2 = self.clone();
+        tokio::spawn(async move { self2.adrop().await; });
+    }
+}
+
 pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, chall: ChallengeDeployment) -> eyre::Result<()> {
     // 1. find the public id of the challenge ("slug")
     let public_chall_partial = sqlx::query!(
@@ -129,9 +243,10 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
     // 4. connect to the appropriate docker socket
     let host_keychain = &state.config.host_keychains[chall_container.host.as_deref().unwrap_or("default")];
-    let ctx: DeployableContext = host_keychain.docker.clone().try_into()?;
+    let ctx: Arc<DeployableContext> = Arc::new(host_keychain.docker.clone().try_into()?);
 
     // think these steps can be repeated for each container (perhaps create a network?)
+    let mut _docker_guard = DockerGuard::new(ctx.clone());
 
     // 4. calculate the container name
     let container_name = calculate_container_name(&chall_data.id, &chall_container, chall.team_id);
@@ -199,6 +314,7 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
             ..Default::default()
         },
     ).await?;
+    _docker_guard.container(&container_name);
 
     debug!("starting container");
 
@@ -226,35 +342,35 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
     debug!("creating caddy client");
 
     // 9. ??? update caddy or something somehow
-    // FIXME(ani): guarding since caddy client thing doesn't work rn
-    if mappings.iter().any(|(_, v)| matches!(v, HostMapping::Http { .. })) {
-        let caddy_client = host_keychain.caddy.as_client()?;
+    let caddy_client = Arc::new(host_keychain.caddy.as_client()?);
+    let mut _caddy_guard = CaddyGuard::new(caddy_client.clone(), host_keychain.caddy.clone());
 
-        for (p, map) in &mappings {
-            if let HostMapping::Http { subdomain, .. } = &map {
-                let caddy_id = format!("proxy-{}", subdomain);
-                caddy_client
-                    .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
-                    .send()
-                    .await?;
-                caddy_client
-                    .put(host_keychain.caddy.prep_url("/id/default-server/routes/0"))
-                    .header("content-type", "application/json")
-                    .body(serde_json::to_string(&serde_json::json!({
-                        "@id": caddy_id,
-                        "match": [{
-                            "host": [format!("{}.{}", subdomain, host_keychain.caddy.base)],
-                        }],
-                        "handle": [{
-                            "handler": "reverse_proxy",
-                            "upstreams": [{
-                                "dial": format!("{}:{}", container_ip, p),
-                            }]
-                        }],
-                    }))?)
-                    .send()
-                    .await?;
-            }
+    for (p, map) in &mappings {
+        if let HostMapping::Http { subdomain, .. } = &map {
+            let caddy_id = format!("proxy-{}", subdomain);
+            caddy_client
+                .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
+                .send()
+                .await?;
+            caddy_client
+                .put(host_keychain.caddy.prep_url("/id/default-server/routes/0"))
+                .header("content-type", "application/json")
+                .body(serde_json::to_string(&serde_json::json!({
+                    "@id": caddy_id,
+                    "match": [{
+                        "host": [format!("{}.{}", subdomain, host_keychain.caddy.base)],
+                    }],
+                    "handle": [{
+                        "handler": "reverse_proxy",
+                        "upstreams": [{
+                            "dial": format!("{}:{}", container_ip, p),
+                        }]
+                    }],
+                    "terminal": true,
+                }))?)
+                .send()
+                .await?;
+            _caddy_guard.id(&caddy_id);
         }
     }
 
@@ -295,6 +411,8 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
         });
     }
 
+    _docker_guard.commit();
+    _caddy_guard.commit();
     Ok(())
 }
 
@@ -386,7 +504,7 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
     ctx.docker.remove_container(&container_name, Some(RemoveContainerOptionsBuilder::new()
         .v(true)
         .force(true)
-        .build())).await?;
+        .build())).await.ok();
 
     // done... how nice
 
