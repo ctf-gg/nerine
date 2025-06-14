@@ -57,6 +57,7 @@ pub async fn list(
             FALSE as "self_solved!"
         FROM challenges c JOIN categories ON categories.id = category_id
         LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))
+        WHERE visible = true
         ORDER BY solves DESC"#,
         claims.team_id,
     )
