@@ -232,7 +232,7 @@ pub fn router() -> Router<crate::State> {
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
             .per_second(4)
-            .burst_size(2)
+            .burst_size(5)
             .key_extractor(SmartIpKeyExtractor)
             .finish()
             .unwrap(),
