@@ -275,12 +275,15 @@ pub struct ChallengeDeployment {
     pub destroyed_at: Option<NaiveDateTime>,
 }
 
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct DeploymentData {
+pub struct DeploymentDataS {
     #[serde(skip_serializing)]
     pub container_id: String,
     pub ports: HashMap<u16, HostMapping>,
 }
+
+pub type DeploymentData = HashMap<String, DeploymentDataS>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase", tag = "type")]

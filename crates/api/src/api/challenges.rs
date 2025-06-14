@@ -154,11 +154,13 @@ pub struct ChallengeDeployment {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct DeploymentData {
+pub struct DeploymentDataS {
     #[serde(skip_serializing)]
     pub container_id: String,
     pub ports: HashMap<u16, HostMapping>,
 }
+
+pub type DeploymentData = HashMap<String, DeploymentDataS>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase", tag = "type")]
@@ -195,7 +197,10 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
     }
 
     let deployment: ChallengeDeployment = client
-        .post(&format!("{}/api/challenge/deploy", state.config.deployer_base))
+        .post(&format!(
+            "{}/api/challenge/deploy",
+            state.config.deployer_base
+        ))
         .json(&ChallengeDeploymentReq {
             challenge_id: record.challenge_id,
             team_id: Some(record.team_id),
@@ -230,7 +235,10 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
     }
 
     client
-        .post(&format!("{}/api/challenge/destroy", state.config.deployer_base))
+        .post(&format!(
+            "{}/api/challenge/destroy",
+            state.config.deployer_base
+        ))
         .json(&ChallengeDeploymentReq {
             challenge_id: record.challenge_id,
             team_id: Some(record.team_id),
@@ -267,8 +275,11 @@ async fn get_deployment(
         deployed: row.deployed,
         data: row
             .data
-            .map::<core::result::Result<DeploymentData, serde_json::Error>, _>(serde_json::from_value)
-            .transpose().unwrap(), // todo unwrap ggs 
+            .map::<core::result::Result<DeploymentData, serde_json::Error>, _>(
+                serde_json::from_value,
+            )
+            .transpose()
+            .unwrap(), // todo unwrap ggs
         created_at: row.created_at,
         expired_at: row.expired_at,
         destroyed_at: row.destroyed_at,

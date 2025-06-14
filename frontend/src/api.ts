@@ -282,7 +282,7 @@ export async function resendToken(email: string) {
 export interface ChallengeDeployment {
   id: string;
   deployed: boolean;
-  data: DeploymentData | null;
+  data: { [k: string]: DeploymentData};
   created_at: string;
   expired_at: string | null;
   destroyed_at: string | null;
