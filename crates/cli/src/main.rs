@@ -412,6 +412,9 @@ async fn main() -> Result<()> {
 
                     println!("updated {}", chall.id);
                 }
+
+                client.post(format!("{platform_base}/api/admin/challs/reload_deployer")).send().await?.error_for_status()?;
+                println!("reloaded deployer")
             }
         },
         Commands::CoalesceManifests { dir } => {
