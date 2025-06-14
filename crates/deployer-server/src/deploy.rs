@@ -516,15 +516,17 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
         .await?;
 
     // 2. find the challenge data for that slug
-    let chall_data = {
+    let chall_data = match {
         let rg = state.challenge_data.read().await;
         rg.get(&public_chall_partial.public_id).map(Clone::clone)
-    }
-        .ok_or_else(|| eyre!("failed to get challenge data for {}", public_chall_partial.public_id))?;
+    } {
+        Some(x) => x,
+        _ => return Ok(()),
+    };
 
     // 3. ensure there is a container on it
     let Some(chall_containers) = &chall_data.container else {
-        return Err(eyre!("challenge {} does not have container", chall_data.id));
+        return Ok(());
     };
 
     // 4. connect to the appropriate docker socket
