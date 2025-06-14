@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
@@ -9,6 +9,9 @@ use axum::{
 use bitstream_io::{BitRead, BitReader, LittleEndian};
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
+use tower_governor::{
+    governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer,
+};
 
 #[derive(Deserialize, Serialize)]
 pub struct PublicChallenge {
@@ -165,7 +168,6 @@ pub enum HostMapping {
     Http { subdomain: String, base: String },
 }
 
-
 pub async fn deploy(
     StateE(state): StateE<State>,
     Auth(claims): Auth,
@@ -188,7 +190,7 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
 
     let client = reqwest::Client::new();
 
-    if true || record.strategy == "static" {
+    if record.strategy == "static" {
         return Err(Error::GenericError);
     }
 
@@ -212,7 +214,7 @@ pub async fn get_deployment(
     Auth(_): Auth,
     Path(pub_id): Path<String>,
 ) -> Result<Json<ChallengeDeployment>> {
-        let client = reqwest::Client::new();
+    let client = reqwest::Client::new();
 
     // TODO unhardcode this later
     let deployment: ChallengeDeployment = client
@@ -224,13 +226,33 @@ pub async fn get_deployment(
         .await?;
 
     Ok(Json(deployment))
-
 }
 
 pub fn router() -> Router<crate::State> {
-    Router::new()
-        .route("/", get(list))
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(4)
+            .burst_size(2)
+            .key_extractor(SmartIpKeyExtractor)
+            .finish()
+            .unwrap(),
+    );
+
+    let governor_limiter = governor_conf.limiter().clone();
+    let interval = Duration::from_secs(60);
+    // a separate background task to clean up
+    std::thread::spawn(move || loop {
+        std::thread::sleep(interval);
+        tracing::info!("rate limiting storage size: {}", governor_limiter.len());
+        governor_limiter.retain_recent();
+    });
+    let ratelimited = Router::new()
         .route("/submit", post(submit))
         .route("/deploy/get/{deployment_id}", get(get_deployment))
         .route("/deploy/new/{chall_id}", post(deploy))
+        .layer(GovernorLayer {
+            config: governor_conf,
+        });
+
+    Router::new().merge(ratelimited).route("/", get(list))
 }
