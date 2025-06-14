@@ -6,6 +6,7 @@ use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 use eyre::eyre;
+use serde_json::json;
 
 use crate::{api::ChallengeDeploymentRow, config::CaddyKeychain, State};
 
@@ -177,7 +178,7 @@ impl Drop for DockerGuard {
 struct CaddyGuard {
     client: Arc<reqwest::Client>,
     kc: CaddyKeychain,
-    ids: Vec<String>,
+    routes: Vec<String>,
     committed: bool,
     dropping: bool,
 }
@@ -187,14 +188,14 @@ impl CaddyGuard {
         Self {
             client,
             kc,
-            ids: vec![],
+            routes: vec![],
             committed: true,
             dropping: false,
         }
     }
 
-    pub fn id(&mut self, i: &str) {
-        self.ids.push(i.to_owned());
+    pub fn route(&mut self, r: &str) {
+        self.routes.push(r.to_owned());
     }
 
     pub fn commit(&mut self) {
@@ -206,9 +207,12 @@ impl CaddyGuard {
             return;
         }
 
-        for i in self.ids.iter().rev() {
+        for r in self.routes.iter().rev() {
             self.client
-                .delete(self.kc.prep_url(&format!("/id/{}", i)))
+                .post(self.kc.prep_url("/dynamic-router/delete"))
+                .json(&json!({
+                    "host": r,
+                }))
                 .send()
                 .await.ok();
         }
@@ -394,30 +398,23 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
 
         for (p, map) in &mappings {
             if let HostMapping::Http { subdomain, .. } = &map {
-                let caddy_id = format!("proxy-{}", subdomain);
+                let host = format!("{}.{}", subdomain, host_keychain.caddy.base);
                 caddy_client
-                    .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
+                    .post(host_keychain.caddy.prep_url("/dynamic-router/delete"))
+                    .json(&json!({
+                        "host": host,
+                    }))
                     .send()
                     .await?;
                 caddy_client
-                    .put(host_keychain.caddy.prep_url("/id/default-server/routes/0"))
-                    .header("content-type", "application/json")
-                    .body(serde_json::to_string(&serde_json::json!({
-                        "@id": caddy_id,
-                        "match": [{
-                            "host": [format!("{}.{}", subdomain, host_keychain.caddy.base)],
-                        }],
-                        "handle": [{
-                            "handler": "reverse_proxy",
-                            "upstreams": [{
-                                "dial": format!("{}:{}", container_ip, p),
-                            }]
-                        }],
-                        "terminal": true,
-                    }))?)
+                    .post(host_keychain.caddy.prep_url("/dynamic-router/add"))
+                    .json(&json!({
+                        "host": host,
+                        "upstream": format!("{}:{}", container_ip, p),
+                    }))
                     .send()
                     .await?;
-                _caddy_guard.id(&caddy_id);
+                _caddy_guard.route(&host);
             }
         }
 
@@ -543,13 +540,15 @@ pub async fn destroy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, c
         debug!("calculated container name: {}", container_name);
 
         // ok now delete the caddy stuff
-        // FIXME(ani): guarding since caddy client thing doesn't work rn
         if let Some(dd) = deploy_data.get(ct) {
             for (_p, map) in &dd.ports {
                 if let HostMapping::Http { subdomain, .. } = &map {
-                    let caddy_id = format!("proxy-{}", subdomain);
+                    let host = format!("{}.{}", subdomain, host_keychain.caddy.base);
                     caddy_client
-                        .delete(host_keychain.caddy.prep_url(&format!("/id/{}", caddy_id)))
+                        .post(host_keychain.caddy.prep_url("/dynamic-router/delete"))
+                        .json(&json!({
+                            "host": host,
+                        }))
                         .send()
                         .await?;
                 }

@@ -4,12 +4,14 @@ package caddyrouter
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"go.uber.org/zap"
 )
 
 func init() {
@@ -79,6 +81,7 @@ func (rt *DynamicRouter) del(route string) {
 
 type DynamicRouterAdmin struct {
     ctx caddy.Context
+    log *zap.Logger
     rt *DynamicRouter
 }
 
@@ -97,7 +100,10 @@ func (DynamicRouterAdmin) CaddyModule() caddy.ModuleInfo {
 
 func (a *DynamicRouterAdmin) Provision(ctx caddy.Context) error {
     a.ctx = ctx
+    a.log = ctx.Logger(a)
+
     app, err := ctx.App("dynamic_router")
+    a.log.Info("Init dynamic router admin, err for looking up app", zap.Error(err))
     if err != nil {
         return err
     }
@@ -109,6 +115,10 @@ func (a *DynamicRouterAdmin) Provision(ctx caddy.Context) error {
 func (a *DynamicRouterAdmin) Routes() []caddy.AdminRoute {
     return []caddy.AdminRoute{
         {
+            Pattern: "/dynamic-router",
+            Handler: caddy.AdminHandlerFunc(a.handleAPIEndpoints),
+        },
+        {
             Pattern: "/dynamic-router/",
             Handler: caddy.AdminHandlerFunc(a.handleAPIEndpoints),
         },
@@ -116,6 +126,21 @@ func (a *DynamicRouterAdmin) Routes() []caddy.AdminRoute {
 }
 
 func (a *DynamicRouterAdmin) handleAPIEndpoints(w http.ResponseWriter, r *http.Request) error {
+    //if a.rt == nil {
+    //    app, err := a.ctx.App("dynamic_router")
+    //    a.log.Info("dynamic router admin late init, err", zap.Error(err))
+    //    if err != nil {
+    //        return caddy.APIError{
+    //            HTTPStatus: http.StatusInternalServerError,
+    //            Err:        fmt.Errorf("failed to get app: %v", err),
+    //        }
+    //    }
+
+    //    a.rt = app.(*DynamicRouter)
+    //}
+
+    a.log.Info("got request!!!", zap.String("url", r.URL.String()))
+
     uri := strings.TrimPrefix(r.URL.Path, "/dynamic-router/")
     parts := strings.Split(uri, "/")
     switch {
@@ -153,7 +178,7 @@ func (a *DynamicRouterAdmin) handleAdd(w http.ResponseWriter, r *http.Request) e
     }
 
     a.rt.add(ar.Host, ar.Upstream)
-    w.WriteHeader(http.StatusOK)
+    io.WriteString(w, "{\"ok\":true}")
     return nil
 }
 
@@ -179,7 +204,7 @@ func (a *DynamicRouterAdmin) handleDelete(w http.ResponseWriter, r *http.Request
     }
 
     a.rt.del(dr.Host)
-    w.WriteHeader(http.StatusOK)
+    io.WriteString(w, "{\"ok\":true}")
     return nil
 }
 
