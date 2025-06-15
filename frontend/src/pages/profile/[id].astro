@@ -45,9 +45,9 @@ if (isError(prof)) {
           <tr class="solve">
             <td class="chall-name">{solve.name}</td>
             <td class="points">{solve.points} pts</td>
-            <span class="timestamp" data-timestamp={solve.solvedAt}>
+            <td class="timestamp" data-timestamp={solve.solvedAt}>
               {new Date(solve.solvedAt + "Z").toISOString()}
-            </span>
+            </td>
           </tr>
         ))
       }
@@ -58,11 +58,11 @@ if (isError(prof)) {
 <script>
   // timestamps are server rendered so set them on client so they show in local tz
   document.addEventListener("astro", () => {
-    document.querySelectorAll(".timestamp").forEach((span) => {
-      const timestamp = (span as HTMLElement).dataset.timestamp;
+    document.querySelectorAll(".timestamp").forEach((td) => {
+      const timestamp = (td as HTMLElement).dataset.timestamp;
       if (timestamp) {
         const date = new Date(timestamp + "Z");
-        span.textContent = date.toLocaleString();
+        td.textContent = date.toLocaleString();
       }
     });
   });
