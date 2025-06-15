@@ -34,11 +34,18 @@ pub struct Challenge {
     pub group: Option<String>,
     pub build_group: Option<String>,
     pub category: String,
+    pub points: PointRange,
     pub provide: Option<Vec<Attachment>>,
     pub container: Option<HashMap<String, Container>>,
     #[serde(default = "default_strategy")]
     pub strategy: DeploymentStrategy,
     pub host: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PointRange {
+    pub min: i32,
+    pub max: i32,
 }
 
 impl Challenge {

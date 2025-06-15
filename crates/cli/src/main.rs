@@ -10,8 +10,7 @@ use std::{
 use bollard::auth::DockerCredentials;
 use clap::{Parser, Subcommand, command};
 use deployer_common::challenge::{
-    Challenge, Container, DeployableChallenge, DeployableContext, DeploymentStrategy, ExposeType,
-    Flag, is_valid_id,
+    is_valid_id, Challenge, Container, DeployableChallenge, DeployableContext, DeploymentStrategy, ExposeType, Flag, PointRange
 };
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::{Result, eyre};
@@ -245,6 +244,10 @@ async fn main() -> Result<()> {
                     .and_then(|f| f.to_str())
                     .unwrap_or("unknown")
                     .to_string(),
+                points: PointRange {
+                    min: 100,
+                    max: 500,
+                },
                 description: "challenge description".to_string(),
                 container: Some({
                     // FIXME
@@ -372,8 +375,8 @@ async fn main() -> Result<()> {
                             name: chall.name.clone(),
                             author: chall.author.clone(),
                             description: chall.description.clone(),
-                            points_max: 500,
-                            points_min: 100,
+                            points_max: chall.points.max,
+                            points_min: chall.points.min,
                             flag: match chall.flag.clone() {
                                 Flag::Raw(flag) => flag,
                                 Flag::File { file } => {
