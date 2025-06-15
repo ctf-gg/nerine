@@ -42,10 +42,9 @@ async fn calculate_score_history(
     event_start_time: NaiveDateTime,
     all_event_timestamps: &[NaiveDateTime],
 ) -> Result<Vec<ScorePoint>> {
-    let team_id_record = sqlx::query!("SELECT id FROM teams WHERE public_id = $1", team_public_id)
+    let team_id = sqlx::query_scalar!("SELECT id FROM teams WHERE public_id = $1", team_public_id)
         .fetch_one(db)
         .await?;
-    let team_id = team_id_record.id;
 
     let team_solve_points: Vec<TeamSolvePoint> = sqlx::query_as!(
         TeamSolvePoint,

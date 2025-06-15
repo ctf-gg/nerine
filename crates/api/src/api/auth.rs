@@ -148,7 +148,7 @@ async fn get_verification_details(
         }
 
         Some(crate::email::PendingVerification::EmailUpdate(details)) => {
-            let team_name_record = sqlx::query!(
+            let team_name = sqlx::query_scalar!(
                 "SELECT name FROM teams WHERE public_id = $1",
                 details.team_id
             )
@@ -156,7 +156,7 @@ async fn get_verification_details(
             .await?;
 
             Ok(Json(VerificationDetailsResponse::EmailUpdate {
-                name: team_name_record.name,
+                name: team_name,
                 new_email: details.new_email,
                 verification_type: "email_update".to_string(),
             }))

@@ -232,6 +232,7 @@ impl Drop for CaddyGuard {
 
 pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, chall: ChallengeDeployment) -> eyre::Result<()> {
     // 1. find the public id of the challenge ("slug")
+    // TODO(aiden): replace with query_scalar!
     let public_chall_partial = sqlx::query!(
         "SELECT public_id FROM challenges WHERE id = $1",
         chall.challenge_id
