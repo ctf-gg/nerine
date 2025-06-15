@@ -45,15 +45,28 @@ if (isError(prof)) {
           <tr class="solve">
             <td class="chall-name">{solve.name}</td>
             <td class="points">{solve.points} pts</td>
-            <td class="solved-at">
-              {new Date(solve.solvedAt + "Z").toLocaleString()}
-            </td>
+            <span class="timestamp" data-timestamp={solve.solvedAt}>
+              {new Date(solve.solvedAt + "Z").toISOString()}
+            </span>
           </tr>
         ))
       }
     </table>
   </div>
 </Layout>
+
+<script>
+  // timestamps are server rendered so set them on client so they show in local tz
+  document.addEventListener("astro", () => {
+    document.querySelectorAll(".timestamp").forEach((span) => {
+      const timestamp = (span as HTMLElement).dataset.timestamp;
+      if (timestamp) {
+        const date = new Date(timestamp + "Z");
+        span.textContent = date.toLocaleString();
+      }
+    });
+  });
+</script>
 
 <style>
   .stats {
