@@ -47,6 +47,7 @@
 
   let waiting = $state(false);
   let interval: any = $state(null);
+  let createCooldown = $state(false);
 
   async function deployInstance() {
     waiting = true;
@@ -81,6 +82,11 @@
     waiting = false;
     deployment = null;
     c.deploymentId = "";
+    createCooldown = true;
+
+    setTimeout(() => {
+      createCooldown = false;
+    }, 2000);
   }
 
   async function getUrl() {
@@ -143,11 +149,11 @@
           {/if}
         {/each}
         {#if deployment.expired_at}
-          <button disabled
-            >Expires at {new Date(
+          <span>
+            Expires at {new Date(
               deployment.expired_at + 'Z',
-            ).toLocaleTimeString()}</button
-          >
+            ).toLocaleTimeString()}
+          </span>
         {/if}
         {#if c.strategy === "instanced"}
           <button onclick={destroyInstance}>Destroy</button>
@@ -157,7 +163,7 @@
       {:else if waiting || (c.strategy === "instanced" && c.deploymentId)}
         <button>Loading...</button>
       {:else if c.strategy === "instanced" && !c.deploymentId}
-        <button onclick={deployInstance}>Create Instance</button>
+        <button onclick={deployInstance} disabled={createCooldown}>Create Instance</button>
       {/if}
     </div>
   </div>
@@ -225,8 +231,7 @@
     }
 
     .resources {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       margin-bottom: 0.5rem;
       button {
         font-size: 1rem;
@@ -234,6 +239,7 @@
     }
 
     .deployment {
+      margin-left: auto;
       display: flex;
       gap: 0.5rem;
       justify-content: end;

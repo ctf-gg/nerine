@@ -113,6 +113,7 @@ button {
   cursor: pointer;
   &:disabled {
     cursor: not-allowed;
+    filter: brightness(80%);
   }
 }
 
