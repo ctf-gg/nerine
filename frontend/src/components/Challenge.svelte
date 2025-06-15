@@ -56,6 +56,7 @@
       alert("something went wrong with deploying: " + JSON.stringify(res));
       return;
     }
+    if (interval) clearInterval(interval);
     interval = setInterval(async () => {
       const dep = await getChallengeDeployment(res.id);
       if (isError(dep)) {
@@ -66,17 +67,21 @@
       if (dep.data) {
         deployment = dep;
         waiting = false;
-        if (interval) clearInterval(interval);
+      }
+      if (dep.destroyed_at) {
+        await destroyInstance(false);
       }
     }, 2000);
   }
 
-  async function destroyInstance() {
-    waiting = true;
-    const res = await destroyChallenge(c.id);
-    if (res != "ok") {
-      alert("something went wrong with deploying: " + JSON.stringify(res));
-      return;
+  async function destroyInstance(actuallyDestroy = true) {
+    if (actuallyDestroy) {
+      waiting = true;
+      const res = await destroyChallenge(c.id);
+      if (res != "ok") {
+        alert("something went wrong with deploying: " + JSON.stringify(res));
+        return;
+      }
     }
 
     waiting = false;
