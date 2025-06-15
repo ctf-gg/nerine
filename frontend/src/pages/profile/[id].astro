@@ -45,7 +45,7 @@ if (isError(prof)) {
           <tr class="solve">
             <td class="chall-name">{solve.name}</td>
             <td class="points">{solve.points} pts</td>
-            <td class="timestamp" data-timestamp={solve.solvedAt}>
+            <td class="solved-at timestamp" data-timestamp={solve.solvedAt}>
               {new Date(solve.solvedAt + "Z").toISOString()}
             </td>
           </tr>
@@ -57,7 +57,7 @@ if (isError(prof)) {
 
 <script>
   // timestamps are server rendered so set them on client so they show in local tz
-  document.addEventListener("astro", () => {
+  document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".timestamp").forEach((td) => {
       const timestamp = (td as HTMLElement).dataset.timestamp;
       if (timestamp) {
