@@ -40,6 +40,7 @@ async fn export_ctftime_leaderboard(
         SELECT t.name, lb.score as "score!", lb.rank as "rank!"
             FROM teams t
             JOIN compute_leaderboard() lb ON lb.team_id = t.id
+            WHERE lb.score > 0
             ORDER BY lb.rank ASC
         "#
     )
