@@ -47,6 +47,7 @@
 
   let waiting = $state(false);
   let interval: any = $state(null);
+  let createCooldown = $state(false);
 
   async function deployInstance() {
     waiting = true;
@@ -55,6 +56,7 @@
       alert("something went wrong with deploying: " + JSON.stringify(res));
       return;
     }
+    if (interval) clearInterval(interval);
     interval = setInterval(async () => {
       const dep = await getChallengeDeployment(res.id);
       if (isError(dep)) {
@@ -65,22 +67,31 @@
       if (dep.data) {
         deployment = dep;
         waiting = false;
-        if (interval) clearInterval(interval);
+      }
+      if (dep.destroyed_at) {
+        await destroyInstance(false);
       }
     }, 2000);
   }
 
-  async function destroyInstance() {
-    waiting = true;
-    const res = await destroyChallenge(c.id);
-    if (res != "ok") {
-      alert("something went wrong with deploying: " + JSON.stringify(res));
-      return;
+  async function destroyInstance(actuallyDestroy = true) {
+    if (actuallyDestroy) {
+      waiting = true;
+      const res = await destroyChallenge(c.id);
+      if (res != "ok") {
+        alert("something went wrong with deploying: " + JSON.stringify(res));
+        return;
+      }
     }
 
     waiting = false;
     deployment = null;
     c.deploymentId = "";
+    createCooldown = true;
+
+    setTimeout(() => {
+      createCooldown = false;
+    }, 2000);
   }
 
   async function getUrl() {
@@ -143,11 +154,11 @@
           {/if}
         {/each}
         {#if deployment.expired_at}
-          <button disabled
-            >Expires at {new Date(
+          <span>
+            Expires at {new Date(
               deployment.expired_at + 'Z',
-            ).toLocaleTimeString()}</button
-          >
+            ).toLocaleTimeString()}
+          </span>
         {/if}
         {#if c.strategy === "instanced"}
           <button onclick={destroyInstance}>Destroy</button>
@@ -157,7 +168,7 @@
       {:else if waiting || (c.strategy === "instanced" && c.deploymentId)}
         <button>Loading...</button>
       {:else if c.strategy === "instanced" && !c.deploymentId}
-        <button onclick={deployInstance}>Create Instance</button>
+        <button onclick={deployInstance} disabled={createCooldown}>Create Instance</button>
       {/if}
     </div>
   </div>
@@ -225,8 +236,7 @@
     }
 
     .resources {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       margin-bottom: 0.5rem;
       button {
         font-size: 1rem;
@@ -234,6 +244,7 @@
     }
 
     .deployment {
+      margin-left: auto;
       display: flex;
       gap: 0.5rem;
       justify-content: end;

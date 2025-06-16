@@ -350,6 +350,9 @@ pub async fn deploy_challenge(state: State, tx: &mut sqlx::PgTransaction<'_>, ch
                     .map(|(k, _)| (format!("{}/tcp", k), Default::default()))
                     .collect::<HashMap<_, _>>()),
                 host_config: Some(HostConfig {
+                    // TODO(ani): i64 vs u64, not a big deal for now
+                    nano_cpus: chall_container.limits.as_ref().and_then(|l| l.cpu).map(|x| x as i64),
+                    memory: chall_container.limits.as_ref().and_then(|l| l.mem).map(|x| x as i64),
                     port_bindings: Some(mappings
                         .iter()
                         .filter_map(|(k, v)| match v {

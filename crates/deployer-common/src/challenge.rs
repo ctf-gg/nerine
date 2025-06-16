@@ -164,7 +164,9 @@ pub enum DeploymentStrategy {
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Limits {
+    // "nano-cpus", i.e. in units of 10^-9 cpu
     pub cpu: Option<u64>,
+    // in bytes
     pub mem: Option<u64>,
 }
 
