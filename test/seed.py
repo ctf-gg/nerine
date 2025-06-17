@@ -98,7 +98,7 @@ for i in range(TEAM_COUNT):
     skill = random.gauss(SKILL_MEAN, SKILL_STD)
     name = generate_name(f"skill {skill}")
     team_skills.append(skill)
-    teams.append((nanoid(), name, f"{name}@sctf.email"))
+    teams.append((nanoid(), name, f"{name}@nerine.email"))
 
 print(f"[+] Creating {TEAM_COUNT} teams")
 execute_batch(cur,"""INSERT INTO teams (public_id, name, email) 

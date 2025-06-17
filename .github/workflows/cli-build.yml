@@ -51,12 +51,12 @@ jobs:
         with:
           command: build
           target: ${{ matrix.platform.target }}
-          args: "--locked --release --bin sctf-cli"
+          args: "--locked --release --bin nerine-cli"
           strip: true
 
       - name: Publish artifacts
         uses: houseabsolute/actions-rust-release@ef6fda7922ec739308e72994c7e8cd2a31fe0289 # v0
         with:
-          executable-name: sctf-cli
+          executable-name: nerine-cli
           target: ${{ matrix.platform.target }}
           changes-file: ""

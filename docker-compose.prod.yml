@@ -8,19 +8,19 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
   api:
-    image: sctf
+    image: nerine
     restart: unless-stopped
     volumes:
       - ./event.toml:/app/event.toml:ro
     environment:
       RUST_LOG: debug
-      CORS_ORIGIN: "http://sctf.localhost"
-      DATABASE_URL: postgres://postgres:postgres@db/sctf
+      CORS_ORIGIN: "http://nerine.localhost"
+      DATABASE_URL: postgres://postgres:postgres@db/nerine
       JWT_SECRET: ZXhhbXBsZV9zZWNyZXQK
       ADMIN_TOKEN: example_admin_token
       EVENT_PATH: /app/event.toml
   frontend:
-    image: sctf-frontend
+    image: nerine-frontend
     restart: unless-stopped
     environment:
       HOST: 0.0.0.0
@@ -30,5 +30,5 @@ services:
     restart: unless-stopped
     shm_size: 128mb
     environment:
-      POSTGRES_DB: sctf
+      POSTGRES_DB: nerine
       POSTGRES_PASSWORD: postgres

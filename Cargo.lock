@@ -2034,6 +2034,110 @@ dependencies = [
 ]
 
 [[package]]
+name = "nerine-api"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "axum-extra",
+ "bitstream-io",
+ "cached",
+ "chrono",
+ "dotenvy",
+ "envconfig",
+ "eyre",
+ "jsonwebtoken",
+ "lettre",
+ "log",
+ "nanoid",
+ "pretty_env_logger",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.12",
+ "time",
+ "tokio",
+ "toml",
+ "tower-http",
+ "tower_governor",
+ "tracing",
+ "url",
+ "urlencoding",
+ "validator",
+]
+
+[[package]]
+name = "nerine-cli"
+version = "0.1.0"
+dependencies = [
+ "bollard",
+ "clap",
+ "dialoguer",
+ "dotenvy",
+ "env_logger 0.11.8",
+ "eyre",
+ "google-cloud-storage",
+ "log",
+ "nerine-deployer-common",
+ "rayon",
+ "reqwest",
+ "rustyline",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "walkdir",
+]
+
+[[package]]
+name = "nerine-deployer-common"
+version = "0.1.0"
+dependencies = [
+ "bollard",
+ "eyre",
+ "flate2",
+ "futures-util",
+ "google-cloud-storage",
+ "log",
+ "serde",
+ "serde_with",
+ "tar",
+ "tempdir",
+ "tokio",
+ "tokio-util",
+ "toml",
+]
+
+[[package]]
+name = "nerine-deployer-server"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bollard",
+ "chrono",
+ "ctrlc",
+ "dotenvy",
+ "envconfig",
+ "eyre",
+ "fast32",
+ "glob",
+ "log",
+ "nanoid",
+ "nerine-deployer-common",
+ "pretty_env_logger",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-util",
+ "toml",
+]
+
+[[package]]
 name = "nibble_vec"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2934,110 +3038,6 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
-name = "sctf-api"
-version = "0.1.0"
-dependencies = [
- "axum",
- "axum-extra",
- "bitstream-io",
- "cached",
- "chrono",
- "dotenvy",
- "envconfig",
- "eyre",
- "jsonwebtoken",
- "lettre",
- "log",
- "nanoid",
- "pretty_env_logger",
- "reqwest",
- "serde",
- "serde_derive",
- "serde_json",
- "sqlx",
- "thiserror 2.0.12",
- "time",
- "tokio",
- "toml",
- "tower-http",
- "tower_governor",
- "tracing",
- "url",
- "urlencoding",
- "validator",
-]
-
-[[package]]
-name = "sctf-cli"
-version = "0.1.0"
-dependencies = [
- "bollard",
- "clap",
- "dialoguer",
- "dotenvy",
- "env_logger 0.11.8",
- "eyre",
- "google-cloud-storage",
- "log",
- "rayon",
- "reqwest",
- "rustyline",
- "sctf-deployer-common",
- "serde",
- "serde_json",
- "tokio",
- "toml",
- "walkdir",
-]
-
-[[package]]
-name = "sctf-deployer-common"
-version = "0.1.0"
-dependencies = [
- "bollard",
- "eyre",
- "flate2",
- "futures-util",
- "google-cloud-storage",
- "log",
- "serde",
- "serde_with",
- "tar",
- "tempdir",
- "tokio",
- "tokio-util",
- "toml",
-]
-
-[[package]]
-name = "sctf-deployer-server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "bollard",
- "chrono",
- "ctrlc",
- "dotenvy",
- "envconfig",
- "eyre",
- "fast32",
- "glob",
- "log",
- "nanoid",
- "pretty_env_logger",
- "reqwest",
- "sctf-deployer-common",
- "serde",
- "serde_json",
- "sha2",
- "sqlx",
- "thiserror 2.0.12",
- "tokio",
- "tokio-util",
- "toml",
-]
 
 [[package]]
 name = "security-framework"

@@ -2,7 +2,7 @@ export function getApiBase(): string {
   if (globalThis.window) {
     return "/api";
   } else {
-    return import.meta.env.API_BASE ?? "http://sctf.localhost/api";
+    return import.meta.env.API_BASE ?? "http://nerine.localhost/api";
   }
 }
 

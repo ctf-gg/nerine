@@ -79,7 +79,7 @@ def email_from_team_name(name: str) -> str:
     inner = "".join(c for c in name.lower() if c in "abcdefghijklmnopqrstuvwxyz0123456789")
     if not inner:
         inner = f"team_{hash(name)}"
-    return f"{inner[:54]}@sctf.email"
+    return f"{inner[:54]}@nerine.email"
 
 def flag_from_chall_name(name: str) -> str:
     inner = "".join(c for c in name.lower() if c in "abcdefghijklmnopqrstuvwxyz0123456789 ").replace(" ","_")

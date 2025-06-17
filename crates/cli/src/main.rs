@@ -22,8 +22,8 @@ use serde_json::Value;
 use walkdir::WalkDir;
 
 #[derive(Debug, Parser)]
-#[command(name = "sctf")]
-#[command(about = "Tool for managing challenges with sctf", long_about = None)]
+#[command(name = "nerine")]
+#[command(about = "Tool for managing challenges with nerine", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -366,7 +366,7 @@ async fn main() -> Result<()> {
                     let attachments = if null_attachments {
                         HashMap::new()
                     } else {
-                        dc.push_attachments(gcs_client.as_ref().unwrap(), "sctf-attachments".to_string()).await?
+                        dc.push_attachments(gcs_client.as_ref().unwrap(), "nerine-attachments".to_string()).await?
                     };
                     client
                         .patch(format!("{platform_base}/api/admin/challs"))

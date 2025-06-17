@@ -5,7 +5,7 @@
 - [ ] cannot see solve teams (bad) i had to manually see who solved what
 - [ ] solve on profile does not have category
 - [ ] websocket subscribe to deployment information
-- [ ] leaderboard freeze time (bad feature, if sctf is opinionated, then maybe not?)
+- [ ] leaderboard freeze time (bad feature, if nerine is opinionated, then maybe not?)
 - [ ] better ratelimit policy (5 min / 3 burst)
 - [ ] more sorting options on team profiles/challenge page/leaderboard (sort by badge count for example)
 

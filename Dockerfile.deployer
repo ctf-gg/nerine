@@ -9,10 +9,10 @@ FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN --mount=type=cache,id=cargo-deployer,target=/app/target cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN --mount=type=cache,id=cargo-deployer,target=/app/target cargo build --bin sctf-deployer-server --release && cp /app/target/release/sctf-deployer-server /app/sctf-deployer-server
+RUN --mount=type=cache,id=cargo-deployer,target=/app/target cargo build --bin nerine-deployer-server --release && cp /app/target/release/nerine-deployer-server /app/nerine-deployer-server
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update && apt-get install libssl3 ca-certificates -y
-COPY --from=builder /app/sctf-deployer-server /usr/local/bin/sctf-deployer-server
-CMD ["/usr/local/bin/sctf-deployer-server"]
+COPY --from=builder /app/nerine-deployer-server /usr/local/bin/nerine-deployer-server
+CMD ["/usr/local/bin/nerine-deployer-server"]

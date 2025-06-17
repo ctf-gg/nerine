@@ -22,12 +22,12 @@
     gopls
   ];
 
-  DATABASE_URL = "postgres://postgres:postgres@localhost/sctf";
+  DATABASE_URL = "postgres://postgres:postgres@localhost/nerine";
   # example_secret in base64
   JWT_SECRET = "ZXhhbXBsZV9zZWNyZXQK";
   ADMIN_TOKEN = "example_admin_token";
 
-  PLATFORM_BASE = "http://sctf.localhost";
+  PLATFORM_BASE = "http://nerine.localhost";
   PLATFORM_ADMIN_TOKEN = ADMIN_TOKEN;
 
   CHALLENGES_DIR = "./test-deploy/challenges";

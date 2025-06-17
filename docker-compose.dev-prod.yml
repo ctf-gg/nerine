@@ -1,6 +1,6 @@
 services:
   api:
-    image: sctf
+    image: nerine
     restart: unless-stopped
     ports:
       - 127.0.0.1:3000:3000
@@ -8,13 +8,13 @@ services:
       - ./event.toml:/app/event.toml
     environment:
       RUST_LOG: debug
-      CORS_ORIGIN: "http://sctf.localhost"
-      DATABASE_URL: postgres://postgres:postgres@db/sctf
+      CORS_ORIGIN: "http://nerine.localhost"
+      DATABASE_URL: postgres://postgres:postgres@db/nerine
       JWT_SECRET: ZXhhbXBsZV9zZWNyZXQK
       ADMIN_TOKEN: example_admin_token
       EVENT_PATH: /app/event.toml
   frontend:
-    image: sctf-frontend
+    image: nerine-frontend
     restart: unless-stopped
     ports:
       - 127.0.0.1:4321:4321
@@ -29,5 +29,5 @@ services:
     ports:
       - 127.0.0.1:5432:5432
     environment:
-      POSTGRES_DB: sctf
+      POSTGRES_DB: nerine
       POSTGRES_PASSWORD: postgres

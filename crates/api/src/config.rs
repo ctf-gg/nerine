@@ -35,13 +35,13 @@ pub struct Config {
     #[envconfig(from = "EVENT_PATH", default = "event.toml")]
     pub event_path: String,
 
-    #[envconfig(from = "CORS_ORIGIN", default = "http://sctf.localhost")]
+    #[envconfig(from = "CORS_ORIGIN", default = "http://nerine.localhost")]
     pub cors_origin: String,
 
     #[envconfig(from = "SMTP_URL", default = "")]
     pub smtp_url: String,
 
-    #[envconfig(from = "FROM_EMAIL", default = "noreply@sctf.localhost")]
+    #[envconfig(from = "FROM_EMAIL", default = "noreply@nerine.localhost")]
     pub from_email: String,
 
     #[envconfig(from = "DEPLOYER_BASE", default = "http://deployer:3001")]

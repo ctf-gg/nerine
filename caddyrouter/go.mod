@@ -1,4 +1,4 @@
-module github.com/ctf-gg/sctf/caddyrouter
+module github.com/ctf-gg/nerine/caddyrouter
 
 go 1.24.3
 
