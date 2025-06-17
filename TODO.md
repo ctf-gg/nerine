@@ -7,6 +7,7 @@
 - [ ] websocket subscribe to deployment information
 - [ ] leaderboard freeze time (bad feature, if sctf is opinionated, then maybe not?)
 - [ ] better ratelimit policy (5 min / 3 burst)
+- [ ] more sorting options on team profiles/challenge page/leaderboard (sort by badge count for example)
 
 # medium tasks
 - [ ] unlockable/sequel challenges (i.e. revenge)
@@ -15,6 +16,7 @@
 - [ ] dynamic flags
 - [ ] better ratelimit error messages
 - [ ] better changed challenge detection (see rcds for inspo)
+- [ ] dynamic generation for static challenges
 
 # large tasks
 - [ ] private deployments
