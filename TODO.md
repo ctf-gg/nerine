@@ -20,6 +20,7 @@
 
 # large tasks
 - [ ] private deployments
+- [ ] ticketed challenges
 - [ ] plain theme
 - [ ] health checks
 - [ ] admin panel with everything
