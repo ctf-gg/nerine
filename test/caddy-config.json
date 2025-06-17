@@ -1,0 +1,107 @@
+{
+  "admin": {
+    "listen": "localhost:990",
+    "remote": {
+      "listen": "0.0.0.0:995",
+      "access_control": [{
+        "public_keys": ["put your own key here"]
+      }]
+    },
+    "identity": {
+      "identifiers": ["127.0.0.1"],
+      "issuers": [{
+        "module": "internal",
+        "ca": "local-admin",
+        "sign_with_root": true
+      }]
+    }
+  },
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "@id": "default-server",
+          "automatic_https": {
+            "disable": true
+          },
+          "listen": [
+            ":80"
+          ],
+          "routes": [
+            {
+              "match": [{
+                "host": ["*.challs.localhost"]
+              }],
+              "handle": [
+                {
+                  "handler": "dynamic_router"
+                },
+                {
+                  "handler": "reverse_proxy",
+                  "upstreams": [{
+                    "dial": "{http.vars.dynamic.upstream}"
+                  }]
+                }
+              ]
+            },
+            {
+              "match": [{
+                  "host": ["nerine.localhost"]
+              }],
+              "handle": [{
+                "handler": "subroute",
+                "routes": [
+                  {
+                    "handle": [{
+                      "handler": "reverse_proxy",
+                      "upstreams": [{
+                        "dial": "localhost:3000"
+                      }]
+                    }],
+                    "match": [{
+                      "path": ["/api/*"]
+                    }]
+                  },
+                  {
+                    "handle": [{
+                      "handler": "reverse_proxy",
+                      "upstreams": [{
+                        "dial": "localhost:4321"
+                      }]
+                    }],
+                    "match": [{
+                      "path": ["/*"]
+                    }]
+                  }
+                ]
+              }],
+              "terminal": true
+            },
+            {
+              "match": [
+                {
+                  "host": [
+                    "*.challs.localhost"
+                  ]
+                }
+              ],
+              "terminal": true
+            }
+          ]
+        }
+      }
+    },
+    "pki": {
+      "certificate_authorities": {
+        "local-admin": {
+          "name": "local-admin",
+          "install_trust": false,
+          "root": {
+            "certificate": "./certs/caddy/ca.pem",
+            "private_key": "./certs/caddy/ca-key.pem"
+          }
+        }
+      }
+    }
+  }
+}
