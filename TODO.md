@@ -17,6 +17,8 @@
 - [ ] better ratelimit error messages
 - [ ] better changed challenge detection (see rcds for inspo)
 - [ ] dynamic generation for static challenges
+- [ ] remove rsync
+- [ ] better detection of what you need to rebuild
 
 # large tasks
 - [ ] private deployments
@@ -24,3 +26,4 @@
 - [ ] plain theme
 - [ ] health checks
 - [ ] admin panel with everything
+- [ ] keychain admin key
