@@ -1,13 +1,14 @@
 # small tasks
 - [x] timestamp not timezoned
 - [x] solve on profile is not ordered by solve time
-- [ ] scoreboard walled by login (bad)
+- [x] scoreboard walled by login (bad)
 - [ ] cannot see solve teams (bad) i had to manually see who solved what
 - [ ] solve on profile does not have category
 - [ ] websocket subscribe to deployment information
 - [ ] leaderboard freeze time (bad feature, if nerine is opinionated, then maybe not?)
 - [ ] better ratelimit policy (5 min / 3 burst)
 - [ ] more sorting options on team profiles/challenge page/leaderboard (sort by badge count for example)
+- [ ] csp
 
 # medium tasks
 - [ ] unlockable/sequel challenges (i.e. revenge)

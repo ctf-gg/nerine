@@ -225,10 +225,8 @@ export interface LeaderboardEntry {
   scoreHistory: ScorePoint[];
   extra: { badges: Badge[] };
 }
-export const leaderboard = async (
-  token?: string
-): Promise<LeaderboardEntry[] | ApiError> => {
-  const res = await req("GET", "/leaderboard", tokenToOptions(token));
+export const leaderboard = async (): Promise<LeaderboardEntry[] | ApiError> => {
+  const res = await req("GET", "/leaderboard");
   return (await res.json()) as LeaderboardEntry[] | ApiError;
 };
 
@@ -282,7 +280,7 @@ export async function resendToken(email: string) {
 export interface ChallengeDeployment {
   id: string;
   deployed: boolean;
-  data: { [k: string]: DeploymentData};
+  data: { [k: string]: DeploymentData };
   created_at: string;
   expired_at: string | null;
   destroyed_at: string | null;
@@ -297,7 +295,7 @@ type HostMapping =
   | { type: "http"; subdomain: string; base: string };
 
 export async function deployChallenge(
-  challengeId: string,
+  challengeId: string
 ): Promise<ChallengeDeployment | ApiError> {
   // TODO make it so we don't have to include body in post
   const res = await req("POST", "/challs/deploy/new/" + challengeId, {

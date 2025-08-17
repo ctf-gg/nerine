@@ -10,7 +10,7 @@ let teams;
 const event = await getEvent();
 const token = Astro.cookies.get("token")?.value;
 if (new Date().getTime() >= event.start_time.getTime()) {
-  teams = await leaderboard(token);
+  teams = await leaderboard();
   if (isError(teams)) {
     if (teams.error === "invalid_token") return Astro.redirect("/login", 307);
     else return new Response("something went wrong");
@@ -28,7 +28,7 @@ if (new Date().getTime() >= event.start_time.getTime()) {
         />
         <LeaderboardDisplay
           teams={teams.filter((team) => team.score > 0)}
-          yourTeam={jwtDecode<{ team_id: string }>(token!).team_id}
+          yourTeam={token ? jwtDecode<{ team_id: string }>(token).team_id : null}
           client:load
         />
       </>

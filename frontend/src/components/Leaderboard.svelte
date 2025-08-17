@@ -2,7 +2,7 @@
   import type { LeaderboardEntry } from "../api";
   import Badges from "./Badges.svelte";
 
-  const { teams, yourTeam }: { teams: LeaderboardEntry[]; yourTeam: string } =
+  const { teams, yourTeam }: { teams: LeaderboardEntry[]; yourTeam: string | null } =
     $props();
 </script>
 
