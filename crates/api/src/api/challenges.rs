@@ -24,11 +24,9 @@ pub struct PublicChallenge {
     solves: i32,
     attachments: serde_json::Value,
     category: String,
-    #[serde(rename(serialize = "deploymentId"))]
     deployment_id: String,
     strategy: String,
-    #[serde(rename(serialize = "selfSolved"))] // todo use built in camel case in future
-    self_solved: bool,
+    solved_at: Option<NaiveDateTime>,
 }
 
 // NOTE: All of the routes in this file are PUBLICALLY
@@ -57,7 +55,7 @@ pub async fn list(
             strategy::text AS "strategy!",
             COALESCE(cd.public_id, '') AS "deployment_id!",
             categories.name AS category,
-            FALSE as "self_solved!"
+            NULL::timestamp AS "solved_at"
         FROM challenges c JOIN categories ON categories.id = category_id
         LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))
         WHERE visible = true
@@ -68,8 +66,11 @@ pub async fn list(
     .await?;
 
     for c in &mut challs {
-        if solves.iter().any(|s| s.public_id == c.public_id) {
-            c.self_solved = true;
+        for s in solves.iter() {
+            if s.public_id == c.public_id {
+                c.solved_at = Some(s.solved_at);
+                break;
+            }
         }
     }
 

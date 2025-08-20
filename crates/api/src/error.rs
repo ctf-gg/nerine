@@ -17,21 +17,21 @@ pub enum Error {
     Validation(#[from] validator::ValidationErrors),
     #[error("{0}")]
     Deploy(#[from] reqwest::Error), // TODO this might be used for other classes of error, idk yet
-    #[error("invalid token")]
+    #[error("Invalid token")]
     InvalidToken,
-    #[error("challenge not found")]
+    #[error("Challenge not found")]
     NotFoundChallenge,
-    #[error("team not found")]
+    #[error("Team not found")]
     NotFoundTeam,
-    #[error("the event has not started, starts at {0}")]
+    #[error("The event has not started, starts at {0}")]
     EventNotStarted(NaiveDateTime),
-    #[error("the event has ended")]
+    #[error("The event has ended")]
     EventEnded,
-    #[error("wrong flag")]
+    #[error("Wrong flag")]
     WrongFlag,
-    #[error("team name already taken")]
+    #[error("Team name already taken")]
     TeamNameTaken,
-    #[error("this is a generic error, you shouldn't recieve this is if you're a well behaved client!")]
+    #[error("This is a generic error, you shouldn't recieve this is if you're a well behaved client!")]
     GenericError,
 }
 

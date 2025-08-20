@@ -8,6 +8,7 @@
 - [ ] leaderboard freeze time (bad feature, if nerine is opinionated, then maybe not?)
 - [ ] better ratelimit policy (5 min / 3 burst)
 - [ ] more sorting options on team profiles/challenge page/leaderboard (sort by badge count for example)
+- [ ] submitting after event (should be marked, but not scored)
 - [ ] csp
 
 # medium tasks

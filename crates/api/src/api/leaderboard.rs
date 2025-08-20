@@ -18,7 +18,6 @@ struct LeaderboardEntry {
     score: i32,
     #[serde(rename(serialize = "extra"))]
     extra_data: serde_json::Value,
-    #[serde(rename = "scoreHistory")]
     score_history: Vec<ScorePoint>,
 }
 

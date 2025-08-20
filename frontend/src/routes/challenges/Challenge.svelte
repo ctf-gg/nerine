@@ -1,0 +1,419 @@
+<script lang="ts">
+  import { marked } from "marked";
+  import {
+    type ApiError,
+    type Challenge,
+    type ChallengeDeployment,
+    challenges,
+    deployChallenge,
+    destroyChallenge,
+    getChallengeDeployment,
+    isError,
+    submitFlag,
+  } from "$lib/api";
+  import { event } from "$lib/event";
+  import TcpLink from "./TcpLink.svelte";
+  const { chall: c }: { chall: Challenge } = $props();
+
+  let flagInput: HTMLInputElement = $state(null!);
+  let deployment: ChallengeDeployment | null = $state(null);
+  const urls: { type: "tcp" | "http"; url: string }[] = $derived.by(() => {
+    if (!deployment || !deployment?.data) return [];
+    let res: { type: "tcp" | "http"; url: string }[] = [];
+    for (const [name, { ports }] of Object.entries(deployment.data)) {
+      for (const mapping of Object.values(ports)) {
+        switch (mapping.type) {
+          case "tcp":
+            res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port });
+            break;
+          case "http":
+            res.push({
+              type: "http",
+              url: `https://${mapping.subdomain}.${mapping.base}`,
+            });
+        }
+      }
+    }
+
+    return res;
+  });
+
+  let error: ApiError | null = $state(null);
+
+  let correct = $state<boolean | null>(null);
+  async function submit(e?: SubmitEvent) {
+    e?.preventDefault();
+    const j = await submitFlag(c.id, flagInput.value);
+    flagInput.value = "";
+    if (isError(j) && j.error != "wrong_flag") {
+      error = j;
+    }
+    correct = !isError(j);
+    if (correct) {
+      c.solved_at = new Date();
+    }
+  }
+
+  let waiting = $state(false);
+  let interval: any = $state(null);
+  let createCooldown = $state(false);
+
+  async function deployInstance() {
+    waiting = true;
+    const res = await deployChallenge(c.id);
+    if (isError(res)) {
+      error = res;
+      return;
+    }
+    if (interval) clearInterval(interval);
+    interval = setInterval(async () => {
+      const dep = await getChallengeDeployment(res.id);
+      if (isError(dep)) {
+        error = dep;
+        return;
+      }
+
+      if (dep.data) {
+        deployment = dep;
+        waiting = false;
+      }
+      if (dep.destroyed_at) {
+        await destroyInstance(false);
+      }
+    }, 2000);
+  }
+
+  // let instanceTimerInterval: number | null = $state(null);
+  // let instanceTimeRemaining: number | null = $state(null);
+
+  // $effect(() => {
+  //   if (instanceTimerInterval) clearInterval(instanceTimerInterval);
+  //   if (deployment !== null) {
+  //     setInterval(() => {
+  //       instanceTimeRemaining = deployment.expired_at;
+  //     });
+  //   }
+  // });
+
+  async function destroyInstance(actuallyDestroy = true) {
+    if (actuallyDestroy) {
+      waiting = true;
+      const res = await destroyChallenge(c.id);
+      if (res != "ok") {
+        error = res;
+        return;
+      }
+    }
+
+    waiting = false;
+    deployment = null;
+    c.deployment_id = "";
+    createCooldown = true;
+
+    setTimeout(() => {
+      createCooldown = false;
+    }, 2000);
+  }
+
+  async function getUrl() {
+    const res = await getChallengeDeployment(c.deployment_id!);
+    if (isError(res)) {
+      error = res;
+      return;
+    }
+
+    if (res.data) {
+      deployment = res;
+    }
+  }
+
+  $effect(() => {
+    if (c.strategy === "instanced" && c.deployment_id) {
+      getChallengeDeployment(c.deployment_id).then((r) => {
+        if (isError(r)) {
+          error = r;
+        } else {
+          deployment = r;
+        }
+      });
+    }
+  });
+
+  const eventHasEnded = new Date().getTime() > event.end_time.getTime();
+</script>
+
+<div class="challenge">
+  <div class="header">
+    <h1>{c.category}/{c.name}</h1>
+
+    <span class="solves">
+      {c.solves} solve{c.solves === 1 ? "" : "s"} / {c.points} points
+    </span>
+  </div>
+  <div class="subheader">
+    <span class="author">{c.author}</span>
+  </div>
+  <p class="description">{@html marked(c.description)}</p>
+  <div class="resources">
+    <div class="attachments">
+      {#if c.attachments}
+        {#each Object.entries(c.attachments) as [name, url]}
+          <a href={url} download><button>{name}</button></a>
+        {/each}
+      {/if}
+    </div>
+    <div class="deployment">
+      <!-- <div class="deployed-info">
+        <div class="deployment-controls">
+          <div class="expire-bar">
+            <div style="width: 50%;" class="bar-fill"></div>
+            <span class="bar-text">Expires in 8:30</span>
+          </div>
+          <button onclick={() => destroyInstance()}>Destroy</button>
+        </div>
+
+        <TcpLink link="nc smiley.cat 3000" />,
+        <a href="importantlink" target="_blank"
+          >https://web-something-8ek3.smiley.cat</a
+        >
+      </div> -->
+
+      {#if deployment}
+        <div class="deployed-info">
+          <div class="deployment-controls">
+            {#if deployment.expired_at}{/if}
+          </div>
+          {#each urls as url}
+            {#if url.type === "tcp"}
+              <TcpLink link={url.url} />
+            {:else}
+              <a href={url.url} target="_blank">
+                {url.url}
+              </a>
+            {/if}
+          {/each}
+          {#if deployment.expired_at}
+            <span>
+              Expires at {new Date(
+                deployment.expired_at + "Z"
+              ).toLocaleTimeString()}
+            </span>
+          {/if}
+          {#if c.strategy === "instanced"}
+            <button onclick={() => destroyInstance()}>Destroy</button>
+          {/if}
+        </div>
+      {:else if c.strategy === "static" && c.deployment_id}
+        <button onclick={getUrl}>Show URL</button>
+      {:else if waiting || (c.strategy === "instanced" && c.deployment_id)}
+        <button class="loading" disabled>
+          <svg
+            class="spinner"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              opacity="0.25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              opacity="0.75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <span>Creating Instance</span>
+        </button>
+      {:else if c.strategy === "instanced" && !c.deployment_id}
+        <button onclick={deployInstance} disabled={createCooldown}>
+          Create Instance
+        </button>
+      {/if}
+    </div>
+  </div>
+  {#if c.solved_at}
+    <div class="solved">Solved at {c.solved_at.toLocaleString()}</div>
+    <!-- {:else if eventHasEnded}
+    <div class="ended">The event has ended</div> -->
+  {:else}
+    <form class="submit" onsubmit={submit}>
+      <input
+        type="text"
+        name="flag"
+        placeholder="Flag"
+        autocomplete="off"
+        onchange={() => (correct = null)}
+        bind:this={flagInput}
+        class={[correct === false && "incorrect"]}
+      />
+      <button type="submit">Submit</button>
+    </form>
+  {/if}
+
+  {#if error}
+    <div class="error">{error.message}</div>
+  {/if}
+</div>
+
+<style>
+  .challenge {
+    border: 1px solid var(--text-primary);
+    padding: 1rem;
+
+    .header {
+      line-height: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      h1 {
+        font-size: 2rem;
+      }
+
+      .solves {
+        white-space: nowrap;
+        font-weight: 600;
+        font-size: 1.25rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .solves {
+          margin-bottom: 0.75rem;
+        }
+      }
+    }
+
+    .author {
+      font-size: 1.25rem;
+    }
+
+    .solved,
+    .ended {
+      height: 2rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--text);
+      font-weight: 600;
+      text-align: center;
+      align-content: center;
+    }
+
+    .solved {
+      --bg: var(--bg-success);
+      --text: var(--text-success);
+    }
+
+    .ended {
+      --bg: var(--bg-neutral);
+      --text: var(--text-neutral);
+    }
+
+    .description {
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .resources {
+      display: flex;
+      margin-bottom: 0.5rem;
+      button {
+        font-size: 1rem;
+      }
+    }
+
+    .deployment {
+      margin-left: auto;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: end;
+
+      .deployment-controls {
+        margin-left: auto;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: end;
+      }
+
+      .expire-bar {
+        display: grid;
+        width: 12rem;
+        border: 1px solid var(--text-accent);
+        background: var(--bg-accent);
+        align-items: center;
+        .bar-fill {
+          opacity: 0.5;
+          padding: 0.15rem 0;
+          background: var(--text-accent);
+          height: 100%;
+        }
+
+        .bar-text {
+          text-align: center;
+        }
+
+        * {
+          grid-column-start: 1;
+          grid-row-start: 1;
+        }
+      }
+    }
+
+    .attachments {
+      display: flex;
+      gap: 0.5rem;
+      align-items: end;
+    }
+  }
+
+  .submit {
+    width: 100%;
+    display: flex;
+    height: 2rem;
+
+    input {
+      flex-grow: 1;
+      transition: background-color 300ms ease-out;
+
+      &.incorrect {
+        background-color: var(--bg-error);
+      }
+    }
+  }
+
+  .error {
+    color: var(--text-error);
+    text-align: center;
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    .spinner {
+      height: 1rem;
+      width: 1rem;
+      display: inline;
+      animation: spin 2s infinite linear;
+    }
+  }
+
+  @keyframes spin {
+    from {
+      rotate: 0deg;
+    }
+    to {
+      rotate: 360deg;
+    }
+  }
+</style>

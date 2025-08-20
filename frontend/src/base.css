@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,100..900;1,100..900&display=swap");
 /*
   Josh's Custom CSS Reset
   https://www.joshwcomeau.com/css/custom-css-reset/
@@ -67,62 +68,69 @@ h6 {
   isolation: isolate;
 }
 
-/* the other stuff begins here */
 
-@font-face {
-  font-family: "Smiley Sans";
-  src: url("/fonts/SmileySans.otf") format("opentype"),
-    url("/fonts/SmileySans.ttf") format("truetype");
-  font-weight: 300 900;
-  font-style: normal;
-  font-display: swap;
-}
+.theme-light {
+  --bg-primary: oklch(1 0 0);
+  --bg-secondary: oklch(0.9731 0.0041 91.45);
 
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-Variable.woff2") format("woff2"),
-    url("/fonts/Satoshi-Variable.woff") format("woff"),
-    url("/fonts/Satoshi-Variable.ttf") format("truetype");
-  font-weight: 300 900;
-  font-display: swap;
-  font-style: normal;
+  --text-primary: oklch(0.3289 0.0107 91.66);
+
+
+  --bg-accent: oklch(0.9514 0.0085 308.36);
+  --text-accent: oklch(0.5814 0.1203 309.5);
+
+  /* For neutral elements */
+  --bg-neutral: oklch(0.9514 0.0027 106.45);
+  --text-neutral: oklch(0.5692 0.0047 91.48);
+
+  --bg-success: oklch(0.9514 0.0269 141.26);
+  --text-success: oklch(0.5579 0.0848 158.39);
+
+  --bg-error: oklch(0.9546 0.0196 13.63);
+  --text-error: oklch(0.6015 0.1724 25.79);
 }
 
 html {
-  font-family: "Smiley Sans", sans-serif;
+  font-family: "Libre Franklin", sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
+.content-container {
+  max-width: 50rem;
+  margin: auto;
+  margin-bottom: 8rem;
+  padding: 1rem;
+}
+
+button {
+  border-radius: 0;
+  border: none;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: color-mix(in oklab, var(--text-primary) 70%, transparent);
+  cursor: not-allowed
 }
 
 input {
-  border-image: url("/border-big.png") 12 / 8px round;
-  border-image-outset: 2px;
-  padding: 0.5rem;
-  background-color: #f8f8f1;
-  font-family: "Satoshi", sans-serif;
+  border-radius: 0;
+  border: 1px solid var(--text-primary);
+  background: var(--bg-neutral);
+  padding: 0.15rem 0.5rem;
+}
+
+input:focus {
+  outline: none;
+  background: var(--bg-primary);
 }
 
 a {
   color: inherit;
-}
-
-button {
-  border-image: url("/border-big.png") 12 / 8px round;
-  border-image-outset: 2px;
-  background-color: black;
-  font-size: 1.5rem;
-  color: white;
+  text-decoration: underline;
   cursor: pointer;
-  &:disabled {
-    cursor: not-allowed;
-    filter: brightness(80%);
-  }
-}
-
-.heading {
-  font-size: 4rem;
-  text-align: center;
-  -webkit-font-smoothing: none;
-}
-
-body {
-  background-color: #f8f8f1;
 }

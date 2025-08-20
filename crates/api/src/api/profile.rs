@@ -88,8 +88,7 @@ pub(crate) struct Solve {
     pub(crate) public_id: String,
     name: String,
     points: i32,
-    #[serde(rename(serialize = "solvedAt"))]
-    solved_at: NaiveDateTime,
+    pub(crate) solved_at: NaiveDateTime,
 }
 
 pub(crate) async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {

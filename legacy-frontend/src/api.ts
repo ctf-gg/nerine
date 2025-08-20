@@ -144,7 +144,7 @@ interface Solve {
   solvedAt: string;
 }
 
-type Profile =
+export type Profile =
   | {
       type: "private";
       name: string;
@@ -155,7 +155,6 @@ type Profile =
     }
   | {
       type: "public";
-
       name: string;
       score: number;
       rank: number;
@@ -197,14 +196,17 @@ export interface Challenge {
   strategy: "static" | "instanced";
   deploymentId: string | null;
   category: string;
-  selfSolved: boolean;
+  solvedAt: Date;
 }
 
 export const challenges = async (
   token?: string
 ): Promise<Challenge[] | ApiError> => {
   const res = await req("GET", "/challs", tokenToOptions(token));
-  return (await res.json()) as Challenge[] | ApiError;
+  const challs = (await res.json()) as Challenge[] | ApiError;
+  if (isError(challs)) return challs;
+
+  return challs.map((c) => ({ ...c, solvedAt: new Date(c.solvedAt) }));
 };
 
 export interface Badge {
@@ -281,7 +283,7 @@ export interface ChallengeDeployment {
   id: string;
   deployed: boolean;
   data: { [k: string]: DeploymentData };
-  created_at: string;
+  created_at: string; // TODO make into date
   expired_at: string | null;
   destroyed_at: string | null;
 }
