@@ -57,6 +57,7 @@
   nav {
     position: sticky;
     top: 0;
+    z-index: 100;
     border-bottom: 1px solid var(--text-primary);
     backdrop-filter: blur(0.25rem);
     padding: 0 0.75rem;

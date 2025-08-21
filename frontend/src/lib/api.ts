@@ -216,6 +216,23 @@ export const challenges = async (
   }));
 };
 
+export interface ChallengeSolve {
+  id: string;
+  name: string;
+  solved_at: Date;
+}
+
+export const challengeSolves = async (
+  id: string,
+  token?: string
+): Promise<ChallengeSolve[] | ApiError> => {
+  const res = await req("GET", `/challs/solves/${id}`, tokenToOptions(token));
+  const solves = (await res.json()) as ChallengeSolve[] | ApiError;
+  if (isError(solves)) return solves;
+
+  return solves.map((s) => ({ ...s, solved_at: new Date(s.solved_at + "Z") }));
+};
+
 export interface Badge {
   type: string;
   obtained: string;

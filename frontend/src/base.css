@@ -103,12 +103,19 @@ html {
   padding: 1rem;
 }
 
-button {
+button:not(.ghost) {
   border-radius: 0;
   border: none;
   background: var(--text-primary);
   color: var(--bg-primary);
   padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
+button.ghost {
+  background: transparent;
+  border: none;
+  border-radius: 0;
   cursor: pointer;
 }
 
@@ -133,4 +140,14 @@ a {
   color: inherit;
   text-decoration: underline;
   cursor: pointer;
+}
+
+dialog {
+  margin: auto;
+  border: 1px solid var(--text-primary);
+  padding: 1rem;
+}
+
+table {
+  width: 100%;
 }

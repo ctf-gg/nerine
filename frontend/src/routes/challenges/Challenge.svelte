@@ -5,6 +5,8 @@
     type Challenge,
     type ChallengeDeployment,
     challenges,
+    type ChallengeSolve,
+    challengeSolves,
     deployChallenge,
     destroyChallenge,
     getChallengeDeployment,
@@ -13,6 +15,7 @@
   } from "$lib/api";
   import { event } from "$lib/event";
   import TcpLink from "./TcpLink.svelte";
+  import { onDestroy, onMount } from "svelte";
   const { chall: c }: { chall: Challenge } = $props();
 
   let flagInput: HTMLInputElement = $state(null!);
@@ -54,6 +57,8 @@
     }
   }
 
+  // Instancing
+
   let waiting = $state(false);
   let interval: any = $state(null);
   let createCooldown = $state(false);
@@ -75,6 +80,13 @@
 
       if (dep.data) {
         deployment = dep;
+        if (dep.expired_at) {
+          const totalTime =
+            new Date(dep.expired_at).getTime() - new Date().getTime();
+          instanceTimeRemaining = totalTime;
+          totalInstanceTime = totalTime;
+        }
+
         waiting = false;
       }
       if (dep.destroyed_at) {
@@ -83,17 +95,20 @@
     }, 2000);
   }
 
-  // let instanceTimerInterval: number | null = $state(null);
-  // let instanceTimeRemaining: number | null = $state(null);
-
-  // $effect(() => {
-  //   if (instanceTimerInterval) clearInterval(instanceTimerInterval);
-  //   if (deployment !== null) {
-  //     setInterval(() => {
-  //       instanceTimeRemaining = deployment.expired_at;
-  //     });
-  //   }
-  // });
+  let instanceTimeInterval: number = $state(null!);
+  let instanceTimeRemaining: number | null = $state(null);
+  let totalInstanceTime: number | null = $state(null);
+  // TODO(aiden): investiagte whether its bad to have 40 intervals going off at once
+  onMount(() => {
+    instanceTimeInterval = setInterval(() => {
+      if (deployment && deployment.expired_at) {
+        instanceTimeRemaining =
+          new Date(deployment.expired_at).getTime() - new Date().getTime();
+      } else {
+        instanceTimeRemaining = null;
+      }
+    }, 1000);
+  });
 
   async function destroyInstance(actuallyDestroy = true) {
     if (actuallyDestroy) {
@@ -109,6 +124,8 @@
     deployment = null;
     c.deployment_id = "";
     createCooldown = true;
+    totalInstanceTime = null;
+    instanceTimeRemaining = null;
 
     setTimeout(() => {
       createCooldown = false;
@@ -134,21 +151,39 @@
           error = r;
         } else {
           deployment = r;
+          if (r.expired_at) {
+            const totalTime =
+              new Date(r.expired_at).getTime() - new Date().getTime();
+            instanceTimeRemaining = totalTime;
+            totalInstanceTime = totalTime;
+          }
         }
       });
     }
   });
 
-  const eventHasEnded = new Date().getTime() > event.end_time.getTime();
+  onDestroy(() => {
+    if (interval) clearInterval(interval);
+    clearInterval(instanceTimeInterval);
+  });
+
+  // Solves Dialog
+  let solvesDialog: HTMLDialogElement = $state(null!);
+  let solves: ChallengeSolve[] | ApiError | null = $state(null);
+
+  async function showSolves() {
+    solvesDialog.showModal();
+    solves = await challengeSolves(c.id);
+  }
 </script>
 
 <div class="challenge">
   <div class="header">
     <h1>{c.category}/{c.name}</h1>
 
-    <span class="solves">
+    <button class="ghost solves" onclick={showSolves}>
       {c.solves} solve{c.solves === 1 ? "" : "s"} / {c.points} points
-    </span>
+    </button>
   </div>
   <div class="subheader">
     <span class="author">{c.author}</span>
@@ -163,25 +198,23 @@
       {/if}
     </div>
     <div class="deployment">
-      <!-- <div class="deployed-info">
-        <div class="deployment-controls">
-          <div class="expire-bar">
-            <div style="width: 50%;" class="bar-fill"></div>
-            <span class="bar-text">Expires in 8:30</span>
-          </div>
-          <button onclick={() => destroyInstance()}>Destroy</button>
-        </div>
-
-        <TcpLink link="nc smiley.cat 3000" />,
-        <a href="importantlink" target="_blank"
-          >https://web-something-8ek3.smiley.cat</a
-        >
-      </div> -->
-
       {#if deployment}
         <div class="deployed-info">
           <div class="deployment-controls">
-            {#if deployment.expired_at}{/if}
+            {#if deployment.expired_at && instanceTimeRemaining}
+              {@const totalSecs = instanceTimeRemaining / 1000}
+              {@const minutes = Math.floor(totalSecs / 60)
+                .toString()
+                .padStart(2, "0")}
+              {@const seconds = (totalSecs % 60).toString().padStart(2, "0")}
+              <div class="expire-bar">
+                <div style="width: 50%;" class="bar-fill"></div>
+                <span class="bar-text">Expires in {minutes}:{seconds}</span>
+              </div>
+            {/if}
+            {#if c.strategy === "instanced"}
+              <button onclick={() => destroyInstance()}>Destroy</button>
+            {/if}
           </div>
           {#each urls as url}
             {#if url.type === "tcp"}
@@ -192,16 +225,6 @@
               </a>
             {/if}
           {/each}
-          {#if deployment.expired_at}
-            <span>
-              Expires at {new Date(
-                deployment.expired_at + "Z"
-              ).toLocaleTimeString()}
-            </span>
-          {/if}
-          {#if c.strategy === "instanced"}
-            <button onclick={() => destroyInstance()}>Destroy</button>
-          {/if}
         </div>
       {:else if c.strategy === "static" && c.deployment_id}
         <button onclick={getUrl}>Show URL</button>
@@ -227,7 +250,9 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span>Creating Instance</span>
+          <span>
+            {c.strategy === "static" ? "Loading" : "Creating Instance"}
+          </span>
         </button>
       {:else if c.strategy === "instanced" && !c.deployment_id}
         <button onclick={deployInstance} disabled={createCooldown}>
@@ -260,6 +285,53 @@
   {/if}
 </div>
 
+<dialog bind:this={solvesDialog} closedby="any" class="solves-dialog">
+  <button
+    class="ghost close"
+    onclick={() => solvesDialog.close()}
+    aria-label="close dialog"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="1.5"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M6 18 18 6M6 6l12 12"
+      />
+    </svg>
+  </button>
+  <h2>Solves for {c.category}/{c.name}</h2>
+  {#if !solves}
+    <div class="loading">Loading...</div>
+  {:else if isError(solves)}
+    <div class="error">Failed to get solves: {solves.message}</div>
+    <button onclick={showSolves}>Retry</button>
+  {:else}
+    <table>
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>Solved At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each solves as solve}
+          {@const href = `/profile/${solve.id}`}
+          <tr>
+            <td><a {href}>{solve.name}</a></td>
+            <td><a {href}>{solve.solved_at.toLocaleString()}</a></td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  {/if}
+</dialog>
+
 <style>
   .challenge {
     border: 1px solid var(--text-primary);
@@ -278,6 +350,9 @@
         white-space: nowrap;
         font-weight: 600;
         font-size: 1.25rem;
+        &:hover {
+          text-decoration: underline 2px;
+        }
       }
     }
 
@@ -357,6 +432,7 @@
         }
 
         .bar-text {
+          z-index: 10;
           text-align: center;
         }
 
@@ -396,7 +472,7 @@
     margin-top: 0.25rem;
   }
 
-  .loading {
+  button.loading {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -414,6 +490,52 @@
     }
     to {
       rotate: 360deg;
+    }
+  }
+
+  .solves-dialog {
+    min-width: 45rem;
+    text-align: center;
+
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .close {
+      position: absolute;
+      right: 1rem;
+
+      svg {
+        height: 1.5rem;
+        width: 1.5rem;
+      }
+    }
+
+    .error {
+      margin-bottom: 0.25rem;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    tbody tr {
+      transition: all 300ms;
+      &:hover {
+        background: var(--bg-neutral);
+      }
+    }
+
+    td {
+      border: none;
+      border-top: 1px solid var(--text-primary);
+      border-bottom: 1px solid var(--text-primary);
+      padding: 0;
+      a {
+        display: block;
+        padding: 0.15rem 0;
+        text-decoration: none;
+      }
     }
   }
 </style>

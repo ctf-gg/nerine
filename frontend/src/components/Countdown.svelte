@@ -117,10 +117,7 @@
       <span class="number"
         >{timeLeft ? timeLeft.seconds.toString().padStart(2, "0") : "--"}</span
       >
-      <span class="la$effect(() => {
-    flagInput.addEventListener("keydown", (e) => {
-    })
-  })bel">Seconds</span>
+      <span class="label">Seconds</span>
     </div>
   </div>
 </div>

@@ -77,6 +77,41 @@ pub async fn list(
     Ok(Json(challs))
 }
 
+#[derive(Serialize)]
+pub struct ChallengeSolve {
+    id: String,
+    name: String,
+    solved_at: NaiveDateTime,
+}
+
+pub async fn challenge_solves(
+    StateE(state): StateE<State>,
+    Auth(_): Auth,
+    Path(chall_id): Path<String>,
+) -> Result<Json<Vec<ChallengeSolve>>> {
+    if Utc::now().naive_utc() < state.event.start_time {
+        return Err(Error::EventNotStarted(state.event.start_time.clone()));
+    }
+
+    let chall_solves = sqlx::query_as!(
+        ChallengeSolve,
+        r#"SELECT 
+            t.public_id AS id,
+            t.name AS name,
+            s.created_at AS solved_at 
+        FROM submissions s
+        JOIN teams t ON s.team_id = t.id
+        JOIN challenges c ON s.challenge_id = c.id
+        WHERE c.public_id = $1 
+        AND s.is_correct = true"#,
+        chall_id,
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    Ok(Json(chall_solves))
+}
+
 #[derive(Deserialize)]
 pub struct Submission {
     flag: String,
@@ -334,5 +369,6 @@ pub fn router() -> Router<crate::State> {
     Router::new()
         .merge(ratelimited)
         .route("/", get(list))
+        .route("/solves/{chall_id}", get(challenge_solves))
         .route("/deploy/get/{deployment_id}", get(get_deployment))
 }
