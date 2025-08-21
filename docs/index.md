@@ -9,6 +9,9 @@ hero:
     - theme: brand
       text: Quickstart
       link: /quickstart
+    - theme: brand
+      text: challenge.toml reference
+      link: /challenge-format
     # - theme: alt
     #   text: API Examples
     #   link: /api-examples
