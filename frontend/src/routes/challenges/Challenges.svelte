@@ -121,6 +121,10 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;
+      div {
+        display: flex;
+        align-items: center;
+      }
     }
 
     @media (max-width: 768px) {

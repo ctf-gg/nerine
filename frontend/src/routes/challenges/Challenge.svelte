@@ -311,6 +311,8 @@
   {:else if isError(solves)}
     <div class="error">Failed to get solves: {solves.message}</div>
     <button onclick={showSolves}>Retry</button>
+  {:else if solves.length === 0}
+  <div>This challenge has no solves</div>
   {:else}
     <table>
       <thead>
