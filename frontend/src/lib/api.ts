@@ -107,13 +107,13 @@ export const verifyEmail = async (
 };
 
 export interface VerificationDetailsTeamRegistration {
-  verification_type: "team_registration";
+  type: "team_registration";
   name: string;
   email: string;
 }
 
 export interface VerificationDetailsEmailUpdate {
-  verification_type: "email_update";
+  type: "email_update";
   name: string;
   new_email: string;
 }
@@ -144,6 +144,7 @@ export const updateProfile = async (
 
 interface Solve {
   name: string;
+  category: string;
   points: number;
   solved_at: string;
 }
@@ -277,6 +278,7 @@ export async function submitFlag(
 
 export interface Event {
   name: string;
+  description: string;
   start_time: Date;
   end_time: Date;
 }
@@ -286,7 +288,7 @@ export async function getEvent(): Promise<Event> {
   const res = await req("GET", "/event");
   const j = await res.json();
   return {
-    name: j.name,
+    ...j,
     start_time: new Date(j.start_time),
     end_time: new Date(j.end_time),
   };

@@ -1,3 +1,11 @@
-name = "smileyCTF"
-start_time = "2025-04-25T22:36:51.356942"
-end_time = "2025-06-27T22:36:51.356942"
+name = "nerine"
+description = """
+nerine is a ctf platform designed for speed and elegance.
+
+## Features
+- a
+- b
+- c
+"""
+start_time = "2025-08-20T22:36:51.356942"
+end_time = "2025-08-27T22:36:51.356942"

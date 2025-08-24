@@ -281,7 +281,7 @@
   {/if}
 
   {#if error}
-    <div class="error">{error.message}</div>
+    <div class="error-text">{error.message}</div>
   {/if}
 </div>
 
@@ -465,13 +465,6 @@
         background-color: var(--bg-error);
       }
     }
-  }
-
-  .error {
-    color: var(--text-error);
-    text-align: center;
-    font-weight: 600;
-    margin-top: 0.25rem;
   }
 
   button.loading {

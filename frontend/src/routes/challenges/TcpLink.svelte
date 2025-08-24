@@ -3,7 +3,6 @@
 
   const { link } = $props();
   let show = $state(false);
-  let timeout = $state(null);
   const copy = (e: MouseEvent) => {
     e.preventDefault();
     navigator.clipboard.writeText(link);

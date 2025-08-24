@@ -2,8 +2,8 @@
 - [x] timestamp not timezoned
 - [x] solve on profile is not ordered by solve time
 - [x] scoreboard walled by login (bad)
-- [ ] cannot see solve teams (bad) i had to manually see who solved what
-- [ ] solve on profile does not have category
+- [x] cannot see solve teams (bad) i had to manually see who solved what
+- [x] solve on profile does not have category
 - [ ] websocket subscribe to deployment information
 - [ ] leaderboard freeze time (bad feature, if nerine is opinionated, then maybe not?)
 - [ ] better ratelimit policy (5 min / 3 burst)
@@ -21,11 +21,12 @@
 - [ ] dynamic generation for static challenges
 - [ ] remove rsync
 - [ ] better detection of what you need to rebuild
+- [ ] frontend: fix FOUT when using dark theme
 
 # large tasks
 - [ ] private deployments
 - [ ] ticketed challenges
-- [ ] plain theme
+- [x] plain theme
 - [ ] health checks
 - [ ] admin panel with everything
 - [ ] keychain admin key

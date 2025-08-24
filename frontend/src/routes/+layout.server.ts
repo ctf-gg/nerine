@@ -3,7 +3,7 @@ import { jwtDecode } from "jwt-decode";
 
 export const load = async ({ cookies }) => {
   const token = cookies.get("token");
-  if (!token) return { profile: null, teamId: null };
+  if (!token) return { authedProfile: null, teamId: null };
 
   const teamId = jwtDecode<{ team_id: string }>(token).team_id;
   let prof = token ? await profile(teamId, token) : null;
@@ -12,6 +12,6 @@ export const load = async ({ cookies }) => {
 
   return {
     teamId,
-    profile: prof,
+    authedProfile: prof,
   };
 };

@@ -10,6 +10,7 @@ use validator::Validate;
 
 use super::auth::{Team, TeamInfo, VerificationRequest};
 
+// todo(aiden): i dont like this implementation
 async fn update(
     StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
@@ -87,6 +88,7 @@ pub(crate) struct Solve {
     // FIXME(ani): shouldn't be here
     pub(crate) public_id: String,
     name: String,
+    category: String,
     points: i32,
     pub(crate) solved_at: NaiveDateTime,
 }
@@ -97,7 +99,7 @@ pub(crate) async fn get_solves(db: &DB, pub_id: &str) -> Result<Vec<Solve>> {
         r#"WITH 
             team AS (SELECT id FROM teams WHERE public_id = $1),
             solved_challs AS (SELECT challenge_id AS id, created_at FROM submissions, team WHERE is_correct = true AND team_id = team.id)
-        SELECT public_id, name, c_points AS points, created_at AS solved_at FROM challenges c JOIN solved_challs sc ON sc.id = c.id 
+        SELECT public_id, c.name, cg.name AS category, c_points AS points, created_at AS solved_at FROM challenges c JOIN solved_challs sc ON sc.id = c.id JOIN categories cg ON cg.id = c.category_id
         ORDER BY solved_at DESC"#,
         pub_id
     ).fetch_all(db).await?;

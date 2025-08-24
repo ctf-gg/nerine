@@ -68,13 +68,11 @@ h6 {
   isolation: isolate;
 }
 
-
-.theme-light {
+:root:has(.theme-light) {
   --bg-primary: oklch(1 0 0);
   --bg-secondary: oklch(0.9731 0.0041 91.45);
 
   --text-primary: oklch(0.3289 0.0107 91.66);
-
 
   --bg-accent: oklch(0.9514 0.0085 308.36);
   --text-accent: oklch(0.5814 0.1203 309.5);
@@ -90,6 +88,25 @@ h6 {
   --text-error: oklch(0.6015 0.1724 25.79);
 }
 
+:root:has(.theme-dark) {
+  --bg-primary: oklch(0.25 0.0099 241.98);
+  --bg-secondary: oklch(0.3526 0.0085 233.9);
+
+  --text-primary: oklch(0.8612 0 0);
+
+  --bg-accent: oklch(0.34 0.0408 293.94);
+  --text-accent: oklch(0.6263 0.1587 301.59);
+
+  --bg-neutral: #454b4e;
+  --text-neutral: #979a9b;
+
+  --bg-success: oklch(0.34 0.0284 192.69);
+  --text-success: #4dab9a;
+
+  --bg-error: #594141;
+  --text-error: #ff7369;
+}
+
 html {
   font-family: "Libre Franklin", sans-serif;
   color: var(--text-primary);
@@ -103,32 +120,40 @@ html {
   padding: 1rem;
 }
 
-button:not(.ghost) {
-  border-radius: 0;
-  border: none;
-  background: var(--text-primary);
-  color: var(--bg-primary);
-  padding: 0.15rem 0.5rem;
-  cursor: pointer;
-}
+button {
+  &:not(.ghost) {
+    border-radius: 0;
+    border: none;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+  }
 
-button.ghost {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
+  &.ghost {
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+  }
 }
 
 button:disabled {
   background: color-mix(in oklab, var(--text-primary) 70%, transparent);
-  cursor: not-allowed
+  cursor: not-allowed;
 }
 
 input {
   border-radius: 0;
   border: 1px solid var(--text-primary);
   background: var(--bg-neutral);
+  color: var(--text-primary);
   padding: 0.15rem 0.5rem;
+
+  &::placeholder {
+    color: color-mix(in oklab, var(--text-primary) 50%, transparent);
+  }
 }
 
 input:focus {
@@ -150,4 +175,19 @@ dialog {
 
 table {
   width: 100%;
+}
+
+.error-text,
+.success-text {
+  text-align: center;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.error-text {
+  color: var(--text-error);
+}
+
+.success-text {
+  color: var(--text-success);
 }

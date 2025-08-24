@@ -127,11 +127,13 @@
     display: grid;
     align-items: center;
     justify-content: center;
+    border: 1px solid var(--text-primary);
+    padding: 1rem;
   }
 
   .countdown-heading {
     text-align: center;
-    font-size: 3rem;
+    font-size: 2.25rem;
   }
 
   .countdown-display {
@@ -143,11 +145,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem;
+    padding: 0 1rem;
   }
 
   .number {
-    font-size: 4rem;
+    font-size: 3.5rem;
     line-height: 1;
   }
 
@@ -156,29 +158,32 @@
   }
 
   .separator {
-    font-size: 4rem;
+    font-size: 3.5rem;
+    line-height: 1;
     padding-bottom: 2.5rem;
   }
 
-  @media (max-width: 440px) {
+  @media (max-width: 768px) {
     .countdown-heading {
       font-size: 2rem;
     }
-    .countdown-title {
-      font-size: 2.5rem;
-    }
+
     .countdown-display {
       gap: 0.5rem;
     }
+    
     .time-unit {
       padding: 0.5rem;
     }
+    
     .number {
       font-size: 2.5rem;
     }
+    
     .label {
       font-size: 0.875rem;
     }
+    
     .separator {
       font-size: 2.5rem;
       padding-bottom: 1.5rem;

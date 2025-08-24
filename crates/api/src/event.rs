@@ -13,6 +13,7 @@ use crate::{Result, State};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Event {
     pub name: String,
+    pub description: String,
     pub start_time: NaiveDateTime,
     pub end_time: NaiveDateTime,
 }

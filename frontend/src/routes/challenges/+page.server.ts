@@ -7,7 +7,7 @@ export const load = async ({ cookies }) => {
   const eventStarted = new Date().getTime() >= event.start_time.getTime();
   if (!eventStarted) return { challs: null };
 
-  let challs = await challenges(token);
+  const challs = await challenges(token);
 
   if (isError(challs)) {
     if (challs.error === "invalid_token") redirect(307, "/login");

@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "nerine"
-  tagline: nerine is a CTF framework designed for speed and elegance
+  tagline: nerine is a ctf platform designed for speed and elegance
   actions:
     - theme: brand
       text: Quickstart

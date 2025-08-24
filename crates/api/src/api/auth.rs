@@ -125,12 +125,12 @@ pub enum VerificationDetailsResponse {
     TeamRegistration {
         name: String,
         email: String,
-        verification_type: String,
+        r#type: String,
     },
     EmailUpdate {
         name: String,
         new_email: String,
-        verification_type: String,
+        r#type: String,
     },
 }
 
@@ -143,7 +143,7 @@ async fn get_verification_details(
             Ok(Json(VerificationDetailsResponse::TeamRegistration {
                 name: details.name,
                 email: details.email,
-                verification_type: "team_registration".to_string(),
+                r#type: "team_registration".to_string(),
             }))
         }
 
@@ -158,7 +158,7 @@ async fn get_verification_details(
             Ok(Json(VerificationDetailsResponse::EmailUpdate {
                 name: team_name,
                 new_email: details.new_email,
-                verification_type: "email_update".to_string(),
+                r#type: "email_update".to_string(),
             }))
         }
         None => Err(crate::error::Error::InvalidToken),
