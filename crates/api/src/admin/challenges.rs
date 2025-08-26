@@ -303,7 +303,10 @@ async fn deploy_static(StateE(state): StateE<State>, _: Admin) -> Result<Json<se
 
     for id in ids {
         let deployment: serde_json::Value = client
-            .post(&format!("{}/api/challenge/deploy", state.config.deployer_base))
+            .post(&format!(
+                "{}/api/challenge/deploy",
+                state.config.deployer_base
+            ))
             .json(&ChallengeDeploymentReq {
                 challenge_id: id.id,
                 team_id: None,
@@ -323,7 +326,29 @@ async fn reload_deployer(StateE(state): StateE<State>, _: Admin) -> Result<()> {
     let client = reqwest::Client::new();
 
     client
-        .post(&format!("{}/api/challenges/reload", state.config.deployer_base))
+        .post(&format!(
+            "{}/api/challenges/reload",
+            state.config.deployer_base
+        ))
+        .send()
+        .await?;
+
+    Ok(())
+}
+
+async fn load_deployer(
+    StateE(state): StateE<State>,
+    _: Admin,
+    Json(challs): Json<HashMap<String, Challenge>>,
+) -> Result<()> {
+    let client = reqwest::Client::new();
+
+    client
+        .post(&format!(
+            "{}/api/challenges/load",
+            state.config.deployer_base
+        ))
+        .json(&challs)
         .send()
         .await?;
 
@@ -334,16 +359,18 @@ async fn reap(StateE(state): StateE<State>, _: Admin) -> Result<Json<String>> {
     let containers = sqlx::query!("SELECT challenge_id, team_id FROM challenge_deployments WHERE NOW() > expired_at AND destroyed_at IS NULL").fetch_all(&state.db).await?;
     let client = reqwest::Client::new();
     for container in containers {
-            client
-        .post(format!("{}/api/challenge/destroy", state.config.deployer_base))
-        .json(&ChallengeDeploymentReq {
-            challenge_id: container.challenge_id,
-            team_id: container.team_id,
-        })
-        .send()
-        .await?
-        .error_for_status()?;
-
+        client
+            .post(format!(
+                "{}/api/challenge/destroy",
+                state.config.deployer_base
+            ))
+            .json(&ChallengeDeploymentReq {
+                challenge_id: container.challenge_id,
+                team_id: container.team_id,
+            })
+            .send()
+            .await?
+            .error_for_status()?;
     }
 
     Ok(Json("ok".to_string()))
@@ -381,6 +408,7 @@ pub fn router() -> Router<crate::State> {
         .route("/category", post(create_category))
         .route("/deploy_static", post(deploy_static))
         .route("/reload_deployer", post(reload_deployer))
+        .route("/load_deployer", post(load_deployer))
         .route("/reap", delete(reap))
         .route("/update_cache", post(update_cache_handler))
 }

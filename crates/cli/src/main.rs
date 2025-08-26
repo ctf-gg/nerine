@@ -10,7 +10,8 @@ use std::{
 use bollard::auth::DockerCredentials;
 use clap::{Parser, Subcommand, command};
 use deployer_common::challenge::{
-    is_valid_id, Challenge, Container, DeployableChallenge, DeployableContext, DeploymentStrategy, ExposeType, Flag, PointRange
+    Challenge, Container, DeployableChallenge, DeployableContext, DeploymentStrategy, ExposeType,
+    Flag, PointRange, is_valid_id,
 };
 use dialoguer::{Select, theme::SimpleTheme};
 use eyre::{Result, eyre};
@@ -56,10 +57,6 @@ enum Commands {
         #[command(subcommand)]
         command: PlatformCommands,
     },
-    CoalesceManifests {
-        #[arg()]
-        dir: PathBuf,
-    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -86,7 +83,7 @@ fn search_for(dir: &Path, filenames: &[&str]) -> Option<PathBuf> {
     None
 }
 
-fn get_all_challs(paths: Vec<PathBuf>) -> impl Iterator<Item = DeployableChallenge> {
+fn get_all_challs(paths: &Vec<PathBuf>) -> impl Iterator<Item = DeployableChallenge> {
     let chall_paths: Vec<PathBuf> = if paths.len() == 0 {
         WalkDir::new(".")
             .into_iter()
@@ -244,10 +241,7 @@ async fn main() -> Result<()> {
                     .and_then(|f| f.to_str())
                     .unwrap_or("unknown")
                     .to_string(),
-                points: PointRange {
-                    min: 100,
-                    max: 500,
-                },
+                points: PointRange { min: 100, max: 500 },
                 description: "challenge description".to_string(),
                 container: Some({
                     // FIXME
@@ -272,7 +266,7 @@ async fn main() -> Result<()> {
             all,
             strict,
         } => {
-            let valid_challs: Vec<DeployableChallenge> = get_all_challs(paths)
+            let valid_challs: Vec<DeployableChallenge> = get_all_challs(&paths)
                 .filter(|c| c.chall.container.is_some())
                 .filter(|c| all || c.chall.build_group == build_group)
                 .collect();
@@ -310,7 +304,11 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Platform { command } => match command {
-            PlatformCommands::Update { paths, build_group, null_attachments } => {
+            PlatformCommands::Update {
+                paths,
+                build_group,
+                null_attachments,
+            } => {
                 #[derive(Deserialize, Serialize)]
                 pub struct Category {
                     pub id: i32,
@@ -357,16 +355,20 @@ async fn main() -> Result<()> {
                 let gcs_client = if null_attachments {
                     None
                 } else {
-                    Some(GcsClient::new(ClientConfig::default().with_auth().await.unwrap()))
+                    Some(GcsClient::new(
+                        ClientConfig::default().with_auth().await.unwrap(),
+                    ))
                 };
-                for ref dc in
-                    get_all_challs(paths).filter(|c| c.chall.build_group == build_group)
-                {
+                for ref dc in get_all_challs(&paths).filter(|c| c.chall.build_group == build_group) {
                     let DeployableChallenge { chall, root } = dc;
                     let attachments = if null_attachments {
                         HashMap::new()
                     } else {
-                        dc.push_attachments(gcs_client.as_ref().unwrap(), "nerine-attachments".to_string()).await?
+                        dc.push_attachments(
+                            gcs_client.as_ref().unwrap(),
+                            "nerine-attachments".to_string(),
+                        )
+                        .await?
                     };
                     client
                         .patch(format!("{platform_base}/api/admin/challs"))
@@ -418,31 +420,19 @@ async fn main() -> Result<()> {
                     println!("updated {}", chall.id);
                 }
 
-                client.post(format!("{platform_base}/api/admin/challs/reload_deployer")).send().await?.error_for_status()?;
+                let challs_json: HashMap<String, Challenge> = get_all_challs(&paths)
+                    .map(|dc| (dc.chall.id.clone(), dc.chall))
+                    .collect();
+                
+                client
+                    .post(format!("{platform_base}/api/admin/challs/load_deployer"))
+                    .json(&challs_json)
+                    .send()
+                    .await?
+                    .error_for_status()?;
                 println!("reloaded deployer")
             }
         },
-        Commands::CoalesceManifests { dir } => {
-            _ = fs::create_dir(&dir);
-
-            for mf in WalkDir::new(".")
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.file_name() == "challenge.toml")
-            {
-                fs::copy(
-                    mf.path(),
-                    &dir.join(
-                        mf.path()
-                            .to_str()
-                            .unwrap()
-                            .replace("/", "-")
-                            .trim_matches('.')
-                            .trim_matches('-'),
-                    ),
-                )?;
-            }
-        }
     }
     Ok(())
 }

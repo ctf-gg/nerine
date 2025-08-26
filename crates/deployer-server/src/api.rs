@@ -1,11 +1,20 @@
-use axum::{extract::{Path, State as StateE}, routing::{get, post}, Json, Router};
+use std::collections::HashMap;
+
+use axum::{
+    Json, Router,
+    extract::{Path, State as StateE},
+    routing::{get, post},
+};
 use chrono::NaiveDateTime;
+use deployer_common::challenge::Challenge;
 use log::debug;
+use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use sqlx::types::JsonValue;
-use nanoid::nanoid;
 
-use crate::{State, Result, deploy::{self, ChallengeDeployment}};
+use crate::{
+    config::write_challenges_to_dir, deploy::{self, ChallengeDeployment}, Result, State
+};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ChallengeDeploymentRow {
@@ -80,7 +89,10 @@ async fn deploy_challenge(
     debug!("got back deployment {:?}", deployment);
 
     // start deploying the chall
-    state.tasks.spawn(deploy::deploy_challenge_task(state.clone(), deployment.clone()));
+    state.tasks.spawn(deploy::deploy_challenge_task(
+        state.clone(),
+        deployment.clone(),
+    ));
 
     Ok(Json(deployment.sanitize()))
 }
@@ -105,7 +117,9 @@ async fn destroy_challenge(
     };
 
     let deployment = deployment.try_into()?;
-    state.tasks.spawn(deploy::destroy_challenge_task(state.clone(), deployment));
+    state
+        .tasks
+        .spawn(deploy::destroy_challenge_task(state.clone(), deployment));
 
     Ok(())
 }
@@ -119,16 +133,14 @@ async fn get_challenge(
         "SELECT * FROM challenge_deployments WHERE public_id = $1",
         pub_id,
     )
-        .fetch_one(&state.db)
-        .await?
-        .try_into()?;
+    .fetch_one(&state.db)
+    .await?
+    .try_into()?;
 
     Ok(Json(deployment.sanitize()))
 }
 
-async fn reload_challenges(
-    StateE(state): StateE<State>,
-) -> Result<()> {
+async fn reload_challenges(StateE(state): StateE<State>) -> Result<()> {
     debug!("Reloading challenges");
     let mut challs_new = crate::config::load_challenges_from_dir(&state.config.challenges_dir)?;
 
@@ -140,9 +152,23 @@ async fn reload_challenges(
     Ok(())
 }
 
+async fn load_challenges(
+    StateE(state): StateE<State>,
+    Json(challs): Json<HashMap<String, Challenge>>,
+) -> Result<()> {
+    debug!("Loading challenges from api endpoint");
+    let mut wg = state.challenge_data.write().await;
+    std::mem::swap(&mut (challs.clone()), &mut *wg);
+    write_challenges_to_dir(&state.config.challenges_dir, challs)?;
+
+    debug!("Loaded challenges from api endpoint");
+    Ok(())
+}
+
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/challenges/reload", post(reload_challenges))
+        .route("/challenges/load", post(load_challenges))
         .route("/challenge/deploy", post(deploy_challenge))
         .route("/challenge/destroy", post(destroy_challenge))
         .route("/deployment/{id}", get(get_challenge))

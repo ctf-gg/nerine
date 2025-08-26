@@ -1,11 +1,13 @@
-use std::{collections::HashMap, ops::Deref, path::{Path, PathBuf}, str::FromStr, sync::Arc};
+use std::{
+    collections::HashMap, fs::File, io::Write, ops::Deref, path::{Path, PathBuf}, str::FromStr, sync::Arc
+};
 
 use deployer_common::challenge::{Challenge, DeployableContextData};
 use envconfig::Envconfig;
+use eyre::eyre;
 use log::debug;
 use serde::Deserialize;
 use sqlx::PgPool;
-use eyre::eyre;
 use tokio::sync::RwLock;
 use tokio_util::task::TaskTracker;
 
@@ -39,14 +41,19 @@ impl CaddyKeychain {
             // FIXME(ani): currently not verifying against ca certs because caddy sucks
             .add_root_certificate(reqwest::Certificate::from_pem(self.mtls.cacert.as_bytes())?)
             .danger_accept_invalid_hostnames(true)
-            .identity(reqwest::Identity::from_pem(format!("{}\n{}", self.mtls.key, self.mtls.cert).as_bytes())?)
+            .identity(reqwest::Identity::from_pem(
+                format!("{}\n{}", self.mtls.key, self.mtls.cert).as_bytes(),
+            )?)
             .use_rustls_tls()
             .build()?)
     }
 
     pub fn prep_url(&self, path: &str) -> reqwest::Url {
         // unwrap bad
-        reqwest::Url::parse(&self.endpoint).unwrap().join(path).unwrap()
+        reqwest::Url::parse(&self.endpoint)
+            .unwrap()
+            .join(path)
+            .unwrap()
     }
 }
 
@@ -118,7 +125,11 @@ pub struct Config {
 
 pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Challenge>> {
     let mut m = HashMap::new();
-    for pat in glob::glob(dir.join("*.toml").to_str().ok_or_else(|| eyre!("bad string for pattern"))?)? {
+    for pat in glob::glob(
+        dir.join("*.toml")
+            .to_str()
+            .ok_or_else(|| eyre!("bad string for pattern"))?,
+    )? {
         if let Ok(pat) = pat {
             let chall_s = std::fs::read_to_string(pat)?;
             let chall = toml::from_str::<Challenge>(&chall_s)?;
@@ -129,6 +140,17 @@ pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Chal
         }
     }
     Ok(m)
+}
+
+// TODO(aiden): in the future it is probably a good idea to write to only a single file instead of a directory
+pub fn write_challenges_to_dir(dir: &Path, m: HashMap<String, Challenge>) -> eyre::Result<()> {
+    std::fs::remove_dir_all(dir)?;
+    std::fs::create_dir(dir)?;
+    for (id, c) in m {
+        let mut file = File::create(dir.join(id))?;
+        write!(file, "{}", toml::to_string(&c)?)?;
+    }
+    Ok(())
 }
 
 pub struct StateInner {

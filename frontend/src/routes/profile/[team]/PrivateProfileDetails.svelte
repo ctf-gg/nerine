@@ -77,7 +77,7 @@
       font-weight: 600;
       font-size: 0.75rem;
       color: var(--text-accent);
-      right: 0.25rem;
+      right: 0.5rem;
       top: 0.25rem;
     }
 
