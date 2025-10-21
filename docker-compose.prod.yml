@@ -23,7 +23,7 @@ services:
       - 127.0.0.1:3333:3333
     env_file: .env
     environment:
-      EVENT_PATH: /app/event.toml
+      - EVENT_PATH=/app/event.toml
   frontend:
     image: ghcr.io/ctf-gg/nerine-frontend:main
     restart: unless-stopped
@@ -32,8 +32,8 @@ services:
     volumes:
       - ./site-assets:/app/client/assets
     environment:
-      HOST: 0.0.0.0
-      API_BASE: "http://api:3333/api"
+      - HOST=0.0.0.0
+      - API_BASE="http://api:3333/api"
   deployer:
     image: ghcr.io/ctf-gg/nerine-deployer:main
     restart: unless-stopped
@@ -43,10 +43,10 @@ services:
       - ./challenges:/app/challenges:ro
       - ./keychain-prod.json:/app/keychain.json:ro
     environment:
-      - RUST_LOG: ${RUST_LOG}
-      - DATABASE_URL: ${DATABASE_URL}
-      - CHALLENGES_DIR: /app/challenges
-      - HOST_KEYCHAINS: /app/keychain.json
+      - RUST_LOG=${RUST_LOG}
+      - DATABASE_URL=${DATABASE_URL}
+      - CHALLENGES_DIR=/app/challenges
+      - HOST_KEYCHAINS=/app/keychain.json
   db:
     image: postgres
     restart: unless-stopped
@@ -56,6 +56,6 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: nerine
-      POSTGRES_USER: nerine
-      POSTGRES_PASSWORD: ${NERINE_POSTGRES_PASSWORD}
+      - POSTGRES_DB=nerine
+      - POSTGRES_USER=nerine
+      - POSTGRES_PASSWORD=${NERINE_POSTGRES_PASSWORD}
