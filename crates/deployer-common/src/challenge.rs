@@ -186,8 +186,10 @@ pub struct DeployableChallenge {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 /// Serializable version of [super::DeployableContext].
 pub struct DeployableContextData {
+    // TODO(aiden): rename to daemon
     pub docker: DockerData,
     pub docker_credentials: Option<bollard::auth::DockerCredentials>,
+    // TODO(aiden): image_prefix and repo are basically the same thing iirc? get rid of image_prefix
     pub image_prefix: String,
     pub repo: String,
 }

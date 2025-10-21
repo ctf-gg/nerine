@@ -41,7 +41,7 @@ services:
       - db
     volumes:
       - ./challenges:/app/challenges:ro
-      - ./keychain-prod.json:/app/keychain.json:ro
+      - ./keychain.json:/app/keychain.json:ro
     environment:
       - RUST_LOG=${RUST_LOG}
       - DATABASE_URL=${DATABASE_URL}
