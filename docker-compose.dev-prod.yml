@@ -3,7 +3,7 @@ services:
     image: nerine
     restart: unless-stopped
     ports:
-      - 127.0.0.1:3000:3000
+      - 127.0.0.1:3333:3333
     volumes:
       - ./event.toml:/app/event.toml
     environment:
@@ -17,10 +17,10 @@ services:
     image: nerine-frontend
     restart: unless-stopped
     ports:
-      - 127.0.0.1:4321:4321
+      - 127.0.0.1:3334:3334
     environment:
       HOST: 0.0.0.0
-      API_BASE: "http://api:3000/api"
+      API_BASE: "http://api:3333/api"
   db:
     image: postgres
     restart: unless-stopped

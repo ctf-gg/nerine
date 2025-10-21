@@ -4,10 +4,10 @@
 
   import "../base.css";
   import Navbar from "../components/Navbar.svelte";
-  import { event } from "$lib/event";
   import { browser } from "$app/environment";
 
   let { children, data }: LayoutProps = $props();
+  const { authedProfile, teamId, event } = data;
   // TODO(aiden): very bad solution, please fix!
   let theme: "light" | "dark" = $state(browser ? localStorage["nerine-theme"] ?? "light" : "light");
 
@@ -28,8 +28,8 @@
 <div class="theme-{theme}">
   <Navbar
     {event}
-    profile={data.authedProfile}
-    teamId={data.teamId}
+    {teamId}
+    profile={authedProfile}
     bind:theme
   />
   <div>

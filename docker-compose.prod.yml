@@ -1,34 +1,61 @@
 # change the env vars before deploying!
 services:
-  nginx:
-    image: nginx
+  # nginx:
+  #   image: nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - 80:80
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  caddy:
+    image: caddy
     restart: unless-stopped
     ports:
       - 80:80
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./caddy:/etc/caddy:ro
   api:
-    image: nerine
+    image: ghcr.io/ctf-gg/nerine-api:main
     restart: unless-stopped
     volumes:
       - ./event.toml:/app/event.toml:ro
+    ports:
+      - 127.0.0.1:3333:3333
+    env_file: .env
     environment:
-      RUST_LOG: debug
-      CORS_ORIGIN: "http://nerine.localhost"
-      DATABASE_URL: postgres://postgres:postgres@db/nerine
-      JWT_SECRET: ZXhhbXBsZV9zZWNyZXQK
-      ADMIN_TOKEN: example_admin_token
       EVENT_PATH: /app/event.toml
   frontend:
-    image: nerine-frontend
+    image: ghcr.io/ctf-gg/nerine-frontend:main
     restart: unless-stopped
+    ports:
+      - 127.0.0.1:3334:3334
+    volumes:
+      - ./site-assets:/app/client/assets
     environment:
       HOST: 0.0.0.0
-      API_BASE: "http://api:3000/api"
+      API_BASE: "http://api:3333/api"
+  deployer:
+    image: ghcr.io/ctf-gg/nerine-deployer:main
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./challenges:/app/challenges:ro
+      - ./keychain-prod.json:/app/keychain.json:ro
+    enviornment:
+      - RUST_LOG: ${RUST_LOG}
+      - DATABASE_URL: ${DATABASE_URL}
+      - CHALLENGES_DIR: /app/challenges
+      - HOST_KEYCHAINS: /app/keychain.json
   db:
     image: postgres
     restart: unless-stopped
     shm_size: 128mb
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: nerine
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: nerine
+      POSTGRES_PASSWORD: ${NERINE_POSTGRES_PASSWORD}

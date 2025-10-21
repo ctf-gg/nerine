@@ -1,7 +1,8 @@
 <script>
   import Countdown from "../components/Countdown.svelte";
-  import { event } from "$lib/event";
   import { marked } from "marked";
+  const { data } = $props();
+  const { event } = data;
 </script>
 
 <div class="content-container">

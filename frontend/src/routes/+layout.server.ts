@@ -1,9 +1,10 @@
-import { isError, profile } from "$lib/api.js";
+import { isError, profile, getEvent } from "$lib/api";
 import { jwtDecode } from "jwt-decode";
 
 export const load = async ({ cookies }) => {
+  const event = await getEvent();
   const token = cookies.get("token");
-  if (!token) return { authedProfile: null, teamId: null };
+  if (!token) return { authedProfile: null, teamId: null, event };
 
   const teamId = jwtDecode<{ team_id: string }>(token).team_id;
   let prof = token ? await profile(teamId, token) : null;
@@ -13,5 +14,6 @@ export const load = async ({ cookies }) => {
   return {
     teamId,
     authedProfile: prof,
+    event,
   };
 };

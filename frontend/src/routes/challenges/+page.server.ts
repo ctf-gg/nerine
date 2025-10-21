@@ -1,8 +1,8 @@
 import { isError, challenges } from "$lib/api.js";
-import { event } from "$lib/event.js";
 import { redirect } from "@sveltejs/kit";
 
-export const load = async ({ cookies }) => {
+export const load = async ({ cookies, parent }) => {
+  const { event } = await parent();
   const token = cookies.get("token");
   const eventStarted = new Date().getTime() >= event.start_time.getTime();
   if (!eventStarted) return { challs: null };

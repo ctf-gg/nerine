@@ -1,10 +1,10 @@
-import { isError, challenges, leaderboard } from "$lib/api.js";
-import { event } from "$lib/event.js";
+import { isError, challenges, leaderboard } from "$lib/api";
 import { redirect } from "@sveltejs/kit";
 
 export const load = async ({ cookies }) => {
+  const { event } = await parent();
   const eventStarted = new Date().getTime() >= event.start_time.getTime();
-  if (!eventStarted) return { leaderboard: null };
+  if (!eventStarted) return { leaderboard: null, event };
 
   const lb = await leaderboard();
 
@@ -13,5 +13,5 @@ export const load = async ({ cookies }) => {
     else throw new Error("fetching challenges failed");
   }
 
-  return { leaderboard: lb };
+  return { leaderboard: lb, event };
 };

@@ -9,14 +9,14 @@
     challengeSolves,
     deployChallenge,
     destroyChallenge,
+    type Event,
     getChallengeDeployment,
     isError,
     submitFlag,
   } from "$lib/api";
-  import { event } from "$lib/event";
   import TcpLink from "./TcpLink.svelte";
   import { onDestroy, onMount } from "svelte";
-  const { chall: c }: { chall: Challenge } = $props();
+  const { chall: c, event }: { challenge: Challenge, event: Event } = $props();
 
   let flagInput: HTMLInputElement = $state(null!);
   let deployment: ChallengeDeployment | null = $state(null);
