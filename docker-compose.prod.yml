@@ -33,7 +33,7 @@ services:
       - ./site-assets:/app/build/client/assets
     environment:
       - HOST=0.0.0.0
-      - PUBLIC_API_BASE="http://api:3333/"
+      - PUBLIC_API_BASE=http://api:3333/api
   deployer:
     image: ghcr.io/ctf-gg/nerine-deployer:main
     restart: unless-stopped
