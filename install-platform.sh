@@ -7,7 +7,7 @@ get_key() {
 }
 
 do_install() {
-    echo "Installing nerine."
+    echo "Running nerine install script."
     if [ ! "$(id -u)" = 0 ]; then
 	echo "ERROR: You must run this script as root."
 	exit 1
@@ -28,14 +28,14 @@ do_install() {
     mkdir "$NERINE_INSTALL_PATH"
     cd "$NERINE_INSTALL_PATH"
 
-    echo "Installing dependencies"
+    echo "Installing dependencies."
     
     if [ ! -x "$(command -v docker)" ]; then
 	curl -fsS https://get.docker.com | sh
     fi
 
-    if [ ! -x "$(command -v docker-compose)" ]; then
-	DOCKER_CONFIG=${DOCKER_CONFIG:-/usr/local/lib/docker}
+    DOCKER_CONFIG=${DOCKER_CONFIG:-/usr/local/lib/docker}
+    if [ ! -f $DOCKER_CONFIG/cli-plugins/docker-compose ]; then
 	mkdir -p $DOCKER_CONFIG/cli-plugins
 	curl -SL "https://github.com/docker/compose/releases/download/v2.40.1/docker-compose-$(uname -s)-$(uname -m)" -o $DOCKER_CONFIG/cli-plugins/docker-compose
 	chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
@@ -48,12 +48,16 @@ do_install() {
     read -p "What host will nerine be hosted at? " -r nerine_url </dev/tty
     nerine_url="${nerine_url##*://}"
 
+    echo "Generating configuration"
+
+    NERINE_ADMIN_TOKEN="${NERINE_ADMIN_TOKEN:-$(get_key)}"
+
     printf "%s\n" \
 	   "RUST_LOG=debug" \
 	   "CORS_ORIGIN=https://${nerine_url}" \
 	   "NERINE_POSTGRES_PASSWORD=${NERINE_POSTGRES_PASSWORD}" \
 	   "DATABASE_URL=postgres://nerine:${NERINE_POSTGRES_PASSWORD}@db/nerine" \
-	   "ADMIN_TOKEN=$(get_key)" \
+	   "ADMIN_TOKEN=${ADMIN_TOKEN}" \
 	   "JWT_SECRET=$(get_key)" \
 	   > .env
 
@@ -86,6 +90,12 @@ EOF
   NERINE_GIT_REF="${NERINE_GIT_REF:-main}"
 
   curl -fsSo docker-compose.yml "https://raw.githubusercontent.com/ctf-gg/nerine/$NERINE_GIT_REF/docker-compose.prod.yml"
+  docker compose pull
+
+  echo "Finished installation to $NERINE_INSTALL_PATH."
+  echo "... Your admin token is: $NERINE_ADMIN_TOKEN. It can also be found in $NERINE_INSTALL_PATH/.env"
+  echo "... Configuration files can be found in $NERINE_INSTALL_PATH."
+  echo "... If you would like to start nerine, run \`docker compose up -d\` in $NERINE_INSTALL_PATH."
 }
 
 do_install
