@@ -1,8 +1,10 @@
+import { env } from '$env/dynamic/public';
+
 export function getApiBase(): string {
   if (globalThis.window) {
     return "/api";
   } else {
-    return import.meta.env.API_BASE ?? "http://nerine.localhost/api";
+    return env.PUBLIC_API_BASE ?? "http://nerine.localhost/api";
   }
 }
 
