@@ -14,6 +14,7 @@ services:
       - 443:443
     volumes:
       - ./caddy:/etc/caddy:ro
+      - caddy_data:/data
   api:
     image: ghcr.io/ctf-gg/nerine-api:main
     restart: unless-stopped
@@ -62,3 +63,5 @@ services:
 
 volumes:
   postgres_data:
+  caddy_data:
+

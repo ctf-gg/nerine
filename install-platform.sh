@@ -125,16 +125,16 @@ EOF
     "endpoint": "https://$challs_ip:995",
     "base": "$challs_hostname",
     "cacert": "$(read_pem_json caddy/ca.pem)",
-    "cert": "$(read_pem_json caddy/server-cert.pem)",
-    "key": "$(read_pem_json caddy/server-key.pem)"
+    "cert": "$(read_pem_json caddy/client-cert.pem)",
+    "key": "$(read_pem_json caddy/client-key.pem)"
   },
   "docker": {
     "docker": {
       "type": "ssl",
       "address": "$challs_ip:996",
       "ca": "$(read_pem_json docker/ca.pem)",
-      "cert": "$(read_pem_json docker/server-cert.pem)",
-      "key": "$(read_pem_json docker/server-key.pem)"
+      "cert": "$(read_pem_json docker/client-cert.pem)",
+      "key": "$(read_pem_json docker/client-key.pem)"
     },
     "docker_credentials": {
       "username": "<docker-registry-username>",
