@@ -48,7 +48,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api
 
       - name: Cache
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
