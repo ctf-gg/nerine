@@ -41,7 +41,7 @@ do_install() {
 	chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
     fi
 
-    mkdir -p data/postgres site-assets
+    mkdir -p site-assets
     
     NERINE_POSTGRES_PASSWORD=$(get_key)
 
@@ -67,8 +67,8 @@ do_install() {
 Write markdown here for the front page!
 You can put things like sponsor logos in \`site-assets\`, then access them at \`https://${nerine_url}/assets/\`
 \"\"\"" \
-	   "start_time = \"$(date -Iseconds)\"" \
-	   "end_time = \"$(date -d +1week -Iseconds)\"" \
+	   "start_time = \"$(date +%FT%T.000)\"" \
+	   "end_time = \"$(date -d +1week +%FT%T.000)\"" \
 	   > event.toml
 
     mkdir caddy

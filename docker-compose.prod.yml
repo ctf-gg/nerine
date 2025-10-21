@@ -1,4 +1,3 @@
-# change the env vars before deploying!
 services:
   # nginx:
   #   image: nginx
@@ -54,8 +53,11 @@ services:
     ports:
       - 127.0.0.1:5432:5432
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=nerine
       - POSTGRES_USER=nerine
       - POSTGRES_PASSWORD=${NERINE_POSTGRES_PASSWORD}
+
+volumes:
+  postgres_data:
