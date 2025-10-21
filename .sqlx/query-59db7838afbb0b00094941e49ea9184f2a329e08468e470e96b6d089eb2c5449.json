@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n            t.public_id AS id,\n            t.name AS name,\n            s.created_at AS solved_at \n        FROM submissions s\n        JOIN teams t ON s.team_id = t.id\n        JOIN challenges c ON s.challenge_id = c.id\n        WHERE c.public_id = $1 \n        AND s.is_correct = true",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "solved_at",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "59db7838afbb0b00094941e49ea9184f2a329e08468e470e96b6d089eb2c5449"
+}
