@@ -1,3 +1,6 @@
+// TODO(aiden): this is a really suboptimal solution
+// but im not going to split this up into 2 different files
+// one for server and one that's not for server
 import { env } from '$env/dynamic/public';
 
 export function getApiBase(): string {

@@ -1,7 +1,7 @@
 import { isError, challenges, leaderboard } from "$lib/api";
 import { redirect } from "@sveltejs/kit";
 
-export const load = async ({ cookies }) => {
+export const load = async ({ cookies, parent }) => {
   const { event } = await parent();
   const eventStarted = new Date().getTime() >= event.start_time.getTime();
   if (!eventStarted) return { leaderboard: null, event };
