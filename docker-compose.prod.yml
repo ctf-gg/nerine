@@ -29,7 +29,7 @@ services:
     ports:
       - 127.0.0.1:3334:3334
     volumes:
-      - ./site-assets:/app/client/assets
+      - ./site-assets:/app/build/client/assets
     environment:
       - HOST=0.0.0.0
       - API_BASE="http://api:3333/api"
