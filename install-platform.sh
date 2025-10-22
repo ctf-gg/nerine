@@ -139,10 +139,10 @@ EOF
     "docker_credentials": {
       "username": "<docker-registry-username>",
       "password": "<docker-registry-password>",
-      "serveraddress": "<docker-registry-address>",
-      "image_prefix": "",
-      "repo": "<docker-registry-repo>"
-    }
+      "serveraddress": "<docker-registry-address>"
+    },
+    "image_prefix": "",
+    "repo": "<docker-registry-repo>"
   }
 }]
 EOF

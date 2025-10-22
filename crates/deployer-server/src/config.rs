@@ -84,9 +84,7 @@ impl FromStr for HostKeychainEnv {
 
     fn from_str(s: &str) -> eyre::Result<Self> {
         let contents = std::fs::read_to_string(s)?;
-        //debug!("decoded = {}", std::str::from_utf8(&decoded).unwrap());
         let parsed = serde_json::from_str::<Vec<HostKeychain>>(&contents)?;
-        //debug!("parsed = {:?}", parsed);
         let mut m = HashMap::new();
         for chain in parsed {
             if m.contains_key(&chain.id) {
