@@ -96,7 +96,7 @@ EOF
   
 
   cd keys
-  read -p "What hostname will challenges be hosted on (e.g., challenges.example.com)? " -r challs_hostname </dev/tty
+  read -p "What hostname will challenges be hosted on (e.g., challs.example.com)? " -r challs_hostname </dev/tty
   
   challs_ip=""
   if [ -n "$challs_hostname" ]; then

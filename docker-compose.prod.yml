@@ -12,6 +12,7 @@ services:
     ports:
       - 80:80
       - 443:443
+      - 443:443/udp
     volumes:
       - ./caddy:/etc/caddy:ro
       - caddy_data:/data
