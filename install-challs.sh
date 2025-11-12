@@ -105,7 +105,7 @@ EOF
       }]
     },
     "identity": {
-      "identifiers": ["$(hostname -i)", "$(curl -s ifconfig.me)", "127.0.0.1"],
+      "identifiers": ["$(hostname -i)", "$(curl -s ifconfig.me)", "0.0.0.0"],
       "issuers": [{
         "module": "internal",
         "ca": "local-admin",

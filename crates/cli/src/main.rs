@@ -366,7 +366,7 @@ async fn main() -> Result<()> {
                     } else {
                         dc.push_attachments(
                             gcs_client.as_ref().unwrap(),
-                            "nerine-attachments".to_string(),
+                            env::var("GCS_ATTACHMENTS_BUCKET")?
                         )
                         .await?
                     };
