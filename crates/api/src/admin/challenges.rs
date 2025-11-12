@@ -15,6 +15,7 @@ use eyre::eyre;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
+use deployer_common::challenge::{Challenge as DeployerChallenge};
 
 impl FromStr for DeploymentStrategy {
     type Err = eyre::Error;
@@ -339,7 +340,7 @@ async fn reload_deployer(StateE(state): StateE<State>, _: Admin) -> Result<()> {
 async fn load_deployer(
     StateE(state): StateE<State>,
     _: Admin,
-    Json(challs): Json<HashMap<String, Challenge>>,
+    Json(challs): Json<HashMap<String, DeployerChallenge>>,
 ) -> Result<()> {
     let client = reqwest::Client::new();
 
