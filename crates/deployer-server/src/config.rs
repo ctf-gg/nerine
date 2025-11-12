@@ -161,7 +161,7 @@ pub fn write_challenges_to_dir(dir: &Path, m: HashMap<String, Challenge>) -> eyr
     }
 
     for (id, c) in m {
-        let mut file = File::create(dir.join(id).join(".toml"))?;
+        let mut file = File::create(dir.join(id).with_extension("toml"))?;
         write!(file, "{}", toml::to_string(&c)?)?;
     }
     Ok(())
