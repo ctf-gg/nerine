@@ -40,7 +40,7 @@ do_install() {
 
     cat <<EOF > /etc/docker/daemon.json
 {
-  "hosts": ["tcp://127.0.0.1:996", "unix:///var/run/docker.sock"],
+  "hosts": ["tcp://0.0.0.0:996", "unix:///var/run/docker.sock"],
   "tls": true,
   "tlscacert": "/var/docker/ca.pem",
   "tlscert": "/var/docker/server-cert.pem",
