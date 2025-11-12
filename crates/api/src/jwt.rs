@@ -9,7 +9,11 @@ pub struct Claims {
     pub team_id: String,
 }
 
-pub fn generate_jwt(keys: &config::JwtKeys, team_id: &str, exp: chrono::Duration) -> Result<String> {
+pub fn generate_jwt(
+    keys: &config::JwtKeys,
+    team_id: &str,
+    exp: chrono::Duration,
+) -> Result<String> {
     jsonwebtoken::encode(
         &Default::default(),
         &Claims {

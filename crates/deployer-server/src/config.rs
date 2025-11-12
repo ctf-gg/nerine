@@ -1,5 +1,11 @@
 use std::{
-    collections::HashMap, fs::File, io::Write, ops::Deref, path::{Path, PathBuf}, str::FromStr, sync::Arc
+    collections::HashMap,
+    fs::File,
+    io::Write,
+    ops::Deref,
+    path::{Path, PathBuf},
+    str::FromStr,
+    sync::Arc,
 };
 
 use deployer_common::challenge::{Challenge, DeployableContextData};
@@ -142,8 +148,18 @@ pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Chal
 
 // TODO(aiden): in the future it is probably a good idea to write to only a single file instead of a directory
 pub fn write_challenges_to_dir(dir: &Path, m: HashMap<String, Challenge>) -> eyre::Result<()> {
-    std::fs::remove_dir_all(dir)?;
-    std::fs::create_dir(dir)?;
+    for pat in glob::glob(
+        dir.join("*.toml")
+            .to_str()
+            .ok_or_else(|| eyre!("bad string for pattern"))?,
+    )? {
+        if let Ok(pat) = pat {
+            if path.is_file() {
+                fs::remove_file(path)?;
+            }
+        }
+    }
+
     for (id, c) in m {
         let mut file = File::create(dir.join(id))?;
         write!(file, "{}", toml::to_string(&c)?)?;

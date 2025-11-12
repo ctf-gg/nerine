@@ -36,11 +36,9 @@ pub async fn update_chall_cache(db: &DB, chall_id: i32) -> crate::Result<()> {
     .execute(&mut *tx)
     .await?;
 
-
     tx.commit().await?;
     Ok(())
 }
-
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, sqlx::Type)]
 #[serde(rename_all = "lowercase")]

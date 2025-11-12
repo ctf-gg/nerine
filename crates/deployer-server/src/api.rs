@@ -13,7 +13,9 @@ use serde::{Deserialize, Serialize};
 use sqlx::types::JsonValue;
 
 use crate::{
-    config::write_challenges_to_dir, deploy::{self, ChallengeDeployment}, Result, State
+    Result, State,
+    config::write_challenges_to_dir,
+    deploy::{self, ChallengeDeployment},
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

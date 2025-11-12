@@ -359,14 +359,15 @@ async fn main() -> Result<()> {
                         ClientConfig::default().with_auth().await.unwrap(),
                     ))
                 };
-                for ref dc in get_all_challs(&paths).filter(|c| c.chall.build_group == build_group) {
+                for ref dc in get_all_challs(&paths).filter(|c| c.chall.build_group == build_group)
+                {
                     let DeployableChallenge { chall, root } = dc;
                     let attachments = if null_attachments {
                         HashMap::new()
                     } else {
                         dc.push_attachments(
                             gcs_client.as_ref().unwrap(),
-                            env::var("GCS_ATTACHMENTS_BUCKET")?
+                            env::var("GCS_ATTACHMENTS_BUCKET")?,
                         )
                         .await?
                     };
@@ -423,7 +424,7 @@ async fn main() -> Result<()> {
                 let challs_json: HashMap<String, Challenge> = get_all_challs(&paths)
                     .map(|dc| (dc.chall.id.clone(), dc.chall))
                     .collect();
-                
+
                 client
                     .post(format!("{platform_base}/api/admin/challs/load_deployer"))
                     .json(&challs_json)

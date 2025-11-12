@@ -1,6 +1,10 @@
-use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
-use thiserror::Error;
+use axum::{
+    Json,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use serde::Serialize;
+use thiserror::Error;
 
 // TODO(ani): dedupe between api and here
 #[derive(Error, Debug)]

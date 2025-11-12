@@ -56,31 +56,31 @@ impl EmailService {
     }
 
     fn create_mailer(smtp_url: &str) -> Result<AsyncSmtpTransport<Tokio1Executor>> {
-    let url = url::Url::parse(smtp_url).map_err(|_| Self::validation_error())?;
+        let url = url::Url::parse(smtp_url).map_err(|_| Self::validation_error())?;
 
-    let host = url.host_str().unwrap_or("localhost");
-    let port = url.port().unwrap_or(587);
+        let host = url.host_str().unwrap_or("localhost");
+        let port = url.port().unwrap_or(587);
 
-    let mut mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(host)
-        .map_err(|_| Self::validation_error())?
-        .port(port);
+        let mut mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(host)
+            .map_err(|_| Self::validation_error())?
+            .port(port);
 
-    if !url.username().is_empty() {
-        if let Some(password) = url.password() {
-            // Decode the percent-encoded username and password
-            let username = urlencoding::decode(url.username())
-                .map_err(|_| Self::validation_error())?
-                .to_string();
-            let password = urlencoding::decode(password)
-                .map_err(|_| Self::validation_error())?
-                .to_string();
-            
-            mailer = mailer.credentials(Credentials::new(username, password));
+        if !url.username().is_empty() {
+            if let Some(password) = url.password() {
+                // Decode the percent-encoded username and password
+                let username = urlencoding::decode(url.username())
+                    .map_err(|_| Self::validation_error())?
+                    .to_string();
+                let password = urlencoding::decode(password)
+                    .map_err(|_| Self::validation_error())?
+                    .to_string();
+
+                mailer = mailer.credentials(Credentials::new(username, password));
+            }
         }
-    }
 
-    Ok(mailer.build())
-}
+        Ok(mailer.build())
+    }
 
     pub async fn send_verification_email(
         &self,
@@ -149,15 +149,13 @@ impl EmailService {
             );
         }
 
-        let verification_link = format!(
-            "{}/verify?token={}",
-            self.app_base_url, verification_token
-        );
+        let verification_link =
+            format!("{}/verify?token={}", self.app_base_url, verification_token);
 
         let subject = "Verify your new email for smileyCTF";
         let body = format!(
             "Hello {},\n\nPlease click the link below to verify your new email address for smileyCTF:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
-            _new_name, 
+            _new_name,
             verification_link
         );
 
@@ -173,7 +171,12 @@ impl EmailService {
         }
     }
 
-    pub async fn send_resend_token_email(&self, to_email: &str, team_name_display: &str, token: &str) -> Result<()> {
+    pub async fn send_resend_token_email(
+        &self,
+        to_email: &str,
+        team_name_display: &str,
+        token: &str,
+    ) -> Result<()> {
         let subject = "Your team token for smileyCTF";
         let body = format!(
             "Hello {},\n\nHere is your team token for logging into smileyCTF:\n{}\n\nPlease keep it safe and do not share it with anyone outside your team.\n\nIf you did not request this, please ignore this email.",

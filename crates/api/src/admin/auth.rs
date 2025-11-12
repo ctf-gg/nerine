@@ -1,4 +1,4 @@
-use axum::{Json, Router, extract::State as StateE, routing::post};
+use axum::{extract::State as StateE, routing::post, Json, Router};
 use chrono::Duration;
 use serde::Deserialize;
 
@@ -21,14 +21,20 @@ async fn resend_token(
     .fetch_one(&state.db)
     .await?;
 
-    let jwt = generate_jwt(&state.config.jwt_keys, &team_partial.public_id, Duration::days(30))?;
+    let jwt = generate_jwt(
+        &state.config.jwt_keys,
+        &team_partial.public_id,
+        Duration::days(30),
+    )?;
 
-    state.email.send_resend_token_email(&payload.email, &team_partial.name, &jwt).await?;
+    state
+        .email
+        .send_resend_token_email(&payload.email, &team_partial.name, &jwt)
+        .await?;
 
     Ok(())
 }
 
 pub fn router() -> Router<crate::State> {
-    Router::new()
-        .route("/resend_token", post(resend_token))
+    Router::new().route("/resend_token", post(resend_token))
 }

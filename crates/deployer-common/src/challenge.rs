@@ -11,8 +11,9 @@ use serde_with::{DisplayFromStr, serde_as};
 use std::{
     collections::HashMap,
     fs::{self, File as StdFile},
-    io::{Read},
-    path::PathBuf, time::Duration,
+    io::Read,
+    path::PathBuf,
+    time::Duration,
 };
 
 use futures_util::StreamExt;
@@ -74,7 +75,9 @@ impl Challenge {
     }
 
     pub async fn push(&self, ctx: &DeployableContext) -> Result<()> {
-        let Some(container) = &self.container else { return Ok(()); };
+        let Some(container) = &self.container else {
+            return Ok(());
+        };
 
         for ct in container.keys() {
             self.push_ct(ctx, &ct).await?;
@@ -100,7 +103,9 @@ impl Challenge {
     }
 
     pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
-        let Some(container) = &self.container else { return Ok(()); };
+        let Some(container) = &self.container else {
+            return Ok(());
+        };
 
         for ct in container.keys() {
             self.pull_ct(ctx, &ct).await?;
@@ -108,7 +113,6 @@ impl Challenge {
 
         Ok(())
     }
-
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -222,7 +226,10 @@ impl TryInto<bollard::Docker> for DockerData {
                 ca,
             } => {
                 // good enough?
-                let basedir = std::env::temp_dir().join(format!("docker-certs-dir-{}", address.replace(":", "-").replace(".", "-")));
+                let basedir = std::env::temp_dir().join(format!(
+                    "docker-certs-dir-{}",
+                    address.replace(":", "-").replace(".", "-")
+                ));
                 std::fs::create_dir_all(&basedir).unwrap();
                 // FIXME(ani): avoid unwraps
                 let key_path = basedir.join("key.pem");
@@ -338,8 +345,13 @@ impl DeployableChallenge {
         Ok(Some(build_infos))
     }
 
-    pub async fn build(&self, ctx: &DeployableContext) -> Result<Vec<Vec<bollard::models::BuildInfo>>> {
-        let Some(container) = &self.chall.container else { return Ok(vec![]); };
+    pub async fn build(
+        &self,
+        ctx: &DeployableContext,
+    ) -> Result<Vec<Vec<bollard::models::BuildInfo>>> {
+        let Some(container) = &self.chall.container else {
+            return Ok(vec![]);
+        };
 
         let mut out = vec![];
         for ct in container.keys() {
@@ -350,7 +362,6 @@ impl DeployableChallenge {
 
         Ok(out)
     }
-
 
     // compat
     pub async fn pull(&self, ctx: &DeployableContext) -> Result<()> {
@@ -395,7 +406,7 @@ impl DeployableChallenge {
 
                         tar_.finish()?;
                     }
-                    
+
                     let mut buffer = Vec::new();
                     StdFile::open(&tar_path)?.read_to_end(&mut buffer)?;
 

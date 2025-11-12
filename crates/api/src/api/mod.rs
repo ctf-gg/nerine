@@ -2,8 +2,8 @@ use axum::Router;
 
 mod auth;
 mod challenges;
-mod profile;
 mod leaderboard;
+mod profile;
 
 pub fn router() -> Router<crate::State> {
     Router::new()

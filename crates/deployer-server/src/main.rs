@@ -17,8 +17,7 @@ async fn main() -> eyre::Result<()> {
     pretty_env_logger::init();
     dotenvy::dotenv().ok();
 
-    let cfg = config::Config::init_from_env()
-        .context("initialize config from environment")?;
+    let cfg = config::Config::init_from_env().context("initialize config from environment")?;
 
     let challs = config::load_challenges_from_dir(&cfg.challenges_dir)?;
 

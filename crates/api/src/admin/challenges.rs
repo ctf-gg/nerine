@@ -11,11 +11,11 @@ use axum::{
     Json, Router,
 };
 use chrono::NaiveDateTime;
+use deployer_common::challenge::Challenge as DeployerChallenge;
 use eyre::eyre;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
-use deployer_common::challenge::{Challenge as DeployerChallenge};
 
 impl FromStr for DeploymentStrategy {
     type Err = eyre::Error;

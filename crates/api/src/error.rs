@@ -31,7 +31,9 @@ pub enum Error {
     WrongFlag,
     #[error("Team name already taken")]
     TeamNameTaken,
-    #[error("This is a generic error, you shouldn't recieve this is if you're a well behaved client!")]
+    #[error(
+        "This is a generic error, you shouldn't recieve this is if you're a well behaved client!"
+    )]
     GenericError,
 }
 

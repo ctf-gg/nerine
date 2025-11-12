@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
-use crate::{config::Config, jwt::{decode_jwt, Claims}};
+use crate::{
+    config::Config,
+    jwt::{decode_jwt, Claims},
+};
 use axum::{extract::FromRequestParts, http::request::Parts, RequestPartsExt};
 use axum_extra::extract::CookieJar;
 

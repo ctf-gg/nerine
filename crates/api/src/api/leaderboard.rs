@@ -162,9 +162,7 @@ async fn leaderboard(db: &DB, event_start_time: NaiveDateTime) -> Result<Vec<Lea
     Ok(leaderboard_entries)
 }
 
-async fn get_lb(
-    StateE(state): StateE<State>,
-) -> Result<Json<Vec<LeaderboardEntry>>> {
+async fn get_lb(StateE(state): StateE<State>) -> Result<Json<Vec<LeaderboardEntry>>> {
     if Utc::now().naive_utc() < state.event.start_time {
         return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
