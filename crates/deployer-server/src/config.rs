@@ -154,7 +154,7 @@ pub fn write_challenges_to_dir(dir: &Path, m: HashMap<String, Challenge>) -> eyr
             .ok_or_else(|| eyre!("bad string for pattern"))?,
     )? {
         if let Ok(pat) = pat {
-            if path.is_file() {
+            if pat.is_file() {
                 fs::remove_file(path)?;
             }
         }
