@@ -155,7 +155,7 @@ pub fn write_challenges_to_dir(dir: &Path, m: HashMap<String, Challenge>) -> eyr
     )? {
         if let Ok(pat) = pat {
             if pat.is_file() {
-                fs::remove_file(path)?;
+                std::fs::remove_file(pat)?;
             }
         }
     }
