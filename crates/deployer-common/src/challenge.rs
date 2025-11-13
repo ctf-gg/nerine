@@ -43,6 +43,10 @@ pub struct Challenge {
     pub host: Option<String>,
 }
 
+fn default_strategy() -> DeploymentStrategy {
+    DeploymentStrategy::Static
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PointRange {
     pub min: i32,
@@ -148,15 +152,19 @@ fn default_archive_name() -> String {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Container {
     pub build: PathBuf,
-    pub limits: Option<Limits>,
+    #[serde(default = "default_limits")]
+    pub limits: Limits,
     pub env: Option<HashMap<String, String>>,
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
     pub privileged: Option<bool>,
 }
 
-fn default_strategy() -> DeploymentStrategy {
-    DeploymentStrategy::Static
+fn default_limits() -> Limits {
+    Limits {
+        cpu: Some(1_000_000_000), // 1vcpu
+        mem: Some(104_857_600), // 100mb
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
@@ -169,9 +177,9 @@ pub enum DeploymentStrategy {
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Limits {
     // "nano-cpus", i.e. in units of 10^-9 cpu
-    pub cpu: Option<u64>,
+    pub cpu: Option<i64>,
     // in bytes
-    pub mem: Option<u64>,
+    pub mem: Option<i64>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]

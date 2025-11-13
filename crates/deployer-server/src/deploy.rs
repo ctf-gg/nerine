@@ -422,17 +422,8 @@ pub async fn deploy_challenge(
                             .collect::<HashMap<_, _>>(),
                     ),
                     host_config: Some(HostConfig {
-                        // TODO(ani): i64 vs u64, not a big deal for now
-                        nano_cpus: chall_container
-                            .limits
-                            .as_ref()
-                            .and_then(|l| l.cpu)
-                            .map(|x| x as i64),
-                        memory: chall_container
-                            .limits
-                            .as_ref()
-                            .and_then(|l| l.mem)
-                            .map(|x| x as i64),
+                        nano_cpus: chall_container.limits.cpu, // nanocpus (10 ^ -9 cpus)
+                        memory: chall_container.limits.mem, // bytes
                         port_bindings: Some(
                             mappings
                                 .iter()

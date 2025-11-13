@@ -9,6 +9,7 @@
 - [ ] better ratelimit policy (5 min / 3 burst)
 - [ ] more sorting options on team profiles/challenge page/leaderboard (sort by badge count for example)
 - [ ] submitting after event (should be marked, but not scored)
+- [ ] normalize cpu and mem units to vcpus and mb respectively
 - [ ] csp
 
 # medium tasks
