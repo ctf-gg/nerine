@@ -8,6 +8,27 @@ get_key() {
 
 setup_keychain() {
   echo "Creating keys."
+  read -p "What hostname will challenges be hosted on (e.g., challs.example.com)? " -r challs_hostname </dev/tty
+  
+  challs_ip=""
+  if [ -n "$challs_hostname" ]; then
+    resolved_ip=$(getent hosts "$challs_hostname" | awk '{print $1}' | head -n 1)
+    
+    if [ -n "$resolved_ip" ]; then
+      echo "Hostname '$challs_hostname' resolved to IP: $resolved_ip"
+      challs_ip="$resolved_ip"
+    else
+      echo "WARN: Could not resolve IP for hostname '$challs_hostname'."
+    fi
+  fi
+  
+  if [ -z "$challs_ip" ]; then
+    read -p "Please enter the challenges IP address directly: " -r direct_ip </dev/tty
+    challs_ip="$direct_ip"
+  fi
+
+  challs_ip="${challs_ip:-'<insert-chall-ip>'}"
+
   mkdir keys
   cd keys
   
@@ -29,7 +50,7 @@ EOF
   openssl genrsa -out server-key.pem 4096
   openssl req -subj "/CN=docker" -sha256 -new -key server-key.pem -out server.csr
   cat >extfile.cnf <<EOF
-subjectAltName = IP:$(hostname -i),IP:$(curl -s ifconfig.me),IP:127.0.0.1
+subjectAltName = DNS:$challs_hostname,IP:$challs_ip,IP:127.0.0.1
 extendedKeyUsage = serverAuth
 EOF
 
@@ -69,7 +90,7 @@ EOF
   openssl genrsa -out server-key.pem 4096
   openssl req -subj "/CN=caddy" -sha256 -new -key server-key.pem -out server.csr
   cat >extfile.cnf <<EOF
-subjectAltName = IP:$(hostname -i),IP:$(curl -s ifconfig.me),IP:127.0.0.1
+subjectAltName = DNS:$challs_hostname,IP:$challs_ip,IP:127.0.0.1
 extendedKeyUsage = serverAuth
 EOF
 
@@ -96,28 +117,6 @@ EOF
   
 
   cd keys
-  read -p "What hostname will challenges be hosted on (e.g., challs.example.com)? " -r challs_hostname </dev/tty
-  
-  challs_ip=""
-  if [ -n "$challs_hostname" ]; then
-    resolved_ip=$(getent hosts "$challs_hostname" | awk '{print $1}' | head -n 1)
-    
-    if [ -n "$resolved_ip" ]; then
-      echo "Hostname '$challs_hostname' resolved to IP: $resolved_ip"
-      challs_ip="$resolved_ip"
-    else
-      echo "WARN: Could not resolve IP for hostname '$challs_hostname'."
-    fi
-  fi
-  
-  if [ -z "$challs_ip" ]; then
-    read -p "Please enter the challenges IP address directly: " -r direct_ip </dev/tty
-    challs_ip="$direct_ip"
-  fi
-
-  challs_ip="${challs_ip:-'<insert-chall-ip>'}"
-
-
   cat <<EOF > ../keychain.json
 [{
   "id": "default",
@@ -125,16 +124,16 @@ EOF
     "endpoint": "https://$challs_ip:995",
     "base": "$challs_hostname",
     "cacert": "$(read_pem_json caddy/ca.pem)",
-    "cert": "$(read_pem_json caddy/client-cert.pem)",
-    "key": "$(read_pem_json caddy/client-key.pem)"
+    "cert": "$(read_pem_json caddy/cert.pem)",
+    "key": "$(read_pem_json caddy/key.pem)"
   },
   "docker": {
     "docker": {
       "type": "ssl",
       "address": "$challs_ip:996",
       "ca": "$(read_pem_json docker/ca.pem)",
-      "cert": "$(read_pem_json docker/client-cert.pem)",
-      "key": "$(read_pem_json docker/client-key.pem)"
+      "cert": "$(read_pem_json docker/cert.pem)",
+      "key": "$(read_pem_json docker/key.pem)"
     },
     "docker_credentials": {
       "username": "<docker-registry-username>",
@@ -181,6 +180,7 @@ do_install() {
 	# This can be read from the installation but lazy
 	read -p "What host will nerine be hosted at (used for CA CN)? " -r nerine_url </dev/tty
 	nerine_url="${nerine_url##*://}"
+	cd "$NERINE_INSTALL_PATH"
 	setup_keychain "$nerine_url"
 	return
     fi
