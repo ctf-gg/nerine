@@ -163,7 +163,7 @@ pub struct Container {
 fn default_limits() -> Limits {
     Limits {
         cpu: Some(1_000_000_000), // 1vcpu
-        mem: Some(104_857_600), // 100mb
+        mem: Some(104_857_600),   // 100mb
     }
 }
 

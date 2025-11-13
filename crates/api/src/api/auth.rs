@@ -61,6 +61,7 @@ async fn register(
     state
         .email
         .send_verification_email(
+            &state.event,
             &payload.email,
             &payload.name,
             PendingTeamVerification {
@@ -215,7 +216,7 @@ async fn resend_token_handler(
         let jwt = generate_jwt(&state.config.jwt_keys, &team.public_id, Duration::days(30))?;
         state
             .email
-            .send_resend_token_email(&team.email, &team.name, &jwt)
+            .send_resend_token_email(&state.event, &team.email, &team.name, &jwt)
             .await?;
     }
 

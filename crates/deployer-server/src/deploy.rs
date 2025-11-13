@@ -423,7 +423,7 @@ pub async fn deploy_challenge(
                     ),
                     host_config: Some(HostConfig {
                         nano_cpus: chall_container.limits.cpu, // nanocpus (10 ^ -9 cpus)
-                        memory: chall_container.limits.mem, // bytes
+                        memory: chall_container.limits.mem,    // bytes
                         port_bindings: Some(
                             mappings
                                 .iter()

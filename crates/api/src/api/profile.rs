@@ -38,7 +38,12 @@ async fn update(
 
         state
             .email
-            .send_email_change_verification_email(&team_id, &payload.name, &payload.email)
+            .send_email_change_verification_email(
+                &state.event,
+                &team_id,
+                &payload.name,
+                &payload.email,
+            )
             .await?;
 
         Ok(Json(serde_json::json!({

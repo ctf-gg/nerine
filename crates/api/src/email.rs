@@ -1,4 +1,4 @@
-use crate::{config::Config, Result};
+use crate::{config::Config, event::Event, Result};
 use cached::{Cached, TimedSizedCache};
 use lettre::{
     message::{header::ContentType, Message},
@@ -84,6 +84,7 @@ impl EmailService {
 
     pub async fn send_verification_email(
         &self,
+        event: &Event,
         to_email_addr: &str,
         team_name_display: &str,
         pending_team_data: PendingTeamVerification,
@@ -101,10 +102,11 @@ impl EmailService {
         let verification_link =
             format!("{}/verify?token={}", self.app_base_url, verification_token);
 
-        let subject = "Verify your email for smileyCTF";
+        let subject = format!("Verify your email for {}", event.name);
         let body = format!(
-            "Hello {},\n\nPlease click the link below to finish registering for smileyCTF:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
+            "Hello {},\n\nPlease click the link below to finish registering for {}:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
             team_name_display,
+            event.name,
             verification_link
         );
 
@@ -130,6 +132,7 @@ impl EmailService {
 
     pub async fn send_email_change_verification_email(
         &self,
+        event: &Event,
         team_id: &str,
         _new_name: &str,
         to_new_email_addr: &str,
@@ -152,10 +155,11 @@ impl EmailService {
         let verification_link =
             format!("{}/verify?token={}", self.app_base_url, verification_token);
 
-        let subject = "Verify your new email for smileyCTF";
+        let subject = format!("Verify your new email for {}", event.name);
         let body = format!(
-            "Hello {},\n\nPlease click the link below to verify your new email address for smileyCTF:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
+            "Hello {},\n\nPlease click the link below to verify your new email address for {}:\n{}\n\nThis link will expire in approximately 10 minutes.\n\nIf you did not request this, please ignore this email.",
             _new_name,
+            event.name,
             verification_link
         );
 
@@ -173,14 +177,16 @@ impl EmailService {
 
     pub async fn send_resend_token_email(
         &self,
+        event: &Event,
         to_email: &str,
         team_name_display: &str,
         token: &str,
     ) -> Result<()> {
-        let subject = "Your team token for smileyCTF";
+        let subject = format!("Your team token for {}", event.name);
         let body = format!(
-            "Hello {},\n\nHere is your team token for logging into smileyCTF:\n{}\n\nPlease keep it safe and do not share it with anyone outside your team.\n\nIf you did not request this, please ignore this email.",
+            "Hello {},\n\nHere is your team token for logging into {}:\n{}\n\nPlease keep it safe and do not share it with anyone outside your team.\n\nIf you did not request this, please ignore this email.",
             team_name_display,
+            event.name,
             token,
         );
 

@@ -29,7 +29,7 @@ async fn resend_token(
 
     state
         .email
-        .send_resend_token_email(&payload.email, &team_partial.name, &jwt)
+        .send_resend_token_email(&state.event, &payload.email, &team_partial.name, &jwt)
         .await?;
 
     Ok(())
