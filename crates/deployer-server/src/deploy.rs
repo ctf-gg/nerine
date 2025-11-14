@@ -131,6 +131,27 @@ fn calculate_subdomain(chall_id: &str, pub_team_id: Option<&str>, port: u16) -> 
     format!("{}-{}", chall_id, end)
 }
 
+pub(crate) fn calculate_static_tcp_port(chall_id: &str, container_name: &str, port: u16) -> u16 {
+    let h = {
+        use sha2::Digest;
+        use std::io::Write;
+
+        let mut hasher = sha2::Sha256::new();
+        write!(
+            hasher,
+            "{}/{}/{}",
+            chall_id,
+            container_name,
+            port,
+        )
+        .unwrap();
+        hasher.finalize()
+    };
+    // take first 16 bits
+    let n = u16::from_le_bytes(h[..2].try_into().unwrap());
+    n.saturating_add(1025)
+}
+
 #[derive(Debug, Clone)]
 struct DockerGuard {
     ctx: Arc<DeployableContext>,
@@ -349,7 +370,10 @@ pub async fn deploy_challenge(
                         mappings.insert(
                             p,
                             HostMapping::Tcp {
-                                port: get_unused_port(),
+                                port: match chall_data.strategy {
+                                    DeploymentStrategy::Static => calculate_static_tcp_port(&chall_data.id, &ct, p),
+                                    _ => get_unused_port(),
+                                },
                                 base: host_keychain.caddy.base.clone(),
                             },
                         );

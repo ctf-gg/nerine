@@ -8,7 +8,7 @@ use std::{
     sync::Arc,
 };
 
-use deployer_common::challenge::{Challenge, DeployableContextData};
+use deployer_common::challenge::{Challenge, DeployableContextData, DeploymentStrategy, ExposeType};
 use envconfig::Envconfig;
 use eyre::eyre;
 use log::debug;
@@ -16,6 +16,8 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 use tokio_util::task::TaskTracker;
+
+use crate::deploy::calculate_static_tcp_port;
 
 // god-awful keychain-type thing
 #[derive(Debug, Clone, Deserialize)]
@@ -129,6 +131,8 @@ pub struct Config {
 
 pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Challenge>> {
     let mut m = HashMap::new();
+    // host => (port => chall id)
+    let mut used_ports = HashMap::<Option<String>, HashMap<u16, String>>::new();
     for pat in glob::glob(
         dir.join("*.toml")
             .to_str()
@@ -139,6 +143,26 @@ pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Chal
             let chall = toml::from_str::<Challenge>(&chall_s)?;
             if m.contains_key(&chall.id) {
                 return Err(eyre!("Duplicate challenge {}", chall.id));
+            }
+            // FIXME: ugly
+            if let DeploymentStrategy::Static = chall.strategy {
+                if let Some(c) = &chall.container {
+                    for (name, cd) in c {
+                        if let Some(map) = &cd.expose {
+                            for (&p, x) in map {
+                                if let ExposeType::Tcp = x {
+                                    let calc_p = calculate_static_tcp_port(&chall.id, name, p);
+                                    let m2 = used_ports.entry(chall.host.clone()).or_default();
+                                    if m2.contains_key(&calc_p) {
+                                        return Err(eyre!("Static container {} for challenge {} wants to use port {} on host {:?} which is already used by challenge {}", name, chall.id, calc_p, chall.host, m2.get(&calc_p).unwrap()));
+                                    } else {
+                                        m2.insert(calc_p, chall.id.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             m.insert(chall.id.clone(), chall);
         }

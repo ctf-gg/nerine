@@ -160,8 +160,10 @@ async fn load_challenges(
 ) -> Result<()> {
     debug!("Loading challenges from api endpoint");
     let mut wg = state.challenge_data.write().await;
-    std::mem::swap(&mut (challs.clone()), &mut *wg);
+    // FIXME: use a staging dir so that old challs are kept if loading fails
     write_challenges_to_dir(&state.config.challenges_dir, challs)?;
+    let mut challs_new = crate::config::load_challenges_from_dir(&state.config.challenges_dir)?;
+    std::mem::swap(&mut challs_new, &mut *wg);
 
     debug!("Loaded challenges from api endpoint");
     Ok(())
