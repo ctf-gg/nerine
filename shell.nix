@@ -24,7 +24,7 @@
 
   DATABASE_URL = "postgres://postgres:postgres@localhost/nerine";
   # example_secret in base64
-  JWT_SECRET = "ZXhhbXBsZV9zZWNyZXQK";
+  JWT_SECRET = "ZXhhbXBsZV9zZWNyZXQ=";
   ADMIN_TOKEN = "example_admin_token";
 
   PLATFORM_BASE = "http://nerine.localhost";
