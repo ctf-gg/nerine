@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - crates/deployer-common/**
       - crates/cli/**
   workflow_dispatch:
 
