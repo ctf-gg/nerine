@@ -7,6 +7,7 @@ use crate::config;
 pub struct Claims {
     pub exp: u64,
     pub team_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ethereal: Option<bool>,
 }
 
