@@ -323,6 +323,29 @@ async fn deploy_static(StateE(state): StateE<State>, _: Admin) -> Result<Json<se
     Ok(Json(serde_json::Value::Array(res)))
 }
 
+async fn destroy_static(StateE(state): StateE<State>, _: Admin) -> Result<()> {
+    let ids = sqlx::query!(r#"SELECT id FROM challenges WHERE strategy = 'static'"#)
+        .fetch_all(&state.db)
+        .await?;
+
+    let client = reqwest::Client::new();
+
+    for id in ids {
+        client
+            .post(&format!(
+                "{}/api/challenge/destroy",
+                state.config.deployer_base
+            ))
+            .json(&ChallengeDeploymentReq {
+                challenge_id: id.id,
+                team_id: None,
+            })
+            .send()
+            .await?;
+    }
+    Ok(())
+}
+
 async fn reload_deployer(StateE(state): StateE<State>, _: Admin) -> Result<()> {
     let client = reqwest::Client::new();
 
@@ -408,6 +431,7 @@ pub fn router() -> Router<crate::State> {
         .route("/category", get(list_categories))
         .route("/category", post(create_category))
         .route("/deploy_static", post(deploy_static))
+        .route("/destroy_static", post(destroy_static))
         .route("/reload_deployer", post(reload_deployer))
         .route("/load_deployer", post(load_deployer))
         .route("/reap", delete(reap))
