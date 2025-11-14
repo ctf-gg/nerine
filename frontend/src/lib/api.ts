@@ -324,7 +324,7 @@ interface DeploymentData {
 }
 
 type HostMapping =
-  | { type: "tcp"; port: number }
+  | { type: "tcp"; port: number; base: string }
   | { type: "http"; subdomain: string; base: string };
 
 export async function deployChallenge(

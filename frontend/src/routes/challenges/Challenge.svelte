@@ -27,7 +27,7 @@
       for (const mapping of Object.values(ports)) {
         switch (mapping.type) {
           case "tcp":
-            res.push({ type: "tcp", url: "nc smiley.cat " + mapping.port });
+            res.push({ type: "tcp", url: `nc ${mapping.base} ${mapping.port}` });
             break;
           case "http":
             res.push({

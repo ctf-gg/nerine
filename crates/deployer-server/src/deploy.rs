@@ -71,7 +71,7 @@ pub type DeploymentData = HashMap<String, DeploymentDataS>;
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase", tag = "type")]
 pub enum HostMapping {
-    Tcp { port: u16 },
+    Tcp { port: u16, base: String },
     // subdomain name
     Http { subdomain: String, base: String },
 }
@@ -350,6 +350,7 @@ pub async fn deploy_challenge(
                             p,
                             HostMapping::Tcp {
                                 port: get_unused_port(),
+                                base: host_keychain.caddy.base.clone(),
                             },
                         );
                     }
@@ -428,7 +429,7 @@ pub async fn deploy_challenge(
                             mappings
                                 .iter()
                                 .filter_map(|(k, v)| match v {
-                                    HostMapping::Tcp { port: p } => Some((*k, *p)),
+                                    HostMapping::Tcp { port: p, .. } => Some((*k, *p)),
                                     _ => None,
                                 })
                                 .map(|(p1, p2)| {

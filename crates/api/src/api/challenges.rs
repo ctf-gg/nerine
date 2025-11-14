@@ -201,7 +201,7 @@ pub type DeploymentData = HashMap<String, DeploymentDataS>;
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase", tag = "type")]
 pub enum HostMapping {
-    Tcp { port: u16 },
+    Tcp { port: u16, base: String },
     // subdomain name
     Http { subdomain: String, base: String },
 }
