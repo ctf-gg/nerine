@@ -151,10 +151,10 @@ pub fn load_challenges_from_dir(dir: &Path) -> eyre::Result<HashMap<String, Chal
                         if let Some(map) = &cd.expose {
                             for (&p, x) in map {
                                 if let ExposeType::Tcp = x {
-                                    let calc_p = calculate_static_tcp_port(&chall.id, name, p);
+                                    let calc_p = calculate_static_tcp_port(&chall.id, name, p, chall.bump_seed);
                                     let m2 = used_ports.entry(chall.host.clone()).or_default();
                                     if m2.contains_key(&calc_p) {
-                                        return Err(eyre!("Static container {} for challenge {} wants to use port {} on host {:?} which is already used by challenge {}", name, chall.id, calc_p, chall.host, m2.get(&calc_p).unwrap()));
+                                        return Err(eyre!("Static container {} for challenge {} wants to use port {} on host {:?} which is already used by challenge {}, try adding a bump_seed", name, chall.id, calc_p, chall.host, m2.get(&calc_p).unwrap()));
                                     } else {
                                         m2.insert(calc_p, chall.id.clone());
                                     }

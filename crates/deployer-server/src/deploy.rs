@@ -131,7 +131,7 @@ fn calculate_subdomain(chall_id: &str, pub_team_id: Option<&str>, port: u16) -> 
     format!("{}-{}", chall_id, end)
 }
 
-pub(crate) fn calculate_static_tcp_port(chall_id: &str, container_name: &str, port: u16) -> u16 {
+pub(crate) fn calculate_static_tcp_port(chall_id: &str, container_name: &str, port: u16, bump: u64) -> u16 {
     let h = {
         use sha2::Digest;
         use std::io::Write;
@@ -139,10 +139,11 @@ pub(crate) fn calculate_static_tcp_port(chall_id: &str, container_name: &str, po
         let mut hasher = sha2::Sha256::new();
         write!(
             hasher,
-            "{}/{}/{}",
+            "{}/{}/{},{}",
             chall_id,
             container_name,
             port,
+            bump,
         )
         .unwrap();
         hasher.finalize()
@@ -371,7 +372,7 @@ pub async fn deploy_challenge(
                             p,
                             HostMapping::Tcp {
                                 port: match chall_data.strategy {
-                                    DeploymentStrategy::Static => calculate_static_tcp_port(&chall_data.id, &ct, p),
+                                    DeploymentStrategy::Static => calculate_static_tcp_port(&chall_data.id, &ct, p, chall_data.bump_seed),
                                     _ => get_unused_port(),
                                 },
                                 base: host_keychain.caddy.base.clone(),

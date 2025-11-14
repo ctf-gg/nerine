@@ -40,6 +40,8 @@ pub struct Challenge {
     pub container: Option<HashMap<String, Container>>,
     #[serde(default = "default_strategy")]
     pub strategy: DeploymentStrategy,
+    #[serde(default)]
+    pub bump_seed: u64,
     pub host: Option<String>,
 }
 
