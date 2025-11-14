@@ -38,6 +38,7 @@
       border: 1px solid var(--text-primary);
       position: absolute;
       transform: translateY(-2rem);
+      z-index: 9999;
     }
   }
 </style>
