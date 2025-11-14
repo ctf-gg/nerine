@@ -250,6 +250,7 @@ async fn main() -> Result<()> {
                     m
                 }),
                 strategy: container_strategy,
+                bump_seed: 0,
                 provide: None,
                 host: None,
             };

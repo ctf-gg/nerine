@@ -40,10 +40,12 @@ pub struct Challenge {
     pub container: Option<HashMap<String, Container>>,
     #[serde(default = "default_strategy")]
     pub strategy: DeploymentStrategy,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_zero")]
     pub bump_seed: u64,
     pub host: Option<String>,
 }
+
+fn is_zero(x: &u64) -> bool { *x == 0 }
 
 fn default_strategy() -> DeploymentStrategy {
     DeploymentStrategy::Static
