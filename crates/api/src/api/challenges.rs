@@ -35,7 +35,7 @@ pub async fn list(
     StateE(state): StateE<State>,
     Auth(claims): Auth,
 ) -> Result<Json<Vec<PublicChallenge>>> {
-    if Utc::now().naive_utc() < state.event.start_time {
+    if !claims.ethereal() && Utc::now().naive_utc() < state.event.start_time {
         return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
 
@@ -86,10 +86,10 @@ pub struct ChallengeSolve {
 
 pub async fn challenge_solves(
     StateE(state): StateE<State>,
-    Auth(_): Auth,
+    Auth(a): Auth,
     Path(chall_id): Path<String>,
 ) -> Result<Json<Vec<ChallengeSolve>>> {
-    if Utc::now().naive_utc() < state.event.start_time {
+    if !a.ethereal() && Utc::now().naive_utc() < state.event.start_time {
         return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
 
@@ -151,21 +151,25 @@ pub async fn submit(
 
     let is_correct = answer_info.flag == submission.flag;
 
-    sqlx::query!(
-        r#"INSERT INTO submissions (submission, is_correct, team_id, challenge_id)
-        VALUES ($1, $2, (SELECT id FROM teams WHERE public_id = $3), $4)"#,
-        submission.flag,
-        is_correct,
-        claims.team_id,
-        answer_info.id,
-    )
-    .execute(&state.db)
-    .await?;
+    if !claims.ethereal() {
+        sqlx::query!(
+            r#"INSERT INTO submissions (submission, is_correct, team_id, challenge_id)
+            VALUES ($1, $2, (SELECT id FROM teams WHERE public_id = $3), $4)"#,
+            submission.flag,
+            is_correct,
+            claims.team_id,
+            answer_info.id,
+        )
+        .execute(&state.db)
+        .await?;
+    }
 
     if is_correct {
-        update_chall_cache(&state.db, answer_info.id).await?;
-        if answer_info.solves == 0 {
-            award_badge(&state.db, answer_info.id, claims.team_id).await?;
+        if !claims.ethereal() {
+            update_chall_cache(&state.db, answer_info.id).await?;
+            if answer_info.solves == 0 {
+                award_badge(&state.db, answer_info.id, claims.team_id).await?;
+            }
         }
         Ok(())
     } else {
@@ -212,7 +216,7 @@ pub async fn deploy(
     Path(pub_id): Path<String>,
 ) -> Result<Json<ChallengeDeployment>> {
     let now = Utc::now().naive_utc();
-    if now < state.event.start_time {
+    if !claims.ethereal() && now < state.event.start_time {
         return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
 

@@ -7,6 +7,13 @@ use crate::config;
 pub struct Claims {
     pub exp: u64,
     pub team_id: String,
+    pub ethereal: Option<bool>,
+}
+
+impl Claims {
+    pub fn ethereal(&self) -> bool {
+        Some(true) == self.ethereal
+    }
 }
 
 pub fn generate_jwt(
@@ -19,6 +26,7 @@ pub fn generate_jwt(
         &Claims {
             team_id: team_id.to_string(),
             exp: jsonwebtoken::get_current_timestamp() + exp.num_seconds() as u64,
+            ethereal: None,
         },
         &keys.encoding,
     )
