@@ -152,19 +152,12 @@ fn default_archive_name() -> String {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Container {
     pub build: PathBuf,
-    #[serde(default = "default_limits")]
+    #[serde(default)]
     pub limits: Limits,
     pub env: Option<HashMap<String, String>>,
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
     pub privileged: Option<bool>,
-}
-
-fn default_limits() -> Limits {
-    Limits {
-        cpu: Some(1_000_000_000), // 1vcpu
-        mem: Some(104_857_600),   // 100mb
-    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
@@ -174,12 +167,21 @@ pub enum DeploymentStrategy {
     Instanced,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Limits {
     // "nano-cpus", i.e. in units of 10^-9 cpu
     pub cpu: Option<i64>,
     // in bytes
     pub mem: Option<i64>,
+}
+
+impl Default for Limits {
+    fn default() -> Self {
+        Self {
+            cpu: Some(1_000_000_000), // 1vcpu
+            mem: Some(104_857_600), // 100mb
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]

@@ -217,7 +217,7 @@ async fn main() -> Result<()> {
                     .strip_prefix(&path)
                     .unwrap_or(&dockerfile_path)
                     .to_owned(),
-                limits: None,
+                limits: Default::default(),
                 env: None,
                 expose: Some({
                     let mut m = HashMap::new();
