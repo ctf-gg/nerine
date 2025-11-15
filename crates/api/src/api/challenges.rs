@@ -62,8 +62,8 @@ pub async fn list(
         ORDER BY solves DESC"#,
         claims.team_id,
     )
-    .fetch_all(&state.db)
-    .await?;
+        .fetch_all(&state.db)
+        .await?;
 
     for c in &mut challs {
         for s in solves.iter() {
@@ -167,9 +167,31 @@ pub async fn submit(
     if is_correct {
         if !claims.ethereal() {
             update_chall_cache(&state.db, answer_info.id).await?;
-            if answer_info.solves == 0 {
-                award_badge(&state.db, answer_info.id, claims.team_id).await?;
+            // TODO(aiden): make this hookable instead of just vomitting this code here
+            let client = reqwest::Client::new();
+
+            #[derive(Serialize)]
+            struct WebhookData {
+                content: String,
+                embeds: Option<()>,
+                attachments: Vec<()>,
             }
+            let msg = format!(
+                "Congrats to `{}` for first blooding `{}`!",
+                sqlx::query!("SELECT name FROM teams WHERE public_id = $1", team_id)
+                    .fetch_one(db)
+                    .await?
+                    .name,
+                sqlx::query!("SELECT public_id FROM challenges WHERE id = $1", chall_id)
+                    .fetch_one(db)
+                    .await?
+                    .public_id
+            );
+            client.post("https://discord.com/api/webhooks/1129589162115338270/X5hz8w9ajwWOkgor7f_5FDnEyahortUyXyDuNw9ca42FfAgog4dVuADHjx276qPnP1CW").json(&WebhookData {
+                content: msg,
+                embeds: None,
+                attachments: Vec::new(),
+            }).send().await?;
         }
         Ok(())
     } else {
@@ -227,8 +249,8 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
         claims.team_id,
         pub_id,
     )
-    .fetch_one(&state.db)
-    .await?;
+        .fetch_one(&state.db)
+        .await?;
 
     let client = reqwest::Client::new();
 
@@ -266,8 +288,8 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
         claims.team_id,
         pub_id,
     )
-    .fetch_one(&state.db)
-    .await?;
+        .fetch_one(&state.db)
+        .await?;
     let client = reqwest::Client::new();
 
     if record.strategy == "static" {

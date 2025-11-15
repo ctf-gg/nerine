@@ -45,7 +45,9 @@ pub struct Challenge {
     pub host: Option<String>,
 }
 
-fn is_zero(x: &u64) -> bool { *x == 0 }
+fn is_zero(x: &u64) -> bool {
+    *x == 0
+}
 
 fn default_strategy() -> DeploymentStrategy {
     DeploymentStrategy::Static
@@ -183,7 +185,7 @@ impl Default for Limits {
     fn default() -> Self {
         Self {
             cpu: Some(1_000_000_000), // 1vcpu
-            mem: Some(104_857_600), // 100mb
+            mem: Some(104_857_600),   // 100mb
         }
     }
 }

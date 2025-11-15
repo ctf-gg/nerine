@@ -38,30 +38,5 @@ pub async fn award_badge(db: &DB, chall_id: i32, team_id: String) -> crate::Resu
     .execute(db)
     .await?;
 
-    let client = reqwest::Client::new();
-
-    #[derive(Serialize)]
-    struct WebhookData {
-        content: String,
-        embeds: Option<()>,
-        attachments: Vec<()>,
-    }
-    let msg = format!(
-        "Congrats to `{}` for first blooding `{}`!",
-        sqlx::query!("SELECT name FROM teams WHERE public_id = $1", team_id)
-            .fetch_one(db)
-            .await?
-            .name,
-        sqlx::query!("SELECT public_id FROM challenges WHERE id = $1", chall_id)
-            .fetch_one(db)
-            .await?
-            .public_id
-    );
-    client.post("https://discord.com/api/webhooks/1383231404976115743/e5Cv4VMmzXqU6sxeq5LClzze3MJd0ilolR9Bc9hvS_1hcO4pXAhTnzfB5VwO9CmfeVoW").json(&WebhookData {
-        content: msg,
-        embeds: None,
-        attachments: Vec::new(),
-    }).send().await?;
-
     Ok(())
 }
