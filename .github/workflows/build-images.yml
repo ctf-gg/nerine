@@ -40,6 +40,7 @@ jobs:
               - 'Cargo.toml'
               - 'Cargo.lock'
               - '.sqlx/**'
+              - '.github/workflows/build-images.yml'
             deployer:
               - 'crates/deployer-common/**'
               - 'crates/deployer-server/**'
@@ -47,8 +48,10 @@ jobs:
               - 'Cargo.toml'
               - 'Cargo.lock'
               - '.sqlx/**'
+              - '.github/workflows/build-images.yml'
             frontend:
               - 'frontend/**'
+              - '.github/workflows/build-images.yml'
 
   build-backend-docker:
     needs: changes
