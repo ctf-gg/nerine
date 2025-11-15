@@ -54,7 +54,7 @@
 
 <style>
   .login-container {
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
     text-align: center;
   }

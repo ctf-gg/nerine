@@ -70,8 +70,6 @@ h6 {
 
 :root:has(.theme-light) {
   --bg-primary: oklch(1 0 0);
-  --bg-secondary: oklch(0.9731 0.0041 91.45);
-
   --text-primary: oklch(0.3289 0.0107 91.66);
 
   --bg-accent: oklch(0.9514 0.0085 308.36);
@@ -90,21 +88,19 @@ h6 {
 
 :root:has(.theme-dark) {
   --bg-primary: oklch(0.25 0.0099 241.98);
-  --bg-secondary: oklch(0.3526 0.0085 233.9);
-
   --text-primary: oklch(0.8612 0 0);
 
   --bg-accent: oklch(0.34 0.0408 293.94);
   --text-accent: oklch(0.6263 0.1587 301.59);
 
-  --bg-neutral: #454b4e;
-  --text-neutral: #979a9b;
+  --bg-neutral: oklch(0.3526 0.0085 233.9);
+  --text-neutral: oklch(0.6841 0.0038 219.55);
 
   --bg-success: oklch(0.34 0.0284 192.69);
-  --text-success: #4dab9a;
+  --text-success: oklch(0.6796 0.093 179.77);
 
-  --bg-error: #594141;
-  --text-error: #ff7369;
+  --bg-error: oklch(0.4016 0.0336 18.65);
+  --text-error: oklch(0.7218 0.1728 26.38);
 }
 
 html {
@@ -146,7 +142,7 @@ button:disabled {
 
 input {
   border-radius: 0;
-  border: 1px solid var(--text-primary);
+  border: 1px solid var(--text-neutral);
   background: var(--bg-neutral);
   color: var(--text-primary);
   padding: 0.15rem 0.5rem;
@@ -169,7 +165,7 @@ a {
 
 dialog {
   margin: auto;
-  border: 1px solid var(--text-primary);
+  border: 1px solid var(--text-neutral);
   padding: 1rem;
 }
 

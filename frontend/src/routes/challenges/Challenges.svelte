@@ -87,7 +87,7 @@
 
 <style>
   .filters {
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
     margin-bottom: 2rem;
 

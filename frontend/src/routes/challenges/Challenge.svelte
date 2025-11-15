@@ -342,7 +342,7 @@
 
 <style>
   .challenge {
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
 
     .header {
@@ -497,7 +497,7 @@
   .solves-dialog {
     min-width: 45rem;
     text-align: center;
-    background: var(--bg-secondary);
+    background: var(--bg-neutral);
     color: var(--text-primary);
 
     h2 {
@@ -531,8 +531,8 @@
 
     td {
       border: none;
-      border-top: 1px solid var(--text-primary);
-      border-bottom: 1px solid var(--text-primary);
+      border-top: 1px solid var(--text-neutral);
+      border-bottom: 1px solid var(--text-neutral);
       padding: 0;
       a {
         display: block;

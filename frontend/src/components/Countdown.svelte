@@ -127,7 +127,7 @@
     display: grid;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
   }
 

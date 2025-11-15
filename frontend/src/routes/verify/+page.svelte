@@ -67,7 +67,7 @@
 
   #confirmation {
     text-align: center;
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
     button {
       margin-top: 0.5rem;

@@ -48,8 +48,8 @@
       align-self: center;
       justify-self: center;
       padding: 0.25rem;
-      background: var(--bg-secondary);
-      border: 1px solid var(--text-primary);
+      background: var(--bg-primary);
+      border: 1px solid var(--text-neutral);
       position: absolute;
       transform: translateY(2.5rem);
     }

@@ -43,7 +43,7 @@
   }
 
   #register {
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
     display: flex;
     flex-direction: column;

@@ -72,7 +72,7 @@
 
   .solves {
     margin-top: 1rem;
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
     text-align: center;
 
@@ -93,8 +93,8 @@
 
     td {
       border: none;
-      border-top: 1px solid var(--text-primary);
-      border-bottom: 1px solid var(--text-primary);
+      border-top: 1px solid var(--text-neutral);
+      border-bottom: 1px solid var(--text-neutral);
       padding: 0;
       a {
         display: block;

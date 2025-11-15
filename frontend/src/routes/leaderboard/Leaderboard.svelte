@@ -38,7 +38,7 @@
 
 <style>
   .leaderboard-container {
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--text-neutral);
     padding: 1rem;
   }
   .leaderboard {
@@ -55,7 +55,7 @@
 
     td {
       border: none;
-      border-bottom: 1px solid var(--text-primary);
+      border-bottom: 1px solid var(--text-neutral);
       padding: 0;
       a {
         display: block;
@@ -80,7 +80,7 @@
       top: 3rem;
       background: var(--bg-primary);
       th {
-        border-bottom: 1px solid var(--text-primary);
+        border-bottom: 1px solid var(--text-neutral);
         padding: 0.5rem;
       }
     }
