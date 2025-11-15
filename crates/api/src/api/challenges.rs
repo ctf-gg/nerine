@@ -178,12 +178,12 @@ pub async fn submit(
             }
             let msg = format!(
                 "Congrats to `{}` for first blooding `{}`!",
-                sqlx::query!("SELECT name FROM teams WHERE public_id = $1", team_id)
-                    .fetch_one(db)
+                sqlx::query!("SELECT name FROM teams WHERE public_id = $1", claims.team_id)
+                    .fetch_one(&state.db)
                     .await?
                     .name,
-                sqlx::query!("SELECT public_id FROM challenges WHERE id = $1", chall_id)
-                    .fetch_one(db)
+                sqlx::query!("SELECT public_id FROM challenges WHERE id = $1", answer_info.id)
+                    .fetch_one(&state.db)
                     .await?
                     .public_id
             );
