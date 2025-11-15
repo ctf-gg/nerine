@@ -218,11 +218,12 @@
           </div>
           {#each urls as url}
             {#if url.type === "tcp"}
-              <TcpLink link={url.url} />
+              <TcpLink link={url.url} /><br />
             {:else}
               <a href={url.url} target="_blank">
                 {url.url}
               </a>
+	      <br />
             {/if}
           {/each}
         </div>
