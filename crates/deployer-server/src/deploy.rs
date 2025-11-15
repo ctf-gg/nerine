@@ -470,6 +470,7 @@ pub async fn deploy_challenge(
                                 })
                                 .collect::<HashMap<_, _>>(),
                         ),
+                        cap_add: chall_container.cap_add.clone(),
                         privileged: chall_container.privileged.clone(),
                         ..Default::default()
                     }),

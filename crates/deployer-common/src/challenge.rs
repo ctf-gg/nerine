@@ -163,6 +163,7 @@ pub struct Container {
     pub env: Option<HashMap<String, String>>,
     #[serde_as(as = "Option<HashMap<DisplayFromStr, _>>")]
     pub expose: Option<HashMap<u16, ExposeType>>,
+    pub cap_add: Option<Vec<String>>,
     pub privileged: Option<bool>,
 }
 

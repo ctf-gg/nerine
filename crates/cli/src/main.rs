@@ -224,6 +224,7 @@ async fn main() -> Result<()> {
                     m.insert(expose_port, expose_type);
                     m
                 }),
+                cap_add: None,
                 privileged: None,
             };
 
