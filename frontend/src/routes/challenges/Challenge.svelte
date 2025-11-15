@@ -82,7 +82,7 @@
         deployment = dep;
         if (dep.expired_at) {
           const totalTime =
-            new Date(dep.expired_at).getTime() - new Date().getTime();
+            new Date(dep.expired_at + 'Z').getTime() - new Date().getTime();
           instanceTimeRemaining = totalTime;
           totalInstanceTime = totalTime;
         }
@@ -103,7 +103,7 @@
     instanceTimeInterval = setInterval(() => {
       if (deployment && deployment.expired_at) {
         instanceTimeRemaining =
-          new Date(deployment.expired_at).getTime() - new Date().getTime();
+          new Date(deployment.expired_at + 'Z').getTime() - new Date().getTime();
       } else {
         instanceTimeRemaining = null;
       }
@@ -153,7 +153,7 @@
           deployment = r;
           if (r.expired_at) {
             const totalTime =
-              new Date(r.expired_at).getTime() - new Date().getTime();
+              new Date(r.expired_at + 'Z').getTime() - new Date().getTime();
             instanceTimeRemaining = totalTime;
             totalInstanceTime = totalTime;
           }
