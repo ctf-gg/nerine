@@ -208,7 +208,7 @@
                 .padStart(2, "0")}
               {@const seconds = Math.round(totalSecs % 60).toString().padStart(2, "0")}
               <div class="expire-bar">
-                <div style="width: 50%;" class="bar-fill"></div>
+                <div style="width: {instanceTimeRemaining / totalInstanceTime * 100}%;" class="bar-fill"></div>
                 <span class="bar-text">Expires in {minutes}:{seconds}</span>
               </div>
             {/if}
