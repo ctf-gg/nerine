@@ -167,31 +167,39 @@ pub async fn submit(
     if is_correct {
         if !claims.ethereal() {
             update_chall_cache(&state.db, answer_info.id).await?;
-            // TODO(aiden): make this hookable instead of just vomitting this code here
-            let client = reqwest::Client::new();
+            if answer_info.solves == 0 {
+                // TODO(aiden): make this hookable instead of just vomitting this code here
+                let client = reqwest::Client::new();
 
-            #[derive(Serialize)]
-            struct WebhookData {
-                content: String,
-                embeds: Option<()>,
-                attachments: Vec<()>,
-            }
-            let msg = format!(
-                "Congrats to `{}` for first blooding `{}`!",
-                sqlx::query!("SELECT name FROM teams WHERE public_id = $1", claims.team_id)
+                #[derive(Serialize)]
+                struct WebhookData {
+                    content: String,
+                    embeds: Option<()>,
+                    attachments: Vec<()>,
+                }
+                let msg = format!(
+                    "Congrats to `{}` for first blooding `{}`!",
+                    sqlx::query!(
+                        "SELECT name FROM teams WHERE public_id = $1",
+                        claims.team_id
+                    )
                     .fetch_one(&state.db)
                     .await?
                     .name,
-                sqlx::query!("SELECT public_id FROM challenges WHERE id = $1", answer_info.id)
+                    sqlx::query!(
+                        "SELECT public_id FROM challenges WHERE id = $1",
+                        answer_info.id
+                    )
                     .fetch_one(&state.db)
                     .await?
                     .public_id
-            );
-            client.post("https://discord.com/api/webhooks/1129589162115338270/X5hz8w9ajwWOkgor7f_5FDnEyahortUyXyDuNw9ca42FfAgog4dVuADHjx276qPnP1CW").json(&WebhookData {
+                );
+                client.post("https://discord.com/api/webhooks/1129589162115338270/X5hz8w9ajwWOkgor7f_5FDnEyahortUyXyDuNw9ca42FfAgog4dVuADHjx276qPnP1CW").json(&WebhookData {
                 content: msg,
                 embeds: None,
                 attachments: Vec::new(),
             }).send().await?;
+            }
         }
         Ok(())
     } else {
