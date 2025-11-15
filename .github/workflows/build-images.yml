@@ -23,6 +23,7 @@ jobs:
     # Set outputs to determine which jobs to run
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
+      deployer: ${{ steps.filter.output.deployer }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
       - name: Checkout repository
