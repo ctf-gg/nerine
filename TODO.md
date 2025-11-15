@@ -11,6 +11,7 @@
 - [ ] submitting after event (should be marked, but not scored)
 - [ ] normalize cpu and mem units to vcpus and mb respectively
 - [ ] csp
+- [ ] highlight name on solves dialog
 
 # medium tasks
 - [ ] unlockable/sequel challenges (i.e. revenge)
