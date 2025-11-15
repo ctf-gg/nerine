@@ -16,7 +16,7 @@
   } from "$lib/api";
   import TcpLink from "./TcpLink.svelte";
   import { onDestroy, onMount } from "svelte";
-  const { chall: c, event }: { challenge: Challenge, event: Event } = $props();
+  const { chall: c, event }: { chall: Challenge, event: Event } = $props();
 
   let flagInput: HTMLInputElement = $state(null!);
   let deployment: ChallengeDeployment | null = $state(null);
@@ -180,6 +180,8 @@
     solvesDialog.showModal();
     solves = await challengeSolves(c.id);
   }
+
+  const eventHasEnded = new Date().getTime() >= event.end_time.getTime();
 </script>
 
 <div class="challenge">
@@ -206,7 +208,7 @@
       {#if deployment}
         <div class="deployed-info">
           <div class="deployment-controls">
-            {#if deployment.expired_at && instanceTimeRemaining}
+            {#if deployment.expired_at && instanceTimeRemaining && totalInstanceTime}
               {@const totalSecs = instanceTimeRemaining / 1000}
               {@const minutes = Math.floor(totalSecs / 60)
                 .toString()
@@ -269,8 +271,8 @@
   </div>
   {#if c.solved_at}
     <div class="solved">Solved at {c.solved_at.toLocaleString()}</div>
-    <!-- {:else if eventHasEnded}
-    <div class="ended">The event has ended</div> -->
+  {:else if eventHasEnded}
+    <div class="ended">The event has ended</div>
   {:else}
     <form class="submit" onsubmit={submit}>
       <input

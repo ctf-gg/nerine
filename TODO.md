@@ -21,9 +21,9 @@
 - [ ] better ratelimit error messages
 - [ ] better changed challenge detection (see rcds for inspo)
 - [ ] dynamic generation for static challenges
-- [ ] remove rsync
+- [x] remove rsync
 - [ ] better detection of what you need to rebuild
-- [ ] frontend: fix FOUT when using dark theme
+- [x] frontend: fix FOUT when using dark theme
 
 # large tasks
 - [ ] private deployments
