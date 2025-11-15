@@ -136,7 +136,7 @@ enum Profile {
 
 async fn profile(
     StateE(state): StateE<State>,
-    Auth(ref claims @ Claims { ref team_id, .. }): Auth,
+    auth: Option<Auth>,
     Path(pub_id): Path<String>,
 ) -> Result<Json<Profile>> {
     struct TeamDetails {
@@ -164,9 +164,9 @@ async fn profile(
         (details.rank.unwrap_or(-1), details.score.unwrap_or(-1))
     };
 
-    return if *team_id == pub_id {
+    return if auth.as_ref().map(|x| &x.0.team_id) == Some(&pub_id) {
         Ok(Json(Profile::Private {
-            name: if claims.ethereal() {
+            name: if auth.as_ref().map(|x| x.0.ethereal()) == Some(true) {
                 format!("⭐ ETHEREAL ⭐ {}", details.name)
             } else {
                 details.name
