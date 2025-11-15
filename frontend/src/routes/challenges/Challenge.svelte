@@ -465,7 +465,6 @@
 
     input {
       flex-grow: 1;
-      transition: background-color 300ms ease-out;
 
       &.incorrect {
         background-color: var(--bg-error);

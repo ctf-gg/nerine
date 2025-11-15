@@ -3,7 +3,7 @@
   import PrivateProfileDetails from "./PrivateProfileDetails.svelte";
 
   const { data }: PageProps = $props();
-  let profile = $state(data.profile);
+  let profile = $derived(data.profile);
 
   function ordinal(i: number) {
     let j = i % 10;
