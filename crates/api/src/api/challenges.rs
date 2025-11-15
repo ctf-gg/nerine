@@ -257,9 +257,10 @@ pub async fn deploy(
     let record = sqlx::query!(
         r#"SELECT teams.id AS team_id, challenges.id AS challenge_id, challenges.strategy::text AS "strategy!"
 FROM teams, challenges 
-WHERE teams.public_id = $1 AND challenges.public_id = $2;"#,
+WHERE teams.public_id = $1 AND challenges.public_id = $2 AND challenges.visible IN (true, $3);"#,
         claims.team_id,
         pub_id,
+        !claims.ethereal(),
     )
         .fetch_one(&state.db)
         .await?;
