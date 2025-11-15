@@ -84,7 +84,7 @@
           const totalTime =
             new Date(dep.expired_at + 'Z').getTime() - new Date().getTime();
           instanceTimeRemaining = totalTime;
-          totalInstanceTime = totalTime;
+          if (!totalInstanceTime) totalInstanceTime = totalTime;
         }
 
         waiting = false;
