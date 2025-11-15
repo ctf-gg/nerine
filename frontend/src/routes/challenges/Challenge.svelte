@@ -59,6 +59,31 @@
 
   // Instancing
 
+  const poller = async () => {
+    const dep = await getChallengeDeployment(res.id);
+    if (isError(dep)) {
+      error = dep;
+      return;
+    }
+
+    if (dep.data) {
+      deployment = dep;
+      if (dep.expired_at) {
+	const totalTime =
+	      new Date(dep.expired_at + 'Z').getTime() - new Date().getTime();
+	instanceTimeRemaining = totalTime;
+	if (!totalInstanceTime) totalInstanceTime = totalTime;
+      }
+
+      waiting = false;
+    }
+
+    if (dep.destroyed_at) {
+      await destroyInstance(false);
+      if (interval) clearInterval(interval);
+    }
+  }
+
   let waiting = $state(false);
   let interval: any = $state(null);
   let createCooldown = $state(false);
@@ -70,29 +95,7 @@
       error = res;
       return;
     }
-    if (interval) clearInterval(interval);
-    interval = setInterval(async () => {
-      const dep = await getChallengeDeployment(res.id);
-      if (isError(dep)) {
-        error = dep;
-        return;
-      }
-
-      if (dep.data) {
-        deployment = dep;
-        if (dep.expired_at) {
-          const totalTime =
-            new Date(dep.expired_at + 'Z').getTime() - new Date().getTime();
-          instanceTimeRemaining = totalTime;
-          if (!totalInstanceTime) totalInstanceTime = totalTime;
-        }
-
-        waiting = false;
-      }
-      if (dep.destroyed_at) {
-        await destroyInstance(false);
-      }
-    }, 2000);
+    interval = setInterval(poller, 2000);
   }
 
   let instanceTimeInterval: number = $state(null!);
@@ -126,6 +129,7 @@
     createCooldown = true;
     totalInstanceTime = null;
     instanceTimeRemaining = null;
+    if (interval) clearInterval(interval);
 
     setTimeout(() => {
       createCooldown = false;
@@ -151,7 +155,8 @@
           error = r;
         } else {
           deployment = r;
-          if (r.expired_at) {
+	  interval = setInterval(poller, 2000);
+	  if (r.expired_at) {
             const totalTime =
               new Date(r.expired_at + 'Z').getTime() - new Date().getTime();
             instanceTimeRemaining = totalTime;
