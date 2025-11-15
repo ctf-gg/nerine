@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT \n            t.public_id AS id,\n            t.name AS name,\n            s.created_at AS solved_at \n        FROM submissions s\n        JOIN teams t ON s.team_id = t.id\n        JOIN challenges c ON s.challenge_id = c.id\n        WHERE c.public_id = $1 \n        AND s.is_correct = true",
+  "query": "SELECT \n            t.public_id AS id,\n            t.name AS name,\n            s.created_at AS solved_at \n        FROM submissions s\n        JOIN teams t ON s.team_id = t.id\n        JOIN challenges c ON s.challenge_id = c.id\n        WHERE c.public_id = $1 \n        AND s.is_correct = true\n        ORDER BY solved_at ASC",
   "describe": {
     "columns": [
       {
@@ -30,5 +30,5 @@
       false
     ]
   },
-  "hash": "59db7838afbb0b00094941e49ea9184f2a329e08468e470e96b6d089eb2c5449"
+  "hash": "0077e967398647d5bcb80fca1778608930a6493f7b4ca80fbb7c7d4e765ad850"
 }

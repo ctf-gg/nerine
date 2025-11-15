@@ -107,7 +107,8 @@ pub async fn challenge_solves(
         JOIN teams t ON s.team_id = t.id
         JOIN challenges c ON s.challenge_id = c.id
         WHERE c.public_id = $1 
-        AND s.is_correct = true"#,
+        AND s.is_correct = true
+        ORDER BY solved_at ASC"#,
         chall_id,
     )
     .fetch_all(&state.db)
