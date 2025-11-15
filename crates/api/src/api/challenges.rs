@@ -46,7 +46,10 @@ pub async fn list(
         PublicChallenge,
         r#"SELECT 
             c.public_id,
-            c.name,
+            CASE
+                WHEN c.visible THEN c.name
+                ELSE '⭐ INVISIBLE ⭐ ' || c.name
+            END AS "name!",
             author,
             description,
             c_points AS points,
@@ -58,9 +61,10 @@ pub async fn list(
             NULL::timestamp AS "solved_at"
         FROM challenges c JOIN categories ON categories.id = category_id
         LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))
-        WHERE visible = true
+        WHERE visible IN (true, $2)
         ORDER BY solves DESC"#,
         claims.team_id,
+        !claims.ethereal(),
     )
         .fetch_all(&state.db)
         .await?;
