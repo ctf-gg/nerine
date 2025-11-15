@@ -406,8 +406,8 @@ impl DeployableChallenge {
                     (name, Vec::from(data.as_bytes()))
                 }
                 Attachment::Named { file, r#as } => {
-                    let data = fs::read_to_string(self.root.join(file))?;
-                    (r#as.clone(), Vec::from(data.as_bytes()))
+                    let data = fs::read(self.root.join(file))?;
+                    (r#as.clone(), data)
                 }
                 Attachment::Archive { dir, r#as, exclude } => {
                     let tmp = TempDir::new(&self.chall.id)?;
