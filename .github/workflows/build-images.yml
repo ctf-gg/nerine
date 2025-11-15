@@ -39,12 +39,14 @@ jobs:
               - 'Dockerfile'
               - 'Cargo.toml'
               - 'Cargo.lock'
+              - '.sqlx/**'
             deployer:
               - 'crates/deployer-common/**'
               - 'crates/deployer-server/**'
               - 'Dockerfile.deployer'
               - 'Cargo.toml'
               - 'Cargo.lock'
+              - '.sqlx/**'
             frontend:
               - 'frontend/**'
 
