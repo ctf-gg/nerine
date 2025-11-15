@@ -59,8 +59,8 @@
 
   // Instancing
 
-  const poller = async () => {
-    const dep = await getChallengeDeployment(res.id);
+  const poller = (id: string) => async () => {
+    const dep = await getChallengeDeployment(id);
     if (isError(dep)) {
       error = dep;
       return;
@@ -95,7 +95,7 @@
       error = res;
       return;
     }
-    interval = setInterval(poller, 2000);
+    interval = setInterval(poller(res.id), 2000);
   }
 
   let instanceTimeInterval: number = $state(null!);
@@ -155,7 +155,7 @@
           error = r;
         } else {
           deployment = r;
-	  interval = setInterval(poller, 2000);
+	  interval = setInterval(poller(r.id), 2000);
 	  if (r.expired_at) {
             const totalTime =
               new Date(r.expired_at + 'Z').getTime() - new Date().getTime();
