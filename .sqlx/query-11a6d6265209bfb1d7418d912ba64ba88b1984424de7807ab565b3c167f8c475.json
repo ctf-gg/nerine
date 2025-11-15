@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT \n            c.public_id,\n            c.name,\n            author,\n            description,\n            c_points AS points,\n            c_solves AS solves,\n            attachments,\n            strategy::text AS \"strategy!\",\n            COALESCE(cd.public_id, '') AS \"deployment_id!\",\n            categories.name AS category,\n            NULL::timestamp AS \"solved_at\"\n        FROM challenges c JOIN categories ON categories.id = category_id\n        LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))\n        WHERE visible = true\n        ORDER BY solves DESC",
+  "query": "SELECT \n            c.public_id,\n            CASE\n                WHEN c.visible THEN c.name\n                ELSE '⭐ INVISIBLE ⭐ ' || c.name\n            END AS \"name!\",\n            author,\n            description,\n            c_points AS points,\n            c_solves AS solves,\n            attachments,\n            strategy::text AS \"strategy!\",\n            COALESCE(cd.public_id, '') AS \"deployment_id!\",\n            categories.name AS category,\n            NULL::timestamp AS \"solved_at\"\n        FROM challenges c JOIN categories ON categories.id = category_id\n        LEFT JOIN challenge_deployments cd ON destroyed_at IS NULL AND challenge_id = c.id AND (team_id IS NULL or team_id = (SELECT id FROM teams WHERE public_id = $1))\n        WHERE visible IN (true, $2)\n        ORDER BY solves DESC",
   "describe": {
     "columns": [
       {
@@ -10,7 +10,7 @@
       },
       {
         "ordinal": 1,
-        "name": "name",
+        "name": "name!",
         "type_info": "Text"
       },
       {
@@ -61,12 +61,13 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Text",
+        "Bool"
       ]
     },
     "nullable": [
       false,
-      false,
+      null,
       false,
       false,
       false,
@@ -78,5 +79,5 @@
       null
     ]
   },
-  "hash": "fe26b2e00fe19d50a10470722caba3a6262616fb687716e171f35894bc0681d4"
+  "hash": "11a6d6265209bfb1d7418d912ba64ba88b1984424de7807ab565b3c167f8c475"
 }
