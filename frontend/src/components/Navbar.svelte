@@ -64,7 +64,11 @@
     {#if profile && teamId}
       <!-- <li>{team.name}</li> TODO(aiden): dunno whether i should leave this here or not -->
       {@render route("Profile", `/profile/${teamId}`)}
-      {@render route("Logout", "/logout", true)}
+    <li>
+      <form action="/logout" method="POST">
+	<button type="submit" class="ghost">Logout</button>
+      </form>
+    </li>
     {:else}
       {@render route("Login", `/login`)}
       {@render route("Register", "/register")}
@@ -72,13 +76,14 @@
   </ul>
 </nav>
 
-{#snippet route(name: string, path: string, noPrefetch = false)}
+{#snippet route(name: string, path: string)}
   <li>
     <a
       href={path}
       class={[page.url.pathname == path && "selected"]}
-      data-sveltekit-preload-data={noPrefetch ? "off" : undefined}>{name}</a
     >
+      {name}
+    </a>
   </li>
 {/snippet}
 
