@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
-use crate::{badges::award_badge, db::update_chall_cache, extractors::Auth, Error, Result, State};
+use crate::{db::update_chall_cache, extractors::Auth, Error, Result, State};
 use axum::{
     extract::{Path, State as StateE},
     routing::{delete, get, post},

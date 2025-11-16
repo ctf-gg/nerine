@@ -3,6 +3,7 @@
   import PrivateProfileDetails from "./PrivateProfileDetails.svelte";
 
   const { data }: PageProps = $props();
+  const event = data.event;
   let profile = $derived(data.profile);
 
   function ordinal(i: number) {
@@ -27,13 +28,16 @@
 
     {#if profile.rank !== -1}
       <div class="stats">
-        {ordinal(profile.rank)} place / {profile.score} points
+	{#if profile.division}
+	  {event.divisions[profile.division]} Division  <br/>
+	{/if}
+	{ordinal(profile.rank)} place / {profile.score} points
       </div>
     {/if}
   </div>
 
   {#if profile.type === "private"}
-    <PrivateProfileDetails bind:profile />
+    <PrivateProfileDetails {profile} {event} />
   {/if}
 
   <div class="solves">

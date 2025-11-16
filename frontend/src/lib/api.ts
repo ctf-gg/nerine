@@ -38,6 +38,7 @@ export interface Team {
   id: string;
   name: string;
   email: string;
+  division?: string;
   created_at: Date;
 }
 
@@ -138,10 +139,11 @@ export const getVerificationDetails = async (
 
 export const updateProfile = async (
   email: string,
-  name: string
+  name: string,
+  division?: string | null
 ): Promise<Team | ApiError | { message: string; name: string }> => {
   const res = await req("POST", "/profile/update", {
-    body: { email, name },
+    body: { email, name, division: division ?? null },
   });
   const result = await res.json();
   return result as Team | ApiError | { message: string; name: string };
@@ -154,22 +156,26 @@ interface Solve {
   solved_at: string;
 }
 
-export type Profile =
-  | {
-      type: "private";
-      name: string;
-      email: string;
-      score: number;
-      rank: number;
-      solves: Solve[];
-    }
-  | {
-      type: "public";
-      name: string;
-      score: number;
-      rank: number;
-      solves: Solve[];
-    };
+export type Profile = PrivateProfile | PublicProfile
+
+export interface PrivateProfile {
+  type: "private";
+  name: string;
+  email: string;
+  division: string | null;
+  score: number;
+  rank: number;
+  solves: Solve[];
+}
+
+export interface PublicProfile {
+  type: "public";
+  name: string;
+  division: string | null;
+  score: number;
+  rank: number;
+  solves: Solve[];
+}
 
 const tokenToOptions = (
   token?: string
@@ -257,8 +263,8 @@ export interface LeaderboardEntry {
   score_history: ScorePoint[];
   extra: { badges: Badge[] };
 }
-export const leaderboard = async (): Promise<LeaderboardEntry[] | ApiError> => {
-  const res = await req("GET", "/leaderboard");
+export const leaderboard = async (division?: string | null): Promise<LeaderboardEntry[] | ApiError> => {
+  const res = await req("GET", `/leaderboard${division ? "/" + division : ""}`);
   return (await res.json()) as LeaderboardEntry[] | ApiError;
 };
 
@@ -286,6 +292,7 @@ export interface Event {
   description: string;
   start_time: Date;
   end_time: Date;
+  divisions: { [id: string] : string }
 }
 
 // TODO(ani): don't assume this always succeeds

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT email, name FROM teams WHERE public_id = $1",
+  "query": "SELECT email, name, division FROM teams WHERE public_id = $1",
   "describe": {
     "columns": [
       {
@@ -12,6 +12,11 @@
         "ordinal": 1,
         "name": "name",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "division",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -21,8 +26,9 @@
     },
     "nullable": [
       false,
-      false
+      false,
+      true
     ]
   },
-  "hash": "4147307fd01a5c2c4e6828105bf895d4f397fc88db79bd027c3370206b1a1c31"
+  "hash": "4f998cd5b2fa328a5f12e4671b16000177400060ab6d2e4a5da3426b7449cc6f"
 }

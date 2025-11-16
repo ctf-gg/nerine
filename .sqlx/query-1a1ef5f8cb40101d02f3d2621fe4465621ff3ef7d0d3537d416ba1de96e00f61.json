@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT t.public_id, t.name, lb.score as \"score!\", t.extra_data, lb.rank as \"rank!\"\n            FROM teams t \n            JOIN compute_leaderboard() lb ON lb.team_id = t.id\n            ORDER BY lb.rank ASC\n        ",
+  "query": "\n        SELECT t.public_id, t.name, lb.score AS \"score!\", t.extra_data, lb.rank AS \"rank!\"\n            FROM teams t \n            JOIN compute_leaderboard($1) lb ON lb.team_id = t.id\n            ORDER BY lb.rank ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -30,7 +30,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Text"
+      ]
     },
     "nullable": [
       false,
@@ -40,5 +42,5 @@
       null
     ]
   },
-  "hash": "f064d7e595b179822e336d6038755a7d3e62d881dbcc5de4b165503642ec25c0"
+  "hash": "1a1ef5f8cb40101d02f3d2621fe4465621ff3ef7d0d3537d416ba1de96e00f61"
 }

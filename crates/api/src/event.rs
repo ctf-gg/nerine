@@ -1,7 +1,7 @@
 use axum::{extract::State as StateE, routing::get, Json, Router};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::{fs, collections::HashMap};
 
 use crate::{Result, State};
 
@@ -16,6 +16,7 @@ pub struct Event {
     pub description: String,
     pub start_time: NaiveDateTime,
     pub end_time: NaiveDateTime,
+    pub divisions: HashMap<String, String>,
 }
 
 impl Event {

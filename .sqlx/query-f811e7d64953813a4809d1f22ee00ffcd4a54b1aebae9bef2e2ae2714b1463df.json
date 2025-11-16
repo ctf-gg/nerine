@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE teams SET name = $1 WHERE public_id = $2",
+  "query": "UPDATE teams SET division = $1\n            WHERE public_id = $2",
   "describe": {
     "columns": [],
     "parameters": {
@@ -11,5 +11,5 @@
     },
     "nullable": []
   },
-  "hash": "59b8c2f41284d7c31f5245a51fd863970217591bf5b22fd5b50ae3e68299ce75"
+  "hash": "f811e7d64953813a4809d1f22ee00ffcd4a54b1aebae9bef2e2ae2714b1463df"
 }

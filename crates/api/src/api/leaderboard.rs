@@ -1,5 +1,5 @@
 use crate::{extractors::Auth, Error, Result, State, DB};
-use axum::{extract::State as StateE, routing::get, Json, Router};
+use axum::{extract::{State as StateE, Path}, routing::get, Json, Router};
 use chrono::{NaiveDateTime, Utc};
 use serde::Serialize;
 
@@ -93,15 +93,16 @@ async fn calculate_score_history(
     Ok(history)
 }
 
-async fn leaderboard(db: &DB, event_start_time: NaiveDateTime) -> Result<Vec<LeaderboardEntry>> {
+async fn leaderboard(db: &DB, event_start_time: NaiveDateTime, division: Option<String>) -> Result<Vec<LeaderboardEntry>> {  
     let db_entries = sqlx::query_as!(
         DbLeaderboardEntry,
         r#"
-        SELECT t.public_id, t.name, lb.score as "score!", t.extra_data, lb.rank as "rank!"
+        SELECT t.public_id, t.name, lb.score AS "score!", t.extra_data, lb.rank AS "rank!"
             FROM teams t 
-            JOIN compute_leaderboard() lb ON lb.team_id = t.id
+            JOIN compute_leaderboard($1) lb ON lb.team_id = t.id
             ORDER BY lb.rank ASC
-        "#
+        "#,
+        division
     )
     .fetch_all(db)
     .await?;
@@ -132,7 +133,7 @@ async fn leaderboard(db: &DB, event_start_time: NaiveDateTime) -> Result<Vec<Lea
     };
 
     for db_entry in db_entries {
-        let score_history = if db_entry.rank <= 10 {
+        let score_history = if leaderboard_entries.len() < 10 {
             match calculate_score_history(
                 db,
                 &db_entry.public_id,
@@ -162,16 +163,26 @@ async fn leaderboard(db: &DB, event_start_time: NaiveDateTime) -> Result<Vec<Lea
     Ok(leaderboard_entries)
 }
 
-async fn get_lb(StateE(state): StateE<State>) -> Result<Json<Vec<LeaderboardEntry>>> {
+async fn get_lb(StateE(state): StateE<State>,
+    division: Option<Path<String>>,
+) -> Result<Json<Vec<LeaderboardEntry>>> {
     if Utc::now().naive_utc() < state.event.start_time {
         return Err(Error::EventNotStarted(state.event.start_time.clone()));
     }
 
-    return leaderboard(&state.db, state.event.start_time)
+    let division = division.map(|x| x.0);
+    if division != None && state.event.divisions.get(division.as_ref().unwrap()).is_none() {
+        return Err(Error::NotFoundDivision);
+    }
+ 
+    
+    return leaderboard(&state.db, state.event.start_time, division)
         .await
         .map(Json);
 }
 
 pub fn router() -> Router<crate::State> {
-    Router::new().route("/", get(get_lb))
+    Router::new()
+        .route("/", get(get_lb))
+        .route("/{division}", get(get_lb)) 
 }

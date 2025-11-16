@@ -140,21 +140,51 @@ button:disabled {
   cursor: not-allowed;
 }
 
-input {
+
+input, select {
+  line-height: normal;
   border-radius: 0;
   border: 1px solid var(--text-neutral);
   background: var(--bg-neutral);
   color: var(--text-primary);
-  padding: 0.15rem 0.5rem;
+  padding: 0.25rem 0.5rem;
 
   &::placeholder {
     color: color-mix(in oklab, var(--text-primary) 50%, transparent);
   }
+
+  &:focus {
+    outline: none;
+    background: var(--bg-primary);
+  }
 }
 
-input:focus {
-  outline: none;
+select, ::picker(select) {
+  appearance: base-select;
+}
+
+select:open::picker-icon {
+  rotate: 180deg;
+}
+
+::picker(select) {
+  border: 1px solid var(--text-neutral);
+  background: var(--bg-neutral);
+  color: var(--text-primary);
+  top: calc(anchor(bottom) - 1px);
+}
+
+option:checked {
   background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+option::checkmark {
+  content: '';
+  background: var(--text-primary);
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 100%;
 }
 
 a {

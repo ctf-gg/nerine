@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT name, email, rank, score FROM teams t\n            JOIN compute_leaderboard() lb ON lb.team_id = t.id \n            WHERE t.id = (SELECT id FROM teams WHERE public_id = $1)",
+  "query": "\n        SELECT name, email, division, rank, score FROM teams t\n            JOIN compute_leaderboard(t.division) lb ON lb.team_id = t.id \n            WHERE t.id = (SELECT id FROM teams WHERE public_id = $1)",
   "describe": {
     "columns": [
       {
@@ -15,11 +15,16 @@
       },
       {
         "ordinal": 2,
+        "name": "division",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
         "name": "rank",
         "type_info": "Int4"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "score",
         "type_info": "Int4"
       }
@@ -32,9 +37,10 @@
     "nullable": [
       false,
       false,
+      true,
       null,
       null
     ]
   },
-  "hash": "7af216ef571a241a33d09e5c6508732f03ef5f17727dbad410d90f12d499efd7"
+  "hash": "a78f35ef5ffbccee585949c8b876e31c2bebb3ff7d26a6dfa4b6bb3dd26c749e"
 }

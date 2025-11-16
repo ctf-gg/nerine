@@ -23,6 +23,8 @@ pub enum Error {
     NotFoundChallenge,
     #[error("Team not found")]
     NotFoundTeam,
+    #[error("Division not found")]
+    NotFoundDivision,
     #[error("The event has not started, starts at {0}")]
     EventNotStarted(NaiveDateTime),
     #[error("The event has ended")]
@@ -61,7 +63,7 @@ impl IntoResponse for Error {
             Error::Validation(_) => (StatusCode::BAD_REQUEST, "validation_error"),
             Error::Deploy(_) => (StatusCode::BAD_REQUEST, "deploy_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
-            Error::NotFoundChallenge | Error::NotFoundTeam => (StatusCode::NOT_FOUND, "not_found"),
+            Error::NotFoundChallenge | Error::NotFoundTeam | Error::NotFoundDivision => (StatusCode::NOT_FOUND, "not_found"),
             Error::EventNotStarted(start_time) => {
                 // Event not started special cased to return start time
                 return (

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE teams SET name = $1\n            WHERE public_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "427e5853e8825fc2c1c0e3b883ea87db7e8366689a95ebb0630b8cb2d14fcaf5"
+}

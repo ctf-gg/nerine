@@ -32,6 +32,11 @@
         "ordinal": 5,
         "name": "extra_data",
         "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "division",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -45,6 +50,7 @@
       false,
       false,
       false,
+      true,
       true
     ]
   },

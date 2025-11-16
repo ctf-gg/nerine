@@ -23,6 +23,7 @@ pub struct TeamInfo {
     pub name: String,
     #[validate(email)]
     pub email: String,
+    pub division: Option<String>,
 }
 // TODO move this elsewhere and use teamid return only
 #[derive(Deserialize, Serialize)]
@@ -33,6 +34,7 @@ pub struct Team {
     pub public_id: String,
     pub name: String,
     pub email: String,
+    pub division: Option<String>,
     pub created_at: NaiveDateTime,
     pub extra_data: serde_json::Value,
 }
@@ -206,7 +208,7 @@ async fn resend_token_handler(
 
     let team = sqlx::query_as!(
         Team,
-        "SELECT id, public_id, name, email, created_at, extra_data FROM teams WHERE email = $1",
+        "SELECT id, public_id, name, email, division, created_at, extra_data FROM teams WHERE email = $1",
         payload.email
     )
     .fetch_optional(&state.db)

@@ -1,4 +1,4 @@
-use crate::{extractors::Auth, jwt::Claims, Result, State, DB};
+use crate::{extractors::Auth, jwt::Claims, Result, State, DB, Error};
 use axum::{
     extract::{Path, State as StateE},
     routing::{get, post},
@@ -10,7 +10,7 @@ use validator::Validate;
 
 use super::auth::{Team, TeamInfo, VerificationRequest};
 
-// todo(aiden): i dont like this implementation
+
 async fn update(
     StateE(state): StateE<State>,
     Auth(Claims { team_id, .. }): Auth,
@@ -19,23 +19,39 @@ async fn update(
     payload.validate()?;
 
     let current_team = sqlx::query!(
-        "SELECT email, name FROM teams WHERE public_id = $1",
+        "SELECT email, name, division FROM teams WHERE public_id = $1",
         team_id
     )
     .fetch_one(&state.db)
     .await?;
 
-    if current_team.email != payload.email {
-        if current_team.name != payload.name {
-            sqlx::query!(
-                "UPDATE teams SET name = $1 WHERE public_id = $2",
-                payload.name,
-                team_id
-            )
-            .execute(&state.db)
-            .await?;
-        }
+    if current_team.name != payload.name {
+        sqlx::query!(
+            "UPDATE teams SET name = $1
+            WHERE public_id = $2",
+            payload.name,
+            team_id
+        )
+        .execute(&state.db)
+        .await?;
+    }
 
+    if current_team.division != payload.division {
+        if payload.division != None && state.event.divisions.get(payload.division.as_ref().unwrap()).is_none() {
+            return Err(Error::NotFoundDivision);
+        }
+        sqlx::query!(
+            "UPDATE teams SET division = $1
+            WHERE public_id = $2",
+            payload.division,
+            team_id
+        )
+        .execute(&state.db)
+        .await?;
+
+    }
+
+    if current_team.email != payload.email {
         state
             .email
             .send_email_change_verification_email(
@@ -51,22 +67,10 @@ async fn update(
             "name": payload.name
         })))
     } else {
-        if current_team.name != payload.name {
-            let team = sqlx::query_as!(
-                Team,
-                "UPDATE teams SET name = $1 WHERE public_id = $2 RETURNING *",
-                payload.name,
-                team_id
-            )
+        let team = sqlx::query_as!(Team, "SELECT * FROM teams WHERE public_id = $1", team_id)
             .fetch_one(&state.db)
             .await?;
-            Ok(Json(serde_json::json!(team)))
-        } else {
-            let team = sqlx::query_as!(Team, "SELECT * FROM teams WHERE public_id = $1", team_id)
-                .fetch_one(&state.db)
-                .await?;
-            Ok(Json(serde_json::json!(team)))
-        }
+        Ok(Json(serde_json::json!(team)))
     }
 }
 
@@ -121,6 +125,7 @@ enum Profile {
     Private {
         name: String,
         email: String,
+        division: Option<String>,
         score: i32,
         rank: i32,
         solves: Vec<Solve>,
@@ -128,6 +133,7 @@ enum Profile {
     #[serde(rename = "public")]
     Public {
         name: String,
+        division: Option<String>,
         score: i32,
         rank: i32,
         solves: Vec<Solve>,
@@ -142,6 +148,7 @@ async fn profile(
     struct TeamDetails {
         name: String,
         email: String,
+        division: Option<String>,
         rank: Option<i32>,
         score: Option<i32>,
     }
@@ -149,8 +156,8 @@ async fn profile(
     let details = sqlx::query_as!(
         TeamDetails,
         r#"
-        SELECT name, email, rank, score FROM teams t
-            JOIN compute_leaderboard() lb ON lb.team_id = t.id 
+        SELECT name, email, division, rank, score FROM teams t
+            JOIN compute_leaderboard(t.division) lb ON lb.team_id = t.id 
             WHERE t.id = (SELECT id FROM teams WHERE public_id = $1)"#,
         pub_id
     )
@@ -172,6 +179,7 @@ async fn profile(
                 details.name
             },
             email: details.email,
+            division: details.division,
             rank,
             score,
             solves,
@@ -179,6 +187,7 @@ async fn profile(
     } else {
         Ok(Json(Profile::Public {
             name: details.name,
+            division: details.division,
             rank,
             score,
             solves,

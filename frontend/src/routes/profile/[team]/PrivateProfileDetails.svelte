@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { isError, updateProfile, type ApiError, type Team } from "$lib/api";
+  import type { ApiError, Team, Event, PrivateProfile } from "$lib/api";
+  import { invalidateAll } from '$app/navigation';
+  import { isError, updateProfile } from "$lib/api";
   import TokenReveal from "./TokenReveal.svelte";
 
-  const { profile = $bindable() } = $props();
+  const { event, profile }: { event: Event; profile: PrivateProfile } = $props();
 
   let name = $state(profile.name);
   let email = $state(profile.email);
+  let division = $state(profile.division);
 
   let status: { message: string } | ApiError | null = $state(null);
 
@@ -13,16 +16,14 @@
     e.preventDefault();
     status = null;
 
-    const res = await updateProfile(email, name);
+    const res = await updateProfile(email, name, division);
     if (isError(res)) {
       status = res;
     } else if ("message" in res && typeof res.message === "string") {
       status = res; // bad programming :>
-      profile.name = res.name;
+      invalidateAll();
     } else {
-      const updatedTeam = res as Team;
-      profile.name = updatedTeam.name;
-      profile.email = updatedTeam.email;
+      invalidateAll();
     }
   };
 </script>
@@ -54,6 +55,14 @@
         placeholder="Team Name"
         bind:value={name}
       />
+
+      <label for="update-division">Division:</label>
+      <select id="update-division" name="division" bind:value={division}>
+	<option value={null}>No Division</option>
+	{#each Object.entries(event.divisions) as [id, name]}
+	  <option value={id}>{name}</option>
+	{/each}
+      </select>
 
       <button type="submit">Update</button>
     </form>
@@ -100,7 +109,7 @@
     margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
-    input {
+    input, select {
       margin-bottom: 1rem;
     }
   }

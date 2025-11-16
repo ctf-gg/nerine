@@ -9,3 +9,6 @@ nerine is a ctf platform designed for speed and elegance.
 """
 start_time = "2025-08-20T22:36:51.356942"
 end_time = "2025-08-27T22:36:51.356942"
+
+[divisions]
+hs = "High School"
