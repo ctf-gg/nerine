@@ -264,7 +264,8 @@ WHERE teams.public_id = $1 AND challenges.public_id = $2 AND challenges.visible 
         !claims.ethereal(),
     )
         .fetch_one(&state.db)
-        .await?;
+        .await
+        .map_err(|_| Error::NotFoundChallenge)?;
 
     let client = reqwest::Client::new();
 
