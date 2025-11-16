@@ -17,6 +17,7 @@ async fn update(
     Json(payload): Json<TeamInfo>,
 ) -> Result<Json<serde_json::Value>> {
     payload.validate()?;
+    let trimmed_name = payload.name.trim();
 
     let current_team = sqlx::query!(
         "SELECT email, name, division FROM teams WHERE public_id = $1",
@@ -25,11 +26,11 @@ async fn update(
     .fetch_one(&state.db)
     .await?;
 
-    if current_team.name != payload.name {
+    if current_team.name != trimmed_name {
         sqlx::query!(
             "UPDATE teams SET name = $1
             WHERE public_id = $2",
-            payload.name,
+            trimmed_name,
             team_id
         )
         .execute(&state.db)
@@ -57,14 +58,14 @@ async fn update(
             .send_email_change_verification_email(
                 &state.event,
                 &team_id,
-                &payload.name,
+                &trimmed_name,
                 &payload.email,
             )
             .await?;
 
         Ok(Json(serde_json::json!({
             "message": "Verification email sent. Please check your inbox to confirm the new email address.",
-            "name": payload.name
+            "name": trimmed_name
         })))
     } else {
         let team = sqlx::query_as!(Team, "SELECT * FROM teams WHERE public_id = $1", team_id)
