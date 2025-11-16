@@ -200,11 +200,15 @@ pub async fn submit(
                         .await?
                         .public_id
                     );
-                    client.post(u).json(&WebhookData {
-                        content: msg,
-                        embeds: None,
-                        attachments: Vec::new(),
-                    }).send().await?;
+                    client
+                        .post(u)
+                        .json(&WebhookData {
+                            content: msg,
+                            embeds: None,
+                            attachments: Vec::new(),
+                        })
+                        .send()
+                        .await?;
                 }
             }
         }

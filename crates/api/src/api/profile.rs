@@ -1,4 +1,4 @@
-use crate::{extractors::Auth, jwt::Claims, Result, State, DB, Error};
+use crate::{extractors::Auth, jwt::Claims, Error, Result, State, DB};
 use axum::{
     extract::{Path, State as StateE},
     routing::{get, post},
@@ -9,7 +9,6 @@ use serde::Serialize;
 use validator::Validate;
 
 use super::auth::{Team, TeamInfo, VerificationRequest};
-
 
 async fn update(
     StateE(state): StateE<State>,
@@ -38,7 +37,13 @@ async fn update(
     }
 
     if current_team.division != payload.division {
-        if payload.division != None && state.event.divisions.get(payload.division.as_ref().unwrap()).is_none() {
+        if payload.division != None
+            && state
+                .event
+                .divisions
+                .get(payload.division.as_ref().unwrap())
+                .is_none()
+        {
             return Err(Error::NotFoundDivision);
         }
         sqlx::query!(
@@ -49,7 +54,6 @@ async fn update(
         )
         .execute(&state.db)
         .await?;
-
     }
 
     if current_team.email != payload.email {

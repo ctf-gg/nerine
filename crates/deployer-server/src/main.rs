@@ -10,9 +10,8 @@ mod error;
 
 use config::State;
 use error::Result;
-use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use log::error;
-
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -39,12 +38,11 @@ async fn main() -> eyre::Result<()> {
     })?;
 
     let state = State::new(config::StateInner {
-            config: cfg,
-            db: pool.clone(),
-            challenge_data: challs.into(),
-            tasks: tt.clone(),
+        config: cfg,
+        db: pool.clone(),
+        challenge_data: challs.into(),
+        tasks: tt.clone(),
     });
-
 
     let inherited_containers = sqlx::query_as!(
         api::ChallengeDeploymentRow,
@@ -67,7 +65,10 @@ async fn main() -> eyre::Result<()> {
                 deploy::destroy_challenge_task(state_clone, container).await;
             });
         } else {
-            error!("failed to start cleanup task for deployment {}", container_id);
+            error!(
+                "failed to start cleanup task for deployment {}",
+                container_id
+            );
         }
     }
 

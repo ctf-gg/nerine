@@ -4,7 +4,11 @@ use crate::{
     config::Config,
     jwt::{decode_jwt, Claims},
 };
-use axum::{extract::{FromRequestParts, OptionalFromRequestParts}, http::request::Parts, RequestPartsExt};
+use axum::{
+    extract::{FromRequestParts, OptionalFromRequestParts},
+    http::request::Parts,
+    RequestPartsExt,
+};
 use axum_extra::extract::CookieJar;
 
 #[derive(Debug, Clone)]
@@ -34,7 +38,10 @@ where
 {
     type Rejection = crate::Error;
 
-    async fn from_request_parts(parts: &mut Parts, cfg: &B) -> Result<Option<Self>, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        cfg: &B,
+    ) -> Result<Option<Self>, Self::Rejection> {
         match <Auth as FromRequestParts<B>>::from_request_parts(parts, cfg).await {
             Ok(a) => Ok(Some(a)),
             Err(e) => match e {

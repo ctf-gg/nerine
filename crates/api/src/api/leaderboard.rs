@@ -1,5 +1,9 @@
 use crate::{extractors::Auth, Error, Result, State, DB};
-use axum::{extract::{State as StateE, Path}, routing::get, Json, Router};
+use axum::{
+    extract::{Path, State as StateE},
+    routing::get,
+    Json, Router,
+};
 use chrono::{NaiveDateTime, Utc};
 use serde::Serialize;
 
@@ -93,7 +97,11 @@ async fn calculate_score_history(
     Ok(history)
 }
 
-async fn leaderboard(db: &DB, event_start_time: NaiveDateTime, division: Option<String>) -> Result<Vec<LeaderboardEntry>> {  
+async fn leaderboard(
+    db: &DB,
+    event_start_time: NaiveDateTime,
+    division: Option<String>,
+) -> Result<Vec<LeaderboardEntry>> {
     let db_entries = sqlx::query_as!(
         DbLeaderboardEntry,
         r#"
@@ -163,7 +171,8 @@ async fn leaderboard(db: &DB, event_start_time: NaiveDateTime, division: Option<
     Ok(leaderboard_entries)
 }
 
-async fn get_lb(StateE(state): StateE<State>,
+async fn get_lb(
+    StateE(state): StateE<State>,
     division: Option<Path<String>>,
 ) -> Result<Json<Vec<LeaderboardEntry>>> {
     if Utc::now().naive_utc() < state.event.start_time {
@@ -171,11 +180,16 @@ async fn get_lb(StateE(state): StateE<State>,
     }
 
     let division = division.map(|x| x.0);
-    if division != None && state.event.divisions.get(division.as_ref().unwrap()).is_none() {
+    if division != None
+        && state
+            .event
+            .divisions
+            .get(division.as_ref().unwrap())
+            .is_none()
+    {
         return Err(Error::NotFoundDivision);
     }
- 
-    
+
     return leaderboard(&state.db, state.event.start_time, division)
         .await
         .map(Json);
@@ -184,5 +198,5 @@ async fn get_lb(StateE(state): StateE<State>,
 pub fn router() -> Router<crate::State> {
     Router::new()
         .route("/", get(get_lb))
-        .route("/{division}", get(get_lb)) 
+        .route("/{division}", get(get_lb))
 }

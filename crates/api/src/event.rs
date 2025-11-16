@@ -1,7 +1,7 @@
 use axum::{extract::State as StateE, routing::get, Json, Router};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use std::{fs, collections::HashMap};
+use std::{collections::HashMap, fs};
 
 use crate::{Result, State};
 

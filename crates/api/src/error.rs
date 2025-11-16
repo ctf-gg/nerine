@@ -63,7 +63,9 @@ impl IntoResponse for Error {
             Error::Validation(_) => (StatusCode::BAD_REQUEST, "validation_error"),
             Error::Deploy(_) => (StatusCode::BAD_REQUEST, "deploy_error"),
             Error::InvalidToken => (StatusCode::UNAUTHORIZED, "invalid_token"),
-            Error::NotFoundChallenge | Error::NotFoundTeam | Error::NotFoundDivision => (StatusCode::NOT_FOUND, "not_found"),
+            Error::NotFoundChallenge | Error::NotFoundTeam | Error::NotFoundDivision => {
+                (StatusCode::NOT_FOUND, "not_found")
+            }
             Error::EventNotStarted(start_time) => {
                 // Event not started special cased to return start time
                 return (
