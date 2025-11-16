@@ -16,6 +16,7 @@ pub struct Event {
     pub description: String,
     pub start_time: NaiveDateTime,
     pub end_time: NaiveDateTime,
+    // TODO(aiden): make divisions optional
     pub divisions: HashMap<String, String>,
 }
 

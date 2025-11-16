@@ -498,7 +498,7 @@
   .solves-dialog {
     min-width: 45rem;
     text-align: center;
-    background: var(--bg-neutral);
+    background: var(--bg-primary);
     color: var(--text-primary);
 
     h2 {

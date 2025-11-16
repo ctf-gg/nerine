@@ -11,6 +11,8 @@ mod error;
 use config::State;
 use error::Result;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
+use log::error;
+
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -36,14 +38,42 @@ async fn main() -> eyre::Result<()> {
         ct_copy.cancel();
     })?;
 
-    let app = Router::<State>::new()
-        .nest("/api", api::router())
-        .with_state(State::new(config::StateInner {
+    let state = State::new(config::StateInner {
             config: cfg,
-            db: pool,
+            db: pool.clone(),
             challenge_data: challs.into(),
             tasks: tt.clone(),
-        }));
+    });
+
+
+    let inherited_containers = sqlx::query_as!(
+        api::ChallengeDeploymentRow,
+        "SELECT * FROM challenge_deployments WHERE destroyed_at IS NULL AND expired_at IS NOT NULL"
+    )
+    .fetch_all(&pool)
+    .await?;
+    for container in inherited_containers {
+        let container_id = container.id;
+        if let Ok(container) = TryInto::<deploy::ChallengeDeployment>::try_into(container) {
+            let expiration_time = container.expired_at.unwrap();
+            let dur = (expiration_time - chrono::Utc::now().naive_utc())
+                .max(chrono::TimeDelta::zero())
+                .to_std()
+                .unwrap();
+
+            let state_clone = state.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(dur).await;
+                deploy::destroy_challenge_task(state_clone, container).await;
+            });
+        } else {
+            error!("failed to start cleanup task for deployment {}", container_id);
+        }
+    }
+
+    let app = Router::<State>::new()
+        .nest("/api", api::router())
+        .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;
     axum::serve(listener, app)
