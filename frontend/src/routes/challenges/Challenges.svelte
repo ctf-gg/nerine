@@ -5,9 +5,12 @@
   const { challs, event, yourTeam }: { challs: Challenge[]; event: Event; yourTeam: string | null } = $props();
 
   const categories = $state(new Set(challs.map((x) => x.category)));
-  const categoryVisibility = $state(
-    Object.fromEntries([...categories].map((c) => [c, false]))
-  );
+  let filters = $state({
+    category: Object.fromEntries([...categories].map((c) => [c, false])),
+    solved: false,
+    onlyUnsolved: false,
+  })
+
   const categoryDetails = $derived.by(() => {
     const details = Object.fromEntries(
       [...categories].map((c) => [c, { solved: 0, total: 0 }])
@@ -19,12 +22,11 @@
 
     return details;
   });
+
   const hasCategoryFilter = $derived(
-    Object.values(categoryVisibility).some(Boolean)
+    Object.values(filters.category).some(Boolean)
   );
 
-  let showSolved = $state(false);
-  let showOnlyUnsolved = $state(false);
   const unblooded = $derived(
     challs.reduce((acc, c) => acc + (c.solves === 0 ? 1 : 0), 0)
   );
@@ -32,14 +34,28 @@
   const fileteredChalls = $derived.by(() => {
     let res = challs;
 
-    if (showOnlyUnsolved) res = res.filter((c) => c.solves === 0);
-    if (!showSolved) res = res.filter((c) => !c.solved_at);
+    if (filters.onlyUnsolved) res = res.filter((c) => c.solves === 0);
+    if (!filters.solved) res = res.filter((c) => !c.solved_at);
 
     if (hasCategoryFilter)
-      res = res.filter((c) => categoryVisibility[c.category]);
+      res = res.filter((c) => filters.category[c.category]);
 
     return res;
   });
+
+  $effect(() => {
+    const savedFilters = JSON.parse(localStorage.getItem("nerine-challenge-filters"));
+    if (savedFilters.category)
+      for (const [category, on] of Object.entries(savedFilters.category))
+	if (typeof filters.category[category] === "boolean") filters.category[category] = on
+
+    filters.onlyUnsolved = !!savedFilters.onlyUnsolved;
+    filters.solved = !!savedFilters.solved;
+  })
+
+  $effect(() => {
+    localStorage.setItem("nerine-challenge-filters", JSON.stringify(filters));
+  })
 </script>
 
 <div class="filters">
@@ -49,7 +65,7 @@
         <input
           type="checkbox"
           id="{category}-visibility"
-          bind:checked={categoryVisibility[category]}
+          bind:checked={filters.category[category]}
         />
         <label for="{category}-visibility">
           {category} ({categoryDetails[category].solved} / {categoryDetails[
@@ -62,7 +78,7 @@
   <hr />
   <div class="other-filters">
     <div>
-      <input type="checkbox" id="show-solved" bind:checked={showSolved} /><label
+      <input type="checkbox" id="show-solved" bind:checked={filters.solved} /><label
         for="show-solved"
         >Show Solved ({challs.reduce((acc, c) => acc + (c.solved_at ? 1 : 0), 0)}
         / {challs.length})</label
@@ -73,7 +89,7 @@
         <input
           type="checkbox"
           id="show-unsolved"
-          bind:checked={showOnlyUnsolved}
+          bind:checked={filters.onlyUnsolved}
         /><label for="show-unsolved">Show Only Unblooded ({unblooded})</label>
       </div>
     {/if}
