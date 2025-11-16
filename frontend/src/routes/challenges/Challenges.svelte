@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type { Challenge, Event } from "$lib/api";
   import ChallengeDisplay from "./Challenge.svelte";
 
@@ -43,7 +44,7 @@
     return res;
   });
 
-  $effect(() => {
+  onMount(() => {
     const savedFilters = JSON.parse(localStorage.getItem("nerine-challenge-filters"));
     if (savedFilters.category)
       for (const [category, on] of Object.entries(savedFilters.category))
