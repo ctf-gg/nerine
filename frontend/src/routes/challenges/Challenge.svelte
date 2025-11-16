@@ -16,7 +16,7 @@
   } from "$lib/api";
   import TcpLink from "./TcpLink.svelte";
   import { onDestroy, onMount } from "svelte";
-  const { chall: c, event }: { chall: Challenge, event: Event } = $props();
+  const { chall: c, event, yourTeam }: { chall: Challenge; event: Event; yourTeam: string | null } = $props();
 
   let flagInput: HTMLInputElement = $state(null!);
   let deployment: ChallengeDeployment | null = $state(null);
@@ -320,7 +320,7 @@
     <div class="error">Failed to get solves: {solves.message}</div>
     <button onclick={showSolves}>Retry</button>
   {:else if solves.length === 0}
-  <div>This challenge has no solves</div>
+    <div>This challenge has no solves</div>
   {:else}
     <table>
       <thead>
@@ -332,7 +332,7 @@
       <tbody>
         {#each solves as solve}
           {@const href = `/profile/${solve.id}`}
-          <tr>
+          <tr class={[yourTeam === solve.id && "your-team"]}>
             <td><a {href}>{solve.name}</a></td>
             <td><a {href}>{solve.solved_at.toLocaleString()}</a></td>
           </tr>
@@ -540,6 +540,12 @@
         padding: 0.15rem 0;
         text-decoration: none;
       }
+    }
+
+    .your-team {
+      background: var(--bg-accent);
+      color: var(--text-accent);
+      font-weight: 600;
     }
   }
 </style>

@@ -2,7 +2,7 @@
   import type { Challenge, Event } from "$lib/api";
   import ChallengeDisplay from "./Challenge.svelte";
 
-  const { challs, event }: { challs: Challenge[], event: Event } = $props();
+  const { challs, event, yourTeam }: { challs: Challenge[]; event: Event; yourTeam: string | null } = $props();
 
   const categories = $state(new Set(challs.map((x) => x.category)));
   const categoryVisibility = $state(
@@ -81,7 +81,7 @@
 </div>
 <div class="challenges">
   {#each fileteredChalls as chall (chall.id)}
-    <ChallengeDisplay {chall} {event} />
+    <ChallengeDisplay {chall} {event} {yourTeam} />
   {/each}
 </div>
 

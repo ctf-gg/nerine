@@ -9,7 +9,7 @@
 
 <div class="content-container">
   {#if challs}
-    <Challenges {challs} {event} />
+    <Challenges {challs} {event} yourTeam={data.teamId} />
   {:else}
     <Countdown {event} />
   {/if}
