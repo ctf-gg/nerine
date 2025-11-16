@@ -129,8 +129,8 @@
       height: 0;
       width: 100%;
       border: none;
-      border-bottom: 1px solid #ccc;
-      margin: 8px 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--text-neutral) 50%, transparent);
+      margin: 0.5rem 0;
     }
 
     .category-filters,
