@@ -46,6 +46,9 @@ pub struct Config {
 
     #[envconfig(from = "DEPLOYER_BASE", default = "http://deployer:3001")]
     pub deployer_base: String,
+
+    #[envconfig(from = "BLOODBOT_DISCORD_WEBHOOK_URL")]
+    pub bloodbot_discord_webhook_url: Option<String>,
 }
 
 pub struct StateInner {
