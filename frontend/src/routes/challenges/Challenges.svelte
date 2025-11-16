@@ -46,6 +46,8 @@
 
   onMount(() => {
     const savedFilters = JSON.parse(localStorage.getItem("nerine-challenge-filters"));
+    if (!savedFilters) return;
+
     if (savedFilters.category)
       for (const [category, on] of Object.entries(savedFilters.category))
 	if (typeof filters.category[category] === "boolean") filters.category[category] = on
