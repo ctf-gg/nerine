@@ -24,12 +24,14 @@
 
 <div class="content-container">
   {#if leaderboard}
-    <div class="division-selector">
-      <button class={{ selected: division == null }} onclick={() => changeDivision(null)}>Open</button>
-      {#each Object.entries(event.divisions) as [id, name]}
-	<button class={{ selected: division == id }} onclick={() => changeDivision(id)}>{name}</button>
-      {/each}
-    </div>
+    {#if Object.keys(event.divisions).length > 0}
+      <div class="division-selector">
+	<button class={{ selected: division == null }} onclick={() => changeDivision(null)}>Open</button>
+	{#each Object.entries(event.divisions) as [id, name]}
+	  <button class={{ selected: division == id }} onclick={() => changeDivision(id)}>{name}</button>
+	{/each}
+      </div>
+    {/if}
     <Leaderboard
       teams={leaderboard.filter((team) => team.score > 0)}
       yourTeam={data.teamId}

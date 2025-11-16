@@ -56,13 +56,15 @@
         bind:value={name}
       />
 
-      <label for="update-division">Division:</label>
-      <select id="update-division" name="division" bind:value={division}>
-	<option value={null}>No Division</option>
-	{#each Object.entries(event.divisions) as [id, name]}
-	  <option value={id}>{name}</option>
-	{/each}
-      </select>
+      {#if Object.keys(event.divisions).length > 0}
+	<label for="update-division">Division:</label>
+	<select id="update-division" name="division" bind:value={division}>
+	  <option value={null}>No Division</option>
+	  {#each Object.entries(event.divisions) as [id, name]}
+	    <option value={id}>{name}</option>
+	  {/each}
+	</select>
+      {/if}
 
       <button type="submit">Update</button>
     </form>
